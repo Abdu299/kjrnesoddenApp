@@ -7,3 +7,41 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #eef5fb;
+  color: #111111;
+  font-family: var(--font-display);
+}
+
+#root {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  background: #ffffff;
+  box-shadow: 0 0 42px rgba(22, 76, 120, 0.12);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+@media (max-width: 959px) {
+  body {
+    background: #ffffff;
+  }
+
+  #root {
+    max-width: none;
+    box-shadow: none;
+  }
+}
