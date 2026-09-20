@@ -10,14 +10,32 @@ import {
   createRestaurantRequests,
 } from "./restaurantRequestService";
 
+import {
+  httpsCallable,
+} from "firebase/functions";
+
+import {
+  functions,
+} from "./firebase";
 
 // ==================================================
-// API
+// TELEGRAM FUNCTION
 // ==================================================
 
-const ORDER_API_URL =
-  process.env
-    .EXPO_PUBLIC_ORDER_API_URL;
+const sendOrderNotification =
+  httpsCallable<
+    {
+      deliveryType: string;
+      deliveryPlace: string;
+      description: string;
+    },
+    {
+      success: boolean;
+    }
+  >(
+    functions,
+    "sendOrderToTelegram"
+  );
 
 
 // ==================================================
@@ -71,10 +89,10 @@ async function getValidCustomerProfile() {
 
 
 // ==================================================
-// SEND TO VERCEL
+// SEND TO TELEGRAM THROUGH FIREBASE
 // ==================================================
 
-async function sendOrderToVercel(data: {
+async function sendOrderToTelegram(data: {
   fullName: string;
   phone: string;
   deliveryAddress: string;
@@ -82,68 +100,32 @@ async function sendOrderToVercel(data: {
   deliveryPlace: string;
   description: string;
 }) {
-  if (
-    !ORDER_API_URL
-  ) {
-    throw new Error(
-      "Bestillingsserveren er ikke konfigurert."
-    );
-  }
+  // Name, phone and address are intentionally not sent from the
+  // browser. The Cloud Function reads the authenticated customer's
+  // profile directly from Firestore, which prevents spoofing.
+  const result =
+    await sendOrderNotification({
+      deliveryType:
+        data.deliveryType,
 
+      deliveryPlace:
+        data.deliveryPlace,
 
-  const response =
-    await fetch(
-      ORDER_API_URL,
-      {
-        method:
-          "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body:
-          JSON.stringify(
-            data
-          ),
-      }
-    );
+      description:
+        data.description,
+    });
 
 
   if (
-    !response.ok
+    !result.data.success
   ) {
-    try {
-      const errorData =
-        await response.json();
-
-
-      console.log(
-        "Order API error:",
-        errorData
-      );
-
-    } catch (
-      error
-    ) {
-      console.log(
-        "Could not read order API response:",
-        error
-      );
-    }
-
-
     throw new Error(
       "Kunne ikke sende bestillingen. Prøv igjen."
     );
   }
 
 
-  return {
-    success:
-      true,
-  };
+  return result.data;
 }
 
 
@@ -442,7 +424,7 @@ export async function submitCartOrder(
     customItems.length >
     0
   ) {
-    await sendOrderToVercel({
+    await sendOrderToTelegram({
       fullName:
         profile.name,
 
@@ -522,7 +504,7 @@ export async function submitCartOrder(
 
 
   try {
-    await sendOrderToVercel({
+    await sendOrderToTelegram({
       fullName:
         profile.name,
 
@@ -633,7 +615,7 @@ export async function submitCustomOrder(
     await getValidCustomerProfile();
 
 
-  await sendOrderToVercel({
+  await sendOrderToTelegram({
     fullName:
       profile.name,
 

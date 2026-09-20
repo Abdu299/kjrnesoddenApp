@@ -17,6 +17,10 @@ import {
   getFirestore,
 } from "firebase/firestore";
 
+import {
+  getFunctions,
+} from "firebase/functions";
+
 import AsyncStorage from
   "@react-native-async-storage/async-storage";
 
@@ -168,6 +172,19 @@ const db =
 
 
 // ==================================================
+// CLOUD FUNCTIONS
+// ==================================================
+
+// Keep the function close to users in Norway and use the
+// same region in functions/src/index.ts.
+const functions =
+  getFunctions(
+    app,
+    "europe-west1"
+  );
+
+
+// ==================================================
 // EXPORT
 // ==================================================
 
@@ -175,4 +192,5 @@ export {
   app,
   auth,
   db,
+  functions,
 };

@@ -3,6 +3,8 @@ import {
   useState,
 } from "react";
 
+import "../global.css";
+
 import {
   Tabs,
 } from "expo-router";
