@@ -99,76 +99,11 @@ export default function HomeScreen() {
   }
 
 
-  if (!user) {
-    return (
-      <SafeAreaView
-        style={
-          styles.container
-        }
-      >
-        <View
-          style={
-            styles.header
-          }
-        >
-          <Text
-            style={
-              styles.logo
-            }
-          >
-            KjørNesodden
-          </Text>
-        </View>
-
-
-        <View
-          style={
-            styles.centerContainer
-          }
-        >
-          <Text
-            style={
-              styles.welcomeTitle
-            }
-          >
-            Velkommen til KjørNesodden
-          </Text>
-
-
-          <Text
-            style={
-              styles.description
-            }
-          >
-            Du må logge inn for å se restauranter og innholdet i appen.
-          </Text>
-
-
-          <TouchableOpacity
-            style={
-              styles.loginButton
-            }
-            onPress={() =>
-              router.push(
-                "/login"
-              )
-            }
-          >
-            <Text
-              style={
-                styles.loginButtonText
-              }
-            >
-              Logg inn
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-
+  // Public browsing is available without an account.
+  // Apple guideline 5.1.1(v) only allows login to be required
+  // when the customer performs an account-based action.
   if (
+    !user ||
     role ===
     "customer"
   ) {
