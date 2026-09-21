@@ -24,6 +24,10 @@ import {
 } from "../context/CartContext";
 
 import {
+  useAuth,
+} from "../context/AuthContext";
+
+import {
   submitCartOrder,
 } from "../services/orderService";
 
@@ -49,6 +53,12 @@ type RestaurantCartGroup = {
 // ==================================================
 
 export default function CartScreen() {
+  const {
+    user,
+  } =
+    useAuth();
+
+
   const {
     items,
 
@@ -273,6 +283,38 @@ export default function CartScreen() {
       if (
         submittingOrder
       ) {
+        return;
+      }
+
+
+      if (!user) {
+        Alert.alert(
+          "Logg inn for å bestille",
+
+          "Du kan se restauranter og menyer uten konto. For å sende bestillingen må du logge inn eller registrere deg.",
+
+          [
+            {
+              text:
+                "Avbryt",
+
+              style:
+                "cancel",
+            },
+
+            {
+              text:
+                "Logg inn",
+
+              onPress:
+                () =>
+                  router.push(
+                    "/login"
+                  ),
+            },
+          ]
+        );
+
         return;
       }
 
