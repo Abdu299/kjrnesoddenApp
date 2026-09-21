@@ -31,6 +31,10 @@ import {
 } from "../context/CartContext";
 
 import {
+  useRestaurantLanguage,
+} from "../context/RestaurantLanguageContext";
+
+import {
   Restaurant as AdminRestaurant,
   createRestaurant,
   disableRestaurant,
@@ -517,6 +521,23 @@ function CustomerHomeScreen() {
 // ==================================================
 
 function RestaurantHomeScreen() {
+  const {
+    language,
+    setLanguage,
+  } =
+    useRestaurantLanguage();
+
+
+  const tr =
+    (
+      norwegian: string,
+      english: string
+    ) =>
+      language === "en"
+        ? english
+        : norwegian;
+
+
   const [
     products,
     setProducts,
@@ -609,9 +630,14 @@ function RestaurantHomeScreen() {
 
 
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke hente produkter."
+          tr(
+            "Feil",
+            "Error"
+          ),
+          language === "en"
+            ? "Could not load products."
+            : error.message ||
+              "Kunne ikke hente produkter."
         );
 
       } finally {
@@ -653,9 +679,14 @@ function RestaurantHomeScreen() {
         error: any
       ) {
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke velge bildet."
+          tr(
+            "Feil",
+            "Error"
+          ),
+          language === "en"
+            ? "Could not select the image."
+            : error.message ||
+              "Kunne ikke velge bildet."
         );
 
       } finally {
@@ -696,17 +727,28 @@ function RestaurantHomeScreen() {
 
 
         Alert.alert(
-          "Produkt opprettet",
-          "Produktet vises nå i restaurantens meny."
+          tr(
+            "Produkt opprettet",
+            "Product created"
+          ),
+          tr(
+            "Produktet vises nå i restaurantens meny.",
+            "The product is now visible in the restaurant menu."
+          )
         );
 
       } catch (
         error: any
       ) {
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke opprette produkt."
+          tr(
+            "Feil",
+            "Error"
+          ),
+          language === "en"
+            ? "Could not create the product."
+            : error.message ||
+              "Kunne ikke opprette produkt."
         );
 
       } finally {
@@ -739,9 +781,14 @@ function RestaurantHomeScreen() {
         error: any
       ) {
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke oppdatere produktet."
+          tr(
+            "Feil",
+            "Error"
+          ),
+          language === "en"
+            ? "Could not update the product."
+            : error.message ||
+              "Kunne ikke oppdatere produktet."
         );
       }
     };
@@ -794,16 +841,46 @@ function RestaurantHomeScreen() {
 
         <View
           style={
-            styles.roleBadge
+            styles.restaurantHeaderActions
           }
         >
-          <Text
+          <View
             style={
-              styles.roleBadgeText
+              styles.roleBadge
             }
           >
-            Restaurant
-          </Text>
+            <Text
+              style={
+                styles.roleBadgeText
+              }
+            >
+              Restaurant
+            </Text>
+          </View>
+
+
+          <TouchableOpacity
+            style={
+              styles.languageQuickButton
+            }
+            onPress={() =>
+              setLanguage(
+                language === "en"
+                  ? "no"
+                  : "en"
+              )
+            }
+          >
+            <Text
+              style={
+                styles.languageQuickButtonText
+              }
+            >
+              {language === "en"
+                ? "NO"
+                : "EN"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -822,7 +899,7 @@ function RestaurantHomeScreen() {
             styles.pageTitle
           }
         >
-          Produkter
+          {tr("Produkter", "Products")}
         </Text>
 
 
@@ -831,7 +908,7 @@ function RestaurantHomeScreen() {
             styles.pageSubtitle
           }
         >
-          Administrer restaurantens meny.
+          {tr("Administrer restaurantens meny.", "Manage the restaurant menu.")}
         </Text>
 
 
@@ -847,7 +924,7 @@ function RestaurantHomeScreen() {
               styles.sectionTitle
             }
           >
-            Legg til produkt
+            {tr("Legg til produkt", "Add product")}
           </Text>
 
 
@@ -856,7 +933,7 @@ function RestaurantHomeScreen() {
               styles.inputLabel
             }
           >
-            Produktnavn
+            {tr("Produktnavn", "Product name")}
           </Text>
 
           <TextInput
@@ -879,7 +956,7 @@ function RestaurantHomeScreen() {
               styles.inputLabel
             }
           >
-            Beskrivelse
+            {tr("Beskrivelse", "Description")}
           </Text>
 
           <TextInput
@@ -887,7 +964,7 @@ function RestaurantHomeScreen() {
               styles.input,
               styles.multilineInput,
             ]}
-            placeholder="Burger med ost, salat og dressing"
+            placeholder={tr("Burger med ost, salat og dressing", "Burger with cheese, lettuce and dressing")}
             placeholderTextColor="#A0A0A0"
             value={
               description
@@ -904,7 +981,7 @@ function RestaurantHomeScreen() {
               styles.inputLabel
             }
           >
-            Pris
+            {tr("Pris", "Price")}
           </Text>
 
           <TextInput
@@ -928,7 +1005,7 @@ function RestaurantHomeScreen() {
               styles.inputLabel
             }
           >
-            Produktbilde
+            {tr("Produktbilde", "Product image")}
           </Text>
 
 
@@ -949,10 +1026,19 @@ function RestaurantHomeScreen() {
               }
             >
               {selectingImage
-                ? "Behandler bilde..."
+                ? tr(
+                    "Behandler bilde...",
+                    "Processing image..."
+                  )
                 : productImage
-                ? "Bytt bilde"
-                : "Velg bilde fra filer"}
+                ? tr(
+                    "Bytt bilde",
+                    "Change image"
+                  )
+                : tr(
+                    "Velg bilde fra filer",
+                    "Choose image from files"
+                  )}
             </Text>
           </TouchableOpacity>
 
@@ -983,7 +1069,7 @@ function RestaurantHomeScreen() {
                     styles.removeImageText
                   }
                 >
-                  Fjern bilde
+                  {tr("Fjern bilde", "Remove image")}
                 </Text>
               </TouchableOpacity>
             </>
@@ -998,7 +1084,7 @@ function RestaurantHomeScreen() {
                   styles.noImageText
                 }
               >
-                Ingen bilde valgt
+                {tr("Ingen bilde valgt", "No image selected")}
               </Text>
             </View>
           )}
@@ -1024,8 +1110,14 @@ function RestaurantHomeScreen() {
               }
             >
               {creating
-                ? "Oppretter..."
-                : "+ Legg til produkt"}
+                ? tr(
+                    "Oppretter...",
+                    "Creating..."
+                  )
+                : tr(
+                    "+ Legg til produkt",
+                    "+ Add product"
+                  )}
             </Text>
           </TouchableOpacity>
         </View>
@@ -1038,7 +1130,7 @@ function RestaurantHomeScreen() {
             styles.sectionTitle
           }
         >
-          Mine produkter
+          {tr("Mine produkter", "My products")}
         </Text>
 
 
@@ -1064,7 +1156,7 @@ function RestaurantHomeScreen() {
             onChangeText={
               setProductSearch
             }
-            placeholder="Søk etter produkt..."
+            placeholder={tr("Søk etter produkt...", "Search products...")}
             placeholderTextColor="#A0A0A0"
             autoCapitalize="none"
             autoCorrect={
@@ -1113,7 +1205,7 @@ function RestaurantHomeScreen() {
                 styles.emptyTitle
               }
             >
-              Ingen produkter
+              {tr("Ingen produkter", "No products")}
             </Text>
 
             <Text
@@ -1121,7 +1213,7 @@ function RestaurantHomeScreen() {
                 styles.emptyText
               }
             >
-              Legg til restaurantens første produkt ovenfor.
+              {tr("Legg til restaurantens første produkt ovenfor.", "Add the restaurant first product above.")}
             </Text>
           </View>
         ) : filteredProducts.length ===
@@ -1136,7 +1228,7 @@ function RestaurantHomeScreen() {
                 styles.emptyTitle
               }
             >
-              Ingen treff
+              {tr("Ingen treff", "No results")}
             </Text>
 
 
@@ -1145,7 +1237,7 @@ function RestaurantHomeScreen() {
                 styles.emptyText
               }
             >
-              Ingen produkter matcher søket ditt.
+              {tr("Ingen produkter matcher søket ditt.", "No products match your search.")}
             </Text>
           </View>
         ) : (
@@ -1231,8 +1323,14 @@ function RestaurantHomeScreen() {
                         ]}
                       >
                         {product.available
-                          ? "Tilgjengelig"
-                          : "Utsolgt"}
+                          ? tr(
+                              "Tilgjengelig",
+                              "Available"
+                            )
+                          : tr(
+                              "Utsolgt",
+                              "Sold out"
+                            )}
                       </Text>
                     </View>
                   </View>
@@ -1253,7 +1351,9 @@ function RestaurantHomeScreen() {
                     }
                   >
                     {product.price.toLocaleString(
-                      "nb-NO"
+                      language === "en"
+                        ? "en-GB"
+                        : "nb-NO"
                     )}{" "}
                     kr
                   </Text>
@@ -1283,8 +1383,14 @@ function RestaurantHomeScreen() {
                       ]}
                     >
                       {product.available
-                        ? "Marker som utsolgt"
-                        : "Gjør tilgjengelig"}
+                        ? tr(
+                            "Marker som utsolgt",
+                            "Mark as sold out"
+                          )
+                        : tr(
+                            "Gjør tilgjengelig",
+                            "Make available"
+                          )}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -2154,6 +2260,45 @@ const styles =
 
 
     // COMMON
+
+    restaurantHeaderActions: {
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      gap:
+        8,
+    },
+
+    languageQuickButton: {
+      minWidth:
+        42,
+      paddingHorizontal:
+        10,
+      paddingVertical:
+        7,
+      borderRadius:
+        20,
+      borderWidth:
+        1,
+      borderColor:
+        "#208AEF",
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      backgroundColor:
+        "#FFFFFF",
+    },
+
+    languageQuickButtonText: {
+      color:
+        "#208AEF",
+      fontWeight:
+        "800",
+      fontSize:
+        12,
+    },
 
     roleBadge: {
       backgroundColor:

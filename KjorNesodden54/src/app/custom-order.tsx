@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useCallback,
   useState,
 } from "react";
 
@@ -17,6 +17,7 @@ import {
 
 import {
   router,
+  useFocusEffect,
 } from "expo-router";
 
 import {
@@ -69,14 +70,28 @@ export default function CustomOrderScreen() {
     );
 
 
+  const [
+    checkingAddress,
+    setCheckingAddress,
+  ] =
+    useState(
+      false
+    );
+
+
   // ==================================================
   // LOAD CUSTOMER ADDRESS
   // ==================================================
 
-  useEffect(() => {
-    const loadProfile =
+  const loadCustomerAddress =
+    useCallback(
       async () => {
         try {
+          setLoadingProfile(
+            true
+          );
+
+
           const profile =
             await getCurrentProfile();
 
@@ -89,6 +104,8 @@ export default function CustomOrderScreen() {
               profile.address ??
               ""
             );
+          } else {
+            setAddress("");
           }
 
         } catch (
@@ -99,16 +116,29 @@ export default function CustomOrderScreen() {
             error
           );
 
+
+          setAddress("");
+
         } finally {
           setLoadingProfile(
             false
           );
         }
-      };
+      },
+      []
+    );
 
 
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(
+      () => {
+        loadCustomerAddress();
+      },
+      [
+        loadCustomerAddress,
+      ]
+    )
+  );
 
 
   // ==================================================
@@ -116,7 +146,7 @@ export default function CustomOrderScreen() {
   // ==================================================
 
   const handleAddToCart =
-    () => {
+    async () => {
       const cleanPlace =
         place
           .trim()
@@ -170,31 +200,77 @@ export default function CustomOrderScreen() {
       }
 
 
-      if (
-        !address.trim()
-      ) {
-        Alert.alert(
-          "Mangler leveringsadresse",
-          "Legg inn leveringsadressen din i Profil før du legger bestillingen i handlekurven."
+      try {
+        setCheckingAddress(
+          true
         );
 
-        return;
+
+        const profile =
+          await getCurrentProfile();
+
+
+        const latestAddress =
+          profile.role ===
+          "customer"
+            ? (
+                profile.address ??
+                ""
+              ).trim()
+            : "";
+
+
+        setAddress(
+          latestAddress
+        );
+
+
+        if (
+          !latestAddress
+        ) {
+          Alert.alert(
+            "Mangler leveringsadresse",
+            "Legg inn leveringsadressen din i Profil før du legger bestillingen i handlekurven."
+          );
+
+          return;
+        }
+
+
+        addCustomItem(
+          cleanPlace,
+          cleanRequest
+        );
+
+
+        setPlace("");
+        setRequest("");
+
+
+        router.push(
+          "/cart" as any
+        );
+
+      } catch (
+        error: any
+      ) {
+        console.log(
+          "Custom order address check error:",
+          error
+        );
+
+
+        Alert.alert(
+          "Feil",
+          error.message ||
+            "Kunne ikke hente leveringsadressen. Prøv igjen."
+        );
+
+      } finally {
+        setCheckingAddress(
+          false
+        );
       }
-
-
-      addCustomItem(
-        cleanPlace,
-        cleanRequest
-      );
-
-
-      setPlace("");
-      setRequest("");
-
-
-      router.push(
-        "/cart" as any
-      );
     };
 
 
@@ -432,20 +508,33 @@ export default function CustomOrderScreen() {
           {/* ADD TO CART */}
 
           <TouchableOpacity
-            style={
-              styles.submitButton
-            }
+            style={[
+              styles.submitButton,
+
+              checkingAddress &&
+                styles.submitButtonDisabled,
+            ]}
             onPress={
               handleAddToCart
             }
+            disabled={
+              checkingAddress
+            }
           >
-            <Text
-              style={
-                styles.submitButtonText
-              }
-            >
-              Legg i handlekurven
-            </Text>
+            {checkingAddress ? (
+              <ActivityIndicator
+                color="#FFFFFF"
+              />
+
+            ) : (
+              <Text
+                style={
+                  styles.submitButtonText
+                }
+              >
+                Legg i handlekurven
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -629,6 +718,11 @@ const styles =
       justifyContent:
         "center",
     },
+
+    submitButtonDisabled: {
+      opacity: 0.65,
+    },
+
 
     submitButtonText: {
       color:

@@ -1,28 +1,32 @@
 import {
-    useEffect,
-    useMemo,
-    useState,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import {
-    useAuth,
+  useAuth,
 } from "../context/AuthContext";
 
 import {
-    markRestaurantRequestCompleted,
-    RestaurantRequest,
-    subscribeToMyRestaurantRequests,
+  useRestaurantLanguage,
+} from "../context/RestaurantLanguageContext";
+
+import {
+  markRestaurantRequestCompleted,
+  RestaurantRequest,
+  subscribeToMyRestaurantRequests,
 } from "../services/restaurantRequestService";
 
 
@@ -43,7 +47,9 @@ function formatDate(
   request:
     RestaurantRequest,
   completed:
-    boolean
+    boolean,
+  language:
+    "no" | "en"
 ) {
   const timestamp =
     completed
@@ -60,7 +66,9 @@ function formatDate(
     return timestamp
       .toDate()
       .toLocaleString(
-        "nb-NO",
+        language === "en"
+          ? "en-GB"
+          : "nb-NO",
         {
           day:
             "2-digit",
@@ -97,6 +105,22 @@ export default function RequestsScreen() {
       authLoading,
   } =
     useAuth();
+
+
+  const {
+    language,
+  } =
+    useRestaurantLanguage();
+
+
+  const tr =
+    (
+      norwegian: string,
+      english: string
+    ) =>
+      language === "en"
+        ? english
+        : norwegian;
 
 
   const [
@@ -187,8 +211,14 @@ export default function RequestsScreen() {
 
 
             Alert.alert(
-              "Feil",
-              "Kunne ikke hente bestillingene."
+              tr(
+                "Feil",
+                "Error"
+              ),
+              tr(
+                "Kunne ikke hente bestillingene.",
+                "Could not load the orders."
+              )
             );
           }
         );
@@ -295,9 +325,14 @@ export default function RequestsScreen() {
 
 
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke markere bestillingen som ferdig."
+          tr(
+            "Feil",
+            "Error"
+          ),
+          language === "en"
+            ? "Could not mark the order as completed."
+            : error.message ||
+              "Kunne ikke markere bestillingen som ferdig."
         );
 
       } finally {
@@ -314,14 +349,22 @@ export default function RequestsScreen() {
         RestaurantRequest
     ) => {
       Alert.alert(
-        "Marker som ferdig",
+        tr(
+          "Marker som ferdig",
+          "Mark as completed"
+        ),
 
-        `Vil du markere bestillingen fra ${request.customerName} som ferdig?`,
+        language === "en"
+          ? `Do you want to mark the order from ${request.customerName} as completed?`
+          : `Vil du markere bestillingen fra ${request.customerName} som ferdig?`,
 
         [
           {
             text:
-              "Avbryt",
+              tr(
+                "Avbryt",
+                "Cancel"
+              ),
 
             style:
               "cancel",
@@ -329,7 +372,10 @@ export default function RequestsScreen() {
 
           {
             text:
-              "Marker som ferdig",
+              tr(
+                "Marker som ferdig",
+                "Mark as completed"
+              ),
 
             onPress:
               () =>
@@ -395,7 +441,7 @@ export default function RequestsScreen() {
               styles.accessTitle
             }
           >
-            Ikke tilgjengelig
+            {tr("Ikke tilgjengelig", "Not available")}
           </Text>
 
 
@@ -404,7 +450,7 @@ export default function RequestsScreen() {
               styles.accessText
             }
           >
-            Denne siden er bare tilgjengelig for restauranter.
+            {tr("Denne siden er bare tilgjengelig for restauranter.", "This page is only available to restaurants.")}
           </Text>
         </View>
       </SafeAreaView>
@@ -452,7 +498,7 @@ export default function RequestsScreen() {
             styles.pageTitle
           }
         >
-          Bestillinger
+          {tr("Bestillinger", "Orders")}
         </Text>
 
 
@@ -461,7 +507,7 @@ export default function RequestsScreen() {
             styles.pageSubtitle
           }
         >
-          Se nye bestillinger og bestillinger som er ferdige.
+          {tr("Se nye bestillinger og bestillinger som er ferdige.", "View new and completed orders.")}
         </Text>
 
 
@@ -497,7 +543,7 @@ export default function RequestsScreen() {
                   styles.switchTextActive,
               ]}
             >
-              Nye
+              {tr("Nye", "New")}
             </Text>
 
 
@@ -551,7 +597,7 @@ export default function RequestsScreen() {
                   styles.switchTextActive,
               ]}
             >
-              Ferdig
+              {tr("Ferdig", "Completed")}
             </Text>
 
 
@@ -604,7 +650,7 @@ export default function RequestsScreen() {
                 styles.loadingText
               }
             >
-              Laster bestillinger...
+              {tr("Laster bestillinger...", "Loading orders...")}
             </Text>
           </View>
 
@@ -634,8 +680,14 @@ export default function RequestsScreen() {
             >
               {selectedView ===
               "pending"
-                ? "Ingen nye bestillinger"
-                : "Ingen ferdige bestillinger"}
+                ? tr(
+                    "Ingen nye bestillinger",
+                    "No new orders"
+                  )
+                : tr(
+                    "Ingen ferdige bestillinger",
+                    "No completed orders"
+                  )}
             </Text>
 
 
@@ -646,8 +698,14 @@ export default function RequestsScreen() {
             >
               {selectedView ===
               "pending"
-                ? "Nye bestillinger vises her automatisk."
-                : "Bestillinger du markerer som ferdige vises her."}
+                ? tr(
+                    "Nye bestillinger vises her automatisk.",
+                    "New orders will appear here automatically."
+                  )
+                : tr(
+                    "Bestillinger du markerer som ferdige vises her.",
+                    "Orders you mark as completed will appear here."
+                  )}
             </Text>
           </View>
 
@@ -722,7 +780,7 @@ export default function RequestsScreen() {
                           styles.newBadgeText
                         }
                       >
-                        Ny
+                        {tr("Ny", "New")}
                       </Text>
                     </View>
 
@@ -737,7 +795,7 @@ export default function RequestsScreen() {
                           styles.completedBadgeText
                         }
                       >
-                        Ferdig
+                        {tr("Ferdig", "Completed")}
                       </Text>
                     </View>
                   )}
@@ -753,13 +811,21 @@ export default function RequestsScreen() {
                 >
                   {request.status ===
                   "completed"
-                    ? `Ferdig: ${formatDate(
+                    ? `${tr(
+                        "Ferdig",
+                        "Completed"
+                      )}: ${formatDate(
                         request,
-                        true
+                        true,
+                        language
                       )}`
-                    : `Mottatt: ${formatDate(
+                    : `${tr(
+                        "Mottatt",
+                        "Received"
+                      )}: ${formatDate(
                         request,
-                        false
+                        false,
+                        language
                       )}`}
                 </Text>
 
@@ -821,9 +887,14 @@ export default function RequestsScreen() {
                           }
                         >
                           {item.price.toLocaleString(
-                            "nb-NO"
+                            language === "en"
+                              ? "en-GB"
+                              : "nb-NO"
                           )}{" "}
-                          kr per stk.
+                          {tr(
+                            "kr per stk.",
+                            "kr each"
+                          )}
                         </Text>
                       </View>
 
@@ -834,7 +905,9 @@ export default function RequestsScreen() {
                         }
                       >
                         {item.lineTotal.toLocaleString(
-                          "nb-NO"
+                          language === "en"
+                            ? "en-GB"
+                            : "nb-NO"
                         )}{" "}
                         kr
                       </Text>
@@ -855,7 +928,7 @@ export default function RequestsScreen() {
                       styles.totalLabel
                     }
                   >
-                    Totalt
+                    {tr("Totalt", "Total")}
                   </Text>
 
 
@@ -865,7 +938,9 @@ export default function RequestsScreen() {
                     }
                   >
                     {request.subtotal.toLocaleString(
-                      "nb-NO"
+                      language === "en"
+                        ? "en-GB"
+                        : "nb-NO"
                     )}{" "}
                     kr
                   </Text>
@@ -906,7 +981,7 @@ export default function RequestsScreen() {
                           styles.completeButtonText
                         }
                       >
-                        Marker som ferdig
+                        {tr("Marker som ferdig", "Mark as completed")}
                       </Text>
                     )}
                   </TouchableOpacity>

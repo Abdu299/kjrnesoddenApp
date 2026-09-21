@@ -12,6 +12,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
 
 import {
@@ -70,17 +71,24 @@ export default function CustomerRegisterScreen() {
     useState(false);
 
 
+  const [
+    registerError,
+    setRegisterError,
+  ] =
+    useState("");
+
+
   // ==================================================
   // REGISTER
   // ==================================================
 
   const handleRegister =
     async () => {
-      if (
-        !name.trim()
-      ) {
-        Alert.alert(
-          "Feil",
+      setRegisterError("");
+
+
+      if (!name.trim()) {
+        setRegisterError(
           "Skriv inn navnet ditt."
         );
 
@@ -88,11 +96,8 @@ export default function CustomerRegisterScreen() {
       }
 
 
-      if (
-        !email.trim()
-      ) {
-        Alert.alert(
-          "Feil",
+      if (!email.trim()) {
+        setRegisterError(
           "Skriv inn e-postadressen din."
         );
 
@@ -100,11 +105,8 @@ export default function CustomerRegisterScreen() {
       }
 
 
-      if (
-        !phone.trim()
-      ) {
-        Alert.alert(
-          "Feil",
+      if (!phone.trim()) {
+        setRegisterError(
           "Skriv inn mobilnummeret ditt."
         );
 
@@ -112,11 +114,8 @@ export default function CustomerRegisterScreen() {
       }
 
 
-      if (
-        password.length < 6
-      ) {
-        Alert.alert(
-          "Feil",
+      if (password.length < 6) {
+        setRegisterError(
           "Passordet må være minst 6 tegn."
         );
 
@@ -128,8 +127,7 @@ export default function CustomerRegisterScreen() {
         password !==
         confirmPassword
       ) {
-        Alert.alert(
-          "Feil",
+        setRegisterError(
           "Passordene er ikke like."
         );
 
@@ -151,6 +149,9 @@ export default function CustomerRegisterScreen() {
         );
 
 
+        setRegisterError("");
+
+
         Alert.alert(
           "Konto opprettet",
           "Kontoen din er klar."
@@ -170,23 +171,9 @@ export default function CustomerRegisterScreen() {
         );
 
 
-        let message =
-          error.message ||
-          "Kunne ikke opprette konto.";
-
-
-        if (
-          error.code ===
-          "auth/email-already-in-use"
-        ) {
-          message =
-            "Det finnes allerede en konto med denne e-postadressen.";
-        }
-
-
-        Alert.alert(
-          "Feil",
-          message
+        setRegisterError(
+          error?.message ||
+            "Kunne ikke opprette konto. Prøv igjen."
         );
 
       } finally {
@@ -273,9 +260,15 @@ export default function CustomerRegisterScreen() {
             value={
               name
             }
-            onChangeText={
-              setName
-            }
+            onChangeText={(value) => {
+              setName(
+                value
+              );
+
+              if (registerError) {
+                setRegisterError("");
+              }
+            }}
             autoCapitalize="words"
             autoCorrect={
               false
@@ -302,9 +295,15 @@ export default function CustomerRegisterScreen() {
             value={
               email
             }
-            onChangeText={
-              setEmail
-            }
+            onChangeText={(value) => {
+              setEmail(
+                value
+              );
+
+              if (registerError) {
+                setRegisterError("");
+              }
+            }}
             autoCapitalize="none"
             autoCorrect={
               false
@@ -332,9 +331,15 @@ export default function CustomerRegisterScreen() {
             value={
               phone
             }
-            onChangeText={
-              setPhone
-            }
+            onChangeText={(value) => {
+              setPhone(
+                value
+              );
+
+              if (registerError) {
+                setRegisterError("");
+              }
+            }}
             keyboardType="phone-pad"
           />
 
@@ -367,9 +372,15 @@ export default function CustomerRegisterScreen() {
             value={
               password
             }
-            onChangeText={
-              setPassword
-            }
+            onChangeText={(value) => {
+              setPassword(
+                value
+              );
+
+              if (registerError) {
+                setRegisterError("");
+              }
+            }}
             secureTextEntry
             autoCapitalize="none"
           />
@@ -392,12 +403,35 @@ export default function CustomerRegisterScreen() {
             value={
               confirmPassword
             }
-            onChangeText={
-              setConfirmPassword
-            }
+            onChangeText={(value) => {
+              setConfirmPassword(
+                value
+              );
+
+              if (registerError) {
+                setRegisterError("");
+              }
+            }}
             secureTextEntry
             autoCapitalize="none"
           />
+
+
+          {registerError ? (
+            <View
+              style={
+                styles.errorBox
+              }
+            >
+              <Text
+                style={
+                  styles.errorText
+                }
+              >
+                {registerError}
+              </Text>
+            </View>
+          ) : null}
 
 
           <TouchableOpacity
@@ -547,6 +581,34 @@ const styles =
         -8,
       marginBottom:
         20,
+    },
+
+    errorBox: {
+      backgroundColor:
+        "#FFF1F1",
+      borderWidth:
+        1,
+      borderColor:
+        "#F2B8B5",
+      borderRadius:
+        10,
+      paddingHorizontal:
+        14,
+      paddingVertical:
+        12,
+      marginBottom:
+        16,
+    },
+
+    errorText: {
+      color:
+        "#B3261E",
+      fontSize:
+        14,
+      lineHeight:
+        20,
+      fontWeight:
+        "600",
     },
 
     registerButton: {

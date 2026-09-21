@@ -1,17 +1,24 @@
 {
   "expo": {
-    "name": "KjorNesodden54",
-    "slug": "KjorNesodden54",
+    "name": "KjørNesodden",
+    "slug": "kjornesodden",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "kjornesodden54",
+    "scheme": "kjornesodden",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kjornesodden.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.kjornesodden.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -38,11 +45,26 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "KjørNesodden trenger tilgang til bildene dine for at restauranter kan velge produktbilder.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3b19f841-270e-4e02-b15f-bd1ed2d920ed"
+      }
+    },
+    "owner": "abdu2003"
   }
 }

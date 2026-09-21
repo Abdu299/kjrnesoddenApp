@@ -21,6 +21,11 @@ import {
 } from "../context/CartContext";
 
 import {
+  RestaurantLanguageProvider,
+  useRestaurantLanguage,
+} from "../context/RestaurantLanguageContext";
+
+import {
   subscribeToMyRestaurantRequests,
 } from "../services/restaurantRequestService";
 
@@ -35,6 +40,17 @@ function AppTabs() {
     role,
   } =
     useAuth();
+
+
+  const {
+    language,
+  } =
+    useRestaurantLanguage();
+
+
+  const restaurantEnglish =
+    role === "restaurant" &&
+    language === "en";
 
 
   const [
@@ -160,7 +176,9 @@ function AppTabs() {
         name="index"
         options={{
           title:
-            "Hoved",
+            restaurantEnglish
+              ? "Home"
+              : "Hoved",
 
           tabBarIcon: ({
             focused,
@@ -191,7 +209,9 @@ function AppTabs() {
         name="requests"
         options={{
           title:
-            "Bestillinger",
+            restaurantEnglish
+              ? "Orders"
+              : "Bestillinger",
 
           href:
             role ===
@@ -254,7 +274,9 @@ function AppTabs() {
         options={{
           title:
             user
-              ? "Profil"
+              ? restaurantEnglish
+                ? "Profile"
+                : "Profil"
               : "Logg inn",
 
           tabBarIcon: ({
@@ -342,9 +364,11 @@ function AppTabs() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppTabs />
-      </CartProvider>
+      <RestaurantLanguageProvider>
+        <CartProvider>
+          <AppTabs />
+        </CartProvider>
+      </RestaurantLanguageProvider>
     </AuthProvider>
   );
 }

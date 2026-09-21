@@ -1,0 +1,217 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasUserDocument() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return hasUserDocument() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    function isCustomer() {
+      return hasUserDocument() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "customer";
+    }
+
+    function isRestaurant() {
+      return hasUserDocument() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "restaurant";
+    }
+
+    function currentRestaurantId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantId;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() &&
+        (request.auth.uid == userId || isAdmin());
+
+      allow create: if signedIn() &&
+        (
+          (
+            request.auth.uid == userId &&
+            request.resource.data.role == "customer" &&
+            request.resource.data.keys().hasAll([
+              "role", "name", "email", "phone", "address", "createdAt", "updatedAt"
+            ]) &&
+            request.resource.data.keys().hasOnly([
+              "role", "name", "email", "phone", "address", "createdAt", "updatedAt"
+            ]) &&
+            request.resource.data.email == request.auth.token.email
+          )
+          ||
+          (
+            isAdmin() &&
+            request.resource.data.role == "restaurant" &&
+            request.resource.data.keys().hasAll([
+              "role", "restaurantId", "restaurantName", "createdAt"
+            ]) &&
+            request.resource.data.keys().hasOnly([
+              "role", "restaurantId", "restaurantName", "createdAt"
+            ])
+          )
+        );
+
+      allow update: if signedIn() &&
+        (
+          (
+            request.auth.uid == userId &&
+            resource.data.role == "customer" &&
+            request.resource.data.role == "customer" &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "name", "phone", "address", "updatedAt"
+            ])
+          )
+          ||
+          isAdmin()
+        );
+
+      allow delete: if signedIn() &&
+        (
+          isAdmin() ||
+          (
+            request.auth.uid == userId &&
+            resource.data.role == "customer"
+          )
+        );
+    }
+
+    match /restaurants/{restaurantId} {
+      allow read: if signedIn() &&
+        (
+          resource.data.active == true ||
+          isAdmin() ||
+          (
+            isRestaurant() &&
+            currentRestaurantId() == restaurantId
+          )
+        );
+
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if signedIn();
+
+      allow create: if isRestaurant() &&
+        request.resource.data.restaurantId == currentRestaurantId() &&
+        request.resource.data.keys().hasAll([
+          "restaurantId", "name", "description", "price", "imageData",
+          "available", "createdAt", "updatedAt"
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          "restaurantId", "name", "description", "price", "imageData",
+          "available", "createdAt", "updatedAt"
+        ]) &&
+        request.resource.data.name is string &&
+        request.resource.data.description is string &&
+        request.resource.data.price is number &&
+        request.resource.data.price > 0 &&
+        request.resource.data.imageData is string &&
+        request.resource.data.available is bool;
+
+      allow update: if
+        isAdmin()
+        ||
+        (
+          isRestaurant() &&
+          resource.data.restaurantId == currentRestaurantId() &&
+          request.resource.data.restaurantId == resource.data.restaurantId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "available", "updatedAt"
+          ]) &&
+          request.resource.data.available is bool
+        );
+
+      allow delete: if
+        isAdmin()
+        ||
+        (
+          isRestaurant() &&
+          resource.data.restaurantId == currentRestaurantId()
+        );
+    }
+
+    match /restaurantRequests/{requestId} {
+      allow create: if isCustomer() &&
+        request.resource.data.customerId == request.auth.uid &&
+        request.resource.data.customerName ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+        request.resource.data.customerPhone ==
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone &&
+        request.resource.data.status == "pending" &&
+        request.resource.data.completedAt == null &&
+        request.resource.data.restaurantId is string &&
+        request.resource.data.restaurantName is string &&
+        request.resource.data.customerName is string &&
+        request.resource.data.customerPhone is string &&
+        request.resource.data.orderGroupId is string &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 100 &&
+        request.resource.data.subtotal is number &&
+        request.resource.data.subtotal >= 0 &&
+        request.resource.data.keys().hasAll([
+          "orderGroupId", "restaurantId", "restaurantName", "customerId",
+          "customerName", "customerPhone", "items", "subtotal",
+          "status", "createdAt", "completedAt"
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          "orderGroupId", "restaurantId", "restaurantName", "customerId",
+          "customerName", "customerPhone", "items", "subtotal",
+          "status", "createdAt", "completedAt"
+        ]) &&
+        exists(/databases/$(database)/documents/restaurants/$(request.resource.data.restaurantId)) &&
+        get(/databases/$(database)/documents/restaurants/$(request.resource.data.restaurantId)).data.active == true;
+
+      allow read: if
+        isAdmin()
+        ||
+        (
+          isRestaurant() &&
+          resource.data.restaurantId == currentRestaurantId()
+        )
+        ||
+        (
+          isCustomer() &&
+          resource.data.customerId == request.auth.uid
+        );
+
+      allow update: if
+        isAdmin()
+        ||
+        (
+          isRestaurant() &&
+          resource.data.restaurantId == currentRestaurantId() &&
+          request.resource.data.restaurantId == resource.data.restaurantId &&
+          request.resource.data.customerId == resource.data.customerId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "completedAt"
+          ]) &&
+          request.resource.data.status == "completed" &&
+          request.resource.data.completedAt == request.time
+        );
+
+      allow delete: if
+        isAdmin()
+        ||
+        (
+          isCustomer() &&
+          resource.data.customerId == request.auth.uid
+        );
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

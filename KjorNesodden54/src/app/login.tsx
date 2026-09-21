@@ -6,6 +6,7 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -24,6 +25,11 @@ import {
 } from "../context/AuthContext";
 
 import {
+  useRestaurantLanguage,
+} from "../context/RestaurantLanguageContext";
+
+import {
+  deleteCustomerAccount,
   login,
   logout,
   sendPasswordResetLink,
@@ -50,6 +56,28 @@ export default function LoginScreen() {
     useAuth();
 
 
+  const {
+    language,
+    setLanguage,
+  } =
+    useRestaurantLanguage();
+
+
+  const restaurantEnglish =
+    role === "restaurant" &&
+    language === "en";
+
+
+  const trRestaurant =
+    (
+      norwegian: string,
+      english: string
+    ) =>
+      restaurantEnglish
+        ? english
+        : norwegian;
+
+
   // LOGIN
 
   const [
@@ -66,6 +94,11 @@ export default function LoginScreen() {
     loading,
     setLoading,
   ] = useState(false);
+
+  const [
+    loginError,
+    setLoginError,
+  ] = useState("");
 
 
   // RESET
@@ -156,6 +189,24 @@ export default function LoginScreen() {
   ] = useState(false);
 
 
+  // DELETE ACCOUNT
+
+  const [
+    showDeleteAccount,
+    setShowDeleteAccount,
+  ] = useState(false);
+
+  const [
+    deletePassword,
+    setDeletePassword,
+  ] = useState("");
+
+  const [
+    deletingAccount,
+    setDeletingAccount,
+  ] = useState(false);
+
+
   // ==================================================
   // LOAD PROFILE
   // ==================================================
@@ -210,9 +261,14 @@ export default function LoginScreen() {
 
 
         Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke hente profilen."
+          trRestaurant(
+            "Feil",
+            "Error"
+          ),
+          restaurantEnglish
+            ? "Could not load the profile."
+            : error.message ||
+              "Kunne ikke hente profilen."
         );
 
       } finally {
@@ -237,11 +293,15 @@ export default function LoginScreen() {
 
   const handleLogin =
     async () => {
-      if (
-        !identifier.trim()
-      ) {
-        Alert.alert(
-          "Feil",
+      const cleanIdentifier =
+        identifier.trim();
+
+
+      setLoginError("");
+
+
+      if (!cleanIdentifier) {
+        setLoginError(
           "Skriv inn e-post eller restaurantnavn."
         );
 
@@ -250,8 +310,7 @@ export default function LoginScreen() {
 
 
       if (!password) {
-        Alert.alert(
-          "Feil",
+        setLoginError(
           "Skriv inn passord."
         );
 
@@ -266,11 +325,12 @@ export default function LoginScreen() {
 
 
         await login(
-          identifier,
+          cleanIdentifier,
           password
         );
 
 
+        setLoginError("");
         setIdentifier("");
         setPassword("");
 
@@ -282,10 +342,15 @@ export default function LoginScreen() {
       } catch (
         error: any
       ) {
-        Alert.alert(
-          "Feil",
-          error.message ||
-            "Kunne ikke logge inn."
+        console.log(
+          "Login error:",
+          error
+        );
+
+
+        setLoginError(
+          error?.message ||
+            "Kunne ikke logge inn. Prøv igjen."
         );
 
       } finally {
@@ -580,6 +645,157 @@ export default function LoginScreen() {
 
 
   // ==================================================
+  // DELETE ACCOUNT
+  // ==================================================
+
+  const openDeleteAccount =
+    () => {
+      if (
+        profile?.role !==
+        "customer"
+      ) {
+        return;
+      }
+
+
+      Alert.alert(
+        "Slett konto?",
+
+        "Dette vil permanent slette kundekontoen din, profilen din og bestillingsdata som er lagret i Firebase. Denne handlingen kan ikke angres.",
+
+        [
+          {
+            text:
+              "Avbryt",
+
+            style:
+              "cancel",
+          },
+
+          {
+            text:
+              "Fortsett",
+
+            style:
+              "destructive",
+
+            onPress:
+              () => {
+                setDeletePassword(
+                  ""
+                );
+
+                setShowDeleteAccount(
+                  true
+                );
+              },
+          },
+        ]
+      );
+    };
+
+
+  const cancelDeleteAccount =
+    () => {
+      if (
+        deletingAccount
+      ) {
+        return;
+      }
+
+
+      setDeletePassword(
+        ""
+      );
+
+      setShowDeleteAccount(
+        false
+      );
+    };
+
+
+  const handleDeleteAccount =
+    async () => {
+      if (
+        !deletePassword
+      ) {
+        Alert.alert(
+          "Mangler passord",
+          "Skriv inn passordet ditt for å bekrefte slettingen."
+        );
+
+        return;
+      }
+
+
+      try {
+        setDeletingAccount(
+          true
+        );
+
+
+        await deleteCustomerAccount(
+          deletePassword
+        );
+
+
+        setDeletePassword(
+          ""
+        );
+
+        setShowDeleteAccount(
+          false
+        );
+
+        setProfile(
+          null
+        );
+
+
+        Alert.alert(
+          "Konto slettet",
+
+          "Kundekontoen din er slettet.",
+
+          [
+            {
+              text:
+                "OK",
+
+              onPress:
+                () =>
+                  router.replace(
+                    "/"
+                  ),
+            },
+          ]
+        );
+
+      } catch (
+        error: any
+      ) {
+        console.log(
+          "Delete account error:",
+          error
+        );
+
+
+        Alert.alert(
+          "Kunne ikke slette kontoen",
+
+          error.message ||
+            "Noe gikk galt. Prøv igjen."
+        );
+
+      } finally {
+        setDeletingAccount(
+          false
+        );
+      }
+    };
+
+
+  // ==================================================
   // LOGOUT
   // ==================================================
 
@@ -605,6 +821,14 @@ export default function LoginScreen() {
           false
         );
 
+        setShowDeleteAccount(
+          false
+        );
+
+        setDeletePassword(
+          ""
+        );
+
 
         router.replace(
           "/"
@@ -616,6 +840,40 @@ export default function LoginScreen() {
         console.log(
           "Logout error:",
           error
+        );
+      }
+    };
+
+
+  // ==================================================
+  // PRIVACY POLICY
+  // ==================================================
+
+  const openPrivacyPolicy =
+    async () => {
+      try {
+        await Linking.openURL(
+          "https://kjornesodden.vercel.app/personvern"
+        );
+
+      } catch (
+        error
+      ) {
+        console.log(
+          "Privacy policy link error:",
+          error
+        );
+
+
+        Alert.alert(
+          trRestaurant(
+            "Kunne ikke åpne siden",
+            "Could not open the page"
+          ),
+          trRestaurant(
+            "Prøv igjen senere.",
+            "Please try again later."
+          )
         );
       }
     };
@@ -644,7 +902,10 @@ export default function LoginScreen() {
               styles.title
             }
           >
-            Profil
+            {trRestaurant(
+              "Profil",
+              "Profile"
+            )}
           </Text>
 
 
@@ -653,7 +914,10 @@ export default function LoginScreen() {
               styles.subtitle
             }
           >
-            Kontoinformasjon
+            {trRestaurant(
+              "Kontoinformasjon",
+              "Account information"
+            )}
           </Text>
 
 
@@ -1189,6 +1453,145 @@ export default function LoginScreen() {
                     )}
                   </View>
 
+
+                  {/* DELETE ACCOUNT */}
+
+                  <View
+                    style={[
+                      styles.profileCard,
+                      styles.dangerCard,
+                    ]}
+                  >
+                    <Text
+                      style={
+                        styles.dangerTitle
+                      }
+                    >
+                      Slett konto
+                    </Text>
+
+
+                    <Text
+                      style={
+                        styles.cardDescription
+                      }
+                    >
+                      Slett kundekontoen din permanent. Profilen og bestillingsdata som er lagret i Firebase blir slettet. Handlingen kan ikke angres.
+                    </Text>
+
+
+                    {!showDeleteAccount ? (
+                      <TouchableOpacity
+                        style={
+                          styles.dangerButton
+                        }
+                        onPress={
+                          openDeleteAccount
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.dangerButtonText
+                          }
+                        >
+                          Slett konto
+                        </Text>
+                      </TouchableOpacity>
+
+                    ) : (
+                      <>
+                        <Text
+                          style={
+                            styles.deleteConfirmText
+                          }
+                        >
+                          Skriv inn passordet ditt for å bekrefte.
+                        </Text>
+
+
+                        <TextInput
+                          style={
+                            styles.profileInput
+                          }
+                          value={
+                            deletePassword
+                          }
+                          onChangeText={
+                            setDeletePassword
+                          }
+                          placeholder="Passord"
+                          placeholderTextColor="#A0A0A0"
+                          secureTextEntry
+                          autoCapitalize="none"
+                          autoCorrect={
+                            false
+                          }
+                          editable={
+                            !deletingAccount
+                          }
+                        />
+
+
+                        <View
+                          style={
+                            styles.editButtons
+                          }
+                        >
+                          <TouchableOpacity
+                            style={
+                              styles.cancelButton
+                            }
+                            disabled={
+                              deletingAccount
+                            }
+                            onPress={
+                              cancelDeleteAccount
+                            }
+                          >
+                            <Text
+                              style={
+                                styles.cancelButtonText
+                              }
+                            >
+                              Avbryt
+                            </Text>
+                          </TouchableOpacity>
+
+
+                          <TouchableOpacity
+                            style={[
+                              styles.deleteConfirmButton,
+
+                              deletingAccount &&
+                                styles.disabledButton,
+                            ]}
+                            disabled={
+                              deletingAccount
+                            }
+                            onPress={
+                              handleDeleteAccount
+                            }
+                          >
+                            {deletingAccount ? (
+                              <ActivityIndicator
+                                color="#FFFFFF"
+                              />
+
+                            ) : (
+                              <Text
+                                style={
+                                  styles.deleteConfirmButtonText
+                                }
+                              >
+                                Slett permanent
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    )}
+                  </View>
+
                 </>
               )}
 
@@ -1197,54 +1600,151 @@ export default function LoginScreen() {
 
               {profile.role ===
                 "restaurant" && (
-                <View
-                  style={
-                    styles.profileCard
-                  }
-                >
-                  <Text
+                <>
+                  <View
                     style={
-                      styles.restaurantProfileName
+                      styles.profileCard
                     }
                   >
-                    {profile.restaurantName}
-                  </Text>
-
-
-                  {profile.description ? (
                     <Text
                       style={
-                        styles.restaurantProfileDescription
+                        styles.restaurantProfileName
                       }
                     >
-                      {profile.description}
+                      {profile.restaurantName}
                     </Text>
-                  ) : null}
+
+
+                    {profile.description ? (
+                      <Text
+                        style={
+                          styles.restaurantProfileDescription
+                        }
+                      >
+                        {profile.description}
+                      </Text>
+                    ) : null}
+
+
+                    <View
+                      style={
+                        styles.divider
+                      }
+                    />
+
+
+                    <Text
+                      style={
+                        styles.infoLabel
+                      }
+                    >
+                      {trRestaurant(
+                        "Innloggingsnavn",
+                        "Login name"
+                      )}
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.infoValue
+                      }
+                    >
+                      {profile.loginName}
+                    </Text>
+                  </View>
 
 
                   <View
                     style={
-                      styles.divider
-                    }
-                  />
-
-
-                  <Text
-                    style={
-                      styles.infoLabel
+                      styles.profileCard
                     }
                   >
-                    Innloggingsnavn
-                  </Text>
+                    <Text
+                      style={
+                        styles.sectionTitle
+                      }
+                    >
+                      {trRestaurant(
+                        "Språk",
+                        "Language"
+                      )}
+                    </Text>
 
-                  <Text
-                    style={
-                      styles.infoValue
-                    }
-                  >
-                    {profile.loginName}
-                  </Text>
-                </View>
+
+                    <Text
+                      style={
+                        styles.cardDescription
+                      }
+                    >
+                      {trRestaurant(
+                        "Velg språk for restaurantdelen av appen.",
+                        "Choose the language for the restaurant section of the app."
+                      )}
+                    </Text>
+
+
+                    <View
+                      style={
+                        styles.languageSelector
+                      }
+                    >
+                      <TouchableOpacity
+                        style={[
+                          styles.languageOption,
+
+                          language ===
+                            "no" &&
+                            styles.languageOptionActive,
+                        ]}
+                        onPress={() =>
+                          setLanguage(
+                            "no"
+                          )
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.languageOptionText,
+
+                            language ===
+                              "no" &&
+                              styles.languageOptionTextActive,
+                          ]}
+                        >
+                          Norsk
+                        </Text>
+                      </TouchableOpacity>
+
+
+                      <TouchableOpacity
+                        style={[
+                          styles.languageOption,
+
+                          language ===
+                            "en" &&
+                            styles.languageOptionActive,
+                        ]}
+                        onPress={() =>
+                          setLanguage(
+                            "en"
+                          )
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.languageOptionText,
+
+                            language ===
+                              "en" &&
+                              styles.languageOptionTextActive,
+                          ]}
+                        >
+                          English
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </>
               )}
 
 
@@ -1320,6 +1820,59 @@ export default function LoginScreen() {
               )}
 
 
+              {/* PRIVACY */}
+
+              <View
+                style={
+                  styles.profileCard
+                }
+              >
+                <Text
+                  style={
+                    styles.sectionTitle
+                  }
+                >
+                  {trRestaurant(
+                    "Personvern",
+                    "Privacy"
+                  )}
+                </Text>
+
+
+                <Text
+                  style={
+                    styles.cardDescription
+                  }
+                >
+                  {trRestaurant(
+                    "Les hvordan KjørNesodden behandler og beskytter personopplysningene dine.",
+                    "Read how KjørNesodden handles and protects your personal data."
+                  )}
+                </Text>
+
+
+                <TouchableOpacity
+                  style={
+                    styles.blueOutlineButton
+                  }
+                  onPress={
+                    openPrivacyPolicy
+                  }
+                >
+                  <Text
+                    style={
+                      styles.blueOutlineButtonText
+                    }
+                  >
+                    {trRestaurant(
+                      "Les personvernerklæringen",
+                      "Read the privacy policy"
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+
               <TouchableOpacity
                 style={
                   styles.logoutButton
@@ -1333,7 +1886,10 @@ export default function LoginScreen() {
                     styles.logoutText
                   }
                 >
-                  Logg ut
+                  {trRestaurant(
+                    "Logg ut",
+                    "Log out"
+                  )}
                 </Text>
               </TouchableOpacity>
 
@@ -1398,9 +1954,15 @@ export default function LoginScreen() {
           value={
             identifier
           }
-          onChangeText={
-            setIdentifier
-          }
+          onChangeText={(value) => {
+            setIdentifier(
+              value
+            );
+
+            if (loginError) {
+              setLoginError("");
+            }
+          }}
           autoCapitalize="none"
           autoCorrect={
             false
@@ -1425,12 +1987,35 @@ export default function LoginScreen() {
           value={
             password
           }
-          onChangeText={
-            setPassword
-          }
+          onChangeText={(value) => {
+            setPassword(
+              value
+            );
+
+            if (loginError) {
+              setLoginError("");
+            }
+          }}
           secureTextEntry
           autoCapitalize="none"
         />
+
+
+        {loginError ? (
+          <View
+            style={
+              styles.loginErrorBox
+            }
+          >
+            <Text
+              style={
+                styles.loginErrorText
+              }
+            >
+              {loginError}
+            </Text>
+          </View>
+        ) : null}
 
 
         <TouchableOpacity
@@ -1470,6 +2055,24 @@ export default function LoginScreen() {
             }
           >
             Glemt passord?
+          </Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={
+            styles.privacyLoginButton
+          }
+          onPress={
+            openPrivacyPolicy
+          }
+        >
+          <Text
+            style={
+              styles.privacyLoginText
+            }
+          >
+            Personvernerklæring
           </Text>
         </TouchableOpacity>
 
@@ -1655,6 +2258,34 @@ const styles =
         18,
     },
 
+    loginErrorBox: {
+      backgroundColor:
+        "#FFF1F1",
+      borderWidth:
+        1,
+      borderColor:
+        "#F2B8B5",
+      borderRadius:
+        10,
+      paddingHorizontal:
+        14,
+      paddingVertical:
+        12,
+      marginBottom:
+        16,
+    },
+
+    loginErrorText: {
+      color:
+        "#B3261E",
+      fontSize:
+        14,
+      lineHeight:
+        20,
+      fontWeight:
+        "600",
+    },
+
     loginButton: {
       backgroundColor:
         "#208AEF",
@@ -1700,6 +2331,28 @@ const styles =
         "600",
       marginTop:
         25,
+    },
+
+    privacyLoginButton: {
+      alignSelf:
+        "center",
+      marginTop:
+        14,
+      paddingVertical:
+        8,
+      paddingHorizontal:
+        12,
+    },
+
+    privacyLoginText: {
+      color:
+        "#208AEF",
+      fontSize:
+        14,
+      fontWeight:
+        "600",
+      textDecorationLine:
+        "underline",
     },
 
     resetCard: {
@@ -1961,6 +2614,53 @@ const styles =
         "top",
     },
 
+    languageSelector: {
+      flexDirection:
+        "row",
+      gap:
+        10,
+    },
+
+    languageOption: {
+      flex:
+        1,
+      borderWidth:
+        1,
+      borderColor:
+        "#D8DDE3",
+      backgroundColor:
+        "#FFFFFF",
+      borderRadius:
+        10,
+      paddingVertical:
+        12,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+    },
+
+    languageOptionActive: {
+      borderColor:
+        "#208AEF",
+      backgroundColor:
+        "#EAF5FF",
+    },
+
+    languageOptionText: {
+      color:
+        "#555555",
+      fontWeight:
+        "700",
+      fontSize:
+        15,
+    },
+
+    languageOptionTextActive: {
+      color:
+        "#208AEF",
+    },
+
     restaurantProfileName: {
       fontSize:
         24,
@@ -1977,6 +2677,81 @@ const styles =
         15,
       lineHeight:
         21,
+    },
+
+    dangerCard: {
+      borderColor:
+        "#F0CACA",
+      backgroundColor:
+        "#FFF9F9",
+    },
+
+    dangerTitle: {
+      fontSize:
+        19,
+      fontWeight:
+        "800",
+      color:
+        "#C83D3D",
+      marginBottom:
+        10,
+    },
+
+    dangerButton: {
+      borderWidth:
+        1,
+      borderColor:
+        "#E04646",
+      borderRadius:
+        10,
+      paddingVertical:
+        13,
+      alignItems:
+        "center",
+    },
+
+    dangerButtonText: {
+      color:
+        "#E04646",
+      fontWeight:
+        "700",
+      fontSize:
+        15,
+    },
+
+    deleteConfirmText: {
+      color:
+        "#555555",
+      fontSize:
+        14,
+      lineHeight:
+        20,
+      marginBottom:
+        10,
+    },
+
+    deleteConfirmButton: {
+      flex:
+        1,
+      backgroundColor:
+        "#E04646",
+      paddingVertical:
+        12,
+      borderRadius:
+        9,
+      alignItems:
+        "center",
+      justifyContent:
+        "center",
+      minHeight:
+        44,
+    },
+
+    deleteConfirmButtonText: {
+      color:
+        "#FFFFFF",
+      fontWeight:
+        "700",
     },
 
     logoutButton: {
