@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useState,
 } from "react";
@@ -29,6 +30,8 @@ import {
 } from "../../services/restaurantService";
 
 import {
+  getWebsiteMenuForRestaurant,
+  hasWebsiteMenu,
   Product,
   subscribeToProductsForRestaurant,
 } from "../../services/productService";
@@ -84,6 +87,15 @@ export default function RestaurantScreen() {
   const [
     loading,
     setLoading,
+  ] =
+    useState(
+      true
+    );
+
+
+  const [
+    productsLoading,
+    setProductsLoading,
   ] =
     useState(
       true
@@ -183,46 +195,69 @@ export default function RestaurantScreen() {
 
 
   // ==================================================
-  // REALTIME PRODUCTS
+  // WEBSITE MENU WITH FIRESTORE FALLBACK
   // ==================================================
 
   useEffect(
     () => {
-      if (!id) {
+      if (
+        !id ||
+        !restaurant
+      ) {
         return;
       }
 
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
 
-      const unsubscribe =
-        subscribeToProductsForRestaurant(
+      const subscribeToFirestore = () => {
+        unsubscribe = subscribeToProductsForRestaurant(
           id,
-
-          (
-            updatedProducts
-          ) => {
-            setProducts(
-              updatedProducts
-            );
+          (updatedProducts) => {
+            if (!cancelled) {
+              setProducts(updatedProducts);
+              setProductsLoading(false);
+            }
           },
-
-          (
-            error
-          ) => {
-            console.log(
-              "Product listener error:",
-              error
-            );
+          (error) => {
+            console.log("Product listener error:", error);
+            if (!cancelled) {
+              setProductsLoading(false);
+            }
           }
         );
+      };
+
+      setProductsLoading(true);
+
+      if (hasWebsiteMenu(restaurant.name)) {
+        getWebsiteMenuForRestaurant(id, restaurant.name)
+          .then((websiteProducts) => {
+            if (!cancelled) {
+              setProducts(websiteProducts);
+              setProductsLoading(false);
+            }
+          })
+          .catch((error) => {
+            console.log("Website menu error, using Firestore:", error);
+            if (!cancelled) {
+              subscribeToFirestore();
+            }
+          });
+      } else {
+        subscribeToFirestore();
+      }
 
 
       return () => {
-        unsubscribe();
+        cancelled = true;
+        unsubscribe?.();
       };
 
     },
     [
       id,
+      restaurant,
     ]
   );
 
@@ -542,8 +577,17 @@ export default function RestaurantScreen() {
 
           {/* PRODUCTS */}
 
-          {products.length ===
-          0 ? (
+          {productsLoading ? (
+            <View style={styles.menuLoading}>
+              <ActivityIndicator
+                size="small"
+                color="#208AEF"
+              />
+              <Text style={styles.menuLoadingText}>
+                Laster meny...
+              </Text>
+            </View>
+          ) : products.length === 0 ? (
             <View
               style={
                 styles.emptyProducts
@@ -569,7 +613,8 @@ export default function RestaurantScreen() {
           ) : (
             products.map(
               (
-                product
+                product,
+                index
               ) => {
                 const cartItem =
                   items.find(
@@ -582,10 +627,20 @@ export default function RestaurantScreen() {
 
 
                 return (
-                  <View
+                  <Fragment
                     key={
                       product.id
                     }
+                  >
+                    {product.category &&
+                      (index === 0 ||
+                        products[index - 1].category !== product.category) && (
+                        <Text style={styles.categoryTitle}>
+                          {product.category}
+                        </Text>
+                      )}
+
+                  <View
                     style={[
                       styles.productCard,
 
@@ -731,6 +786,7 @@ export default function RestaurantScreen() {
                       </View>
                     </View>
                   </View>
+                  </Fragment>
                 );
               }
             )
@@ -1098,6 +1154,26 @@ const styles =
       color:
         "#111111",
       marginBottom: 20,
+    },
+
+    categoryTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: "#111111",
+      marginTop: 8,
+      marginBottom: 14,
+    },
+
+    menuLoading: {
+      minHeight: 120,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    menuLoadingText: {
+      marginTop: 10,
+      color: "#777777",
+      fontSize: 14,
     },
 
     productCard: {
