@@ -35,7 +35,167 @@ export type Product = {
   imageData: string;
 
   available: boolean;
+
+  category?: string;
+
+  sortOrder?: number;
 };
+
+
+type WebsiteRestaurantMenu = {
+  slug: string;
+  aliases: string[];
+};
+
+
+const WEBSITE_RESTAURANT_MENUS: WebsiteRestaurantMenu[] = [
+  { slug: "signalen", aliases: ["signalen", "signalen sjøbad"] },
+  { slug: "tonys-sushi", aliases: ["tonys sushi", "tonys sushi og thai", "tony sushi"] },
+  { slug: "jafs", aliases: ["jafs", "jafs nesodden"] },
+  { slug: "jonathan-sushi", aliases: ["jonathan sushi", "jonathan"] },
+  { slug: "flaskebekk-bistro", aliases: ["flaskebekk bistro", "flaskebekk"] },
+  { slug: "o-sole-mio", aliases: ["o sole mio", "o'sole mio", "o’ sole mio"] },
+  { slug: "mama-greek-kitchen", aliases: ["mama greek kitchen", "mama greek kitchen fagerstrand"] },
+];
+
+
+function normalizeRestaurantName(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+
+function decodeHtml(value: string): string {
+  const entities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    hellip: "…",
+    laquo: "«",
+    lt: "<",
+    nbsp: " ",
+    ndash: "–",
+    quot: '"',
+    raquo: "»",
+    rsquo: "’",
+  };
+
+  return value
+    .replace(/<[^>]*>/g, "")
+    .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (_, entity: string) => {
+      if (entity.startsWith("#x")) {
+        return String.fromCodePoint(parseInt(entity.slice(2), 16));
+      }
+      if (entity.startsWith("#")) {
+        return String.fromCodePoint(parseInt(entity.slice(1), 10));
+      }
+      return entities[entity.toLowerCase()] ?? `&${entity};`;
+    })
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+
+function getWebsiteMenuDefinition(restaurantName: string): WebsiteRestaurantMenu | null {
+  const normalizedName = normalizeRestaurantName(restaurantName);
+
+  return WEBSITE_RESTAURANT_MENUS.find(({ aliases }) =>
+    aliases.some((alias) => {
+      const normalizedAlias = normalizeRestaurantName(alias);
+      return normalizedName === normalizedAlias || normalizedName.includes(normalizedAlias);
+    })
+  ) ?? null;
+}
+
+
+export function hasWebsiteMenu(restaurantName: string): boolean {
+  return getWebsiteMenuDefinition(restaurantName) !== null;
+}
+
+
+export async function getWebsiteMenuForRestaurant(
+  restaurantId: string,
+  restaurantName: string
+): Promise<Product[]> {
+  const menu = getWebsiteMenuDefinition(restaurantName);
+
+  if (!menu) {
+    return [];
+  }
+
+  const response = await fetch(
+    `https://www.kjornesodden.no/restauranter/${menu.slug}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Kunne ikke hente menyen (${response.status}).`);
+  }
+
+  const html = await response.text();
+  const products: Product[] = [];
+  const sectionPattern = /<section[^>]*class="[^"]*menu-category[^"]*"[^>]*>([\s\S]*?)<\/section>/gi;
+  let sectionMatch: RegExpExecArray | null;
+  let categoryIndex = 0;
+
+  while ((sectionMatch = sectionPattern.exec(html)) !== null) {
+    const sectionHtml = sectionMatch[1];
+    const category = decodeHtml(sectionHtml.match(/<h2[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? "Meny");
+    const articlePattern = /<article[^>]*class="[^"]*dish[^"]*"[^>]*>([\s\S]*?)<\/article>/gi;
+    let articleMatch: RegExpExecArray | null;
+    let articleIndex = 0;
+
+    while ((articleMatch = articlePattern.exec(sectionHtml)) !== null) {
+      const articleHtml = articleMatch[1];
+      const headingHtml = articleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i)?.[1] ?? "";
+      const cleanHeadingHtml = headingHtml.replace(/<span[\s\S]*?<\/span>/gi, "");
+      const name = decodeHtml(cleanHeadingHtml);
+      const description = decodeHtml(
+        articleHtml.match(/<div[^>]*class="[^"]*dish-text[^"]*"[^>]*>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i)?.[1] ?? ""
+      );
+      const buttonPattern = /<button[^>]*class="[^"]*add-dish[^"]*"[^>]*>([\s\S]*?)<\/button>/gi;
+      let buttonMatch: RegExpExecArray | null;
+      let variantIndex = 0;
+
+      while ((buttonMatch = buttonPattern.exec(articleHtml)) !== null) {
+        const buttonHtml = buttonMatch[1];
+        const variant = decodeHtml(buttonHtml.match(/<small[^>]*>([\s\S]*?)<\/small>/i)?.[1] ?? "");
+        const buttonText = decodeHtml(buttonHtml);
+        const priceMatch = buttonText.match(/(\d[\d\s]*)\s*kr/i);
+        const price = Number((priceMatch?.[1] ?? "0").replace(/\s/g, ""));
+
+        if (name && price > 0) {
+          products.push({
+            id: `website-${menu.slug}-${categoryIndex}-${articleIndex}-${variantIndex}`,
+            restaurantId,
+            name: variant ? `${name} – ${variant}` : name,
+            description,
+            price,
+            imageData: "",
+            available: true,
+            category,
+            sortOrder: products.length,
+          });
+        }
+
+        variantIndex += 1;
+      }
+
+      articleIndex += 1;
+    }
+
+    categoryIndex += 1;
+  }
+
+  if (products.length === 0) {
+    throw new Error("Nettsidemenyen var tom eller hadde et ukjent format.");
+  }
+
+  return products;
+}
 
 
 // ==================================================
@@ -94,9 +254,9 @@ function sortProducts(
       a,
       b
     ) =>
-      a.name.localeCompare(
-        b.name
-      )
+      (a.sortOrder ?? Number.MAX_SAFE_INTEGER) -
+        (b.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
+      a.name.localeCompare(b.name)
   );
 }
 
