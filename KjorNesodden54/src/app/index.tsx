@@ -59,11 +59,6 @@ import {
   pickAndPrepareImage,
 } from "../services/imageService";
 
-import {
-  importWebsiteMenusToFirestore,
-} from "../services/menuImportService";
-
-
 // ==================================================
 // HOME
 // ==================================================
@@ -1501,13 +1496,6 @@ function AdminHomeScreen() {
     useState(false);
 
 
-  const [
-    importingMenus,
-    setImportingMenus,
-  ] =
-    useState(false);
-
-
   // ==================================================
   // LOAD
   // ==================================================
@@ -1726,38 +1714,6 @@ function AdminHomeScreen() {
     };
 
 
-  // ==================================================
-  // IMPORT RESTAURANT MENUS
-  // ==================================================
-
-  const handleImportMenus =
-    async () => {
-      try {
-        setImportingMenus(true);
-
-        const result =
-          await importWebsiteMenusToFirestore();
-
-        const unmatchedText =
-          result.unmatchedRestaurants.length > 0
-            ? `\n\nIngen meny funnet for: ${result.unmatchedRestaurants.join(", ")}`
-            : "";
-
-        Alert.alert(
-          "Menyene er lagret",
-          `${result.productCount} produkter ble lagret for ${result.restaurantCount} restauranter.${unmatchedText}`
-        );
-      } catch (error: any) {
-        Alert.alert(
-          "Kunne ikke importere menyene",
-          error.message || "Prøv igjen."
-        );
-      } finally {
-        setImportingMenus(false);
-      }
-    };
-
-
   return (
     <SafeAreaView
       style={
@@ -1819,32 +1775,6 @@ function AdminHomeScreen() {
         >
           Administrer restaurantene i KjørNesodden.
         </Text>
-
-
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>
-            Lagre restaurantmenyer
-          </Text>
-
-          <Text style={styles.pageSubtitle}>
-            Importerer alle menyretter til Firestore. Produktene blir lagret permanent og kan administreres av restaurantene.
-          </Text>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              importingMenus && styles.disabledButton,
-            ]}
-            onPress={handleImportMenus}
-            disabled={importingMenus}
-          >
-            <Text style={styles.primaryButtonText}>
-              {importingMenus
-                ? "Lagrer menyer..."
-                : "Importer og lagre menyer"}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
 
         <View
