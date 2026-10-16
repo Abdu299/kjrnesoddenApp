@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -124,6 +125,18 @@ export default function RestaurantScreen() {
     useState("");
 
 
+  const scrollRef =
+    useRef<ScrollView>(null);
+
+
+  const categoryOffsets =
+    useRef<Record<string, number>>({});
+
+
+  const productsOffset =
+    useRef(0);
+
+
   // ==================================================
   // LOAD RESTAURANT
   // ==================================================
@@ -204,8 +217,7 @@ export default function RestaurantScreen() {
         Array.from(
           new Set(
             products
-              .map((product) => product.category)
-              .filter((category): category is string => Boolean(category))
+              .map((product) => product.category?.trim() || "Annet")
           )
         );
 
@@ -403,6 +415,43 @@ export default function RestaurantScreen() {
           shouldShow
         );
       }
+
+
+      const currentCategory =
+        [...categories]
+          .reverse()
+          .find(
+            (category) =>
+              scrollY + 150 >=
+              (categoryOffsets.current[category] ?? Number.POSITIVE_INFINITY)
+          );
+
+
+      if (
+        currentCategory &&
+        currentCategory !== selectedCategory
+      ) {
+        setSelectedCategory(currentCategory);
+      }
+    };
+
+
+  const scrollToCategory =
+    (category: string) => {
+      const offset =
+        categoryOffsets.current[category];
+
+
+      if (offset === undefined) {
+        return;
+      }
+
+
+      setSelectedCategory(category);
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, offset - 72),
+        animated: true,
+      });
     };
 
 
@@ -414,16 +463,10 @@ export default function RestaurantScreen() {
     Array.from(
       new Set(
         products
-          .map((product) => product.category)
-          .filter((category): category is string => Boolean(category))
+          .map((product) => product.category?.trim() || "Annet")
       )
     );
 
-
-  const visibleProducts =
-    selectedCategory
-      ? products.filter((product) => product.category === selectedCategory)
-      : products;
 
   return (
     <SafeAreaView
@@ -432,6 +475,7 @@ export default function RestaurantScreen() {
       }
     >
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{
           paddingBottom:
             40,
@@ -442,6 +486,7 @@ export default function RestaurantScreen() {
         scrollEventThrottle={
           16
         }
+        stickyHeaderIndices={categories.length > 0 ? [2] : undefined}
       >
 
         {/* RESTAURANT IMAGE */}
@@ -478,11 +523,7 @@ export default function RestaurantScreen() {
         )}
 
 
-        <View
-          style={
-            styles.content
-          }
-        >
+        <View style={styles.content}>
 
           {/* TOP */}
 
@@ -586,8 +627,10 @@ export default function RestaurantScreen() {
             Meny
           </Text>
 
+        </View>
 
-          {categories.length > 0 && (
+        {categories.length > 0 && (
+          <View style={styles.stickyCategoryBar}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -603,7 +646,7 @@ export default function RestaurantScreen() {
                       styles.categoryTab,
                       selected && styles.categoryTabSelected,
                     ]}
-                    onPress={() => setSelectedCategory(category)}
+                    onPress={() => scrollToCategory(category)}
                   >
                     <Text
                       style={[
@@ -617,11 +660,18 @@ export default function RestaurantScreen() {
                 );
               })}
             </ScrollView>
-          )}
+          </View>
+        )}
 
 
-          {/* PRODUCTS */}
+        {/* PRODUCTS */}
 
+        <View
+          style={styles.productsContainer}
+          onLayout={(event) => {
+            productsOffset.current = event.nativeEvent.layout.y;
+          }}
+        >
           {productsLoading ? (
             <View style={styles.menuLoading}>
               <ActivityIndicator
@@ -656,10 +706,25 @@ export default function RestaurantScreen() {
               </Text>
             </View>
           ) : (
-            visibleProducts.map(
-              (
-                product
-              ) => {
+            categories.map((category) => (
+              <View
+                key={category}
+                style={styles.categorySection}
+                onLayout={(event) => {
+                  categoryOffsets.current[category] =
+                    productsOffset.current + event.nativeEvent.layout.y;
+                }}
+              >
+                <Text style={styles.categoryHeading}>
+                  {category}
+                </Text>
+
+                {products
+                  .filter(
+                    (product) =>
+                      (product.category?.trim() || "Annet") === category
+                  )
+                  .map((product) => {
                 const cartItem =
                   items.find(
                     (
@@ -683,8 +748,6 @@ export default function RestaurantScreen() {
                     ]}
                   >
 
-                    {/* IMAGE */}
-
                     {product.imageData ? (
                       <Image
                         source={{
@@ -698,8 +761,6 @@ export default function RestaurantScreen() {
                       />
                     ) : null}
 
-
-                    {/* PRODUCT CONTENT */}
 
                     <View
                       style={
@@ -803,8 +864,9 @@ export default function RestaurantScreen() {
                     </View>
                   </View>
                 );
-              }
-            )
+                  })}
+              </View>
+            ))
           )}
         </View>
       </ScrollView>
@@ -817,7 +879,7 @@ export default function RestaurantScreen() {
       {showFloatingBack && (
         <TouchableOpacity
           style={[
-            styles.floatingBackButton,
+            styles.scrollTopButton,
 
             {
               top:
@@ -828,25 +890,15 @@ export default function RestaurantScreen() {
           activeOpacity={
             0.85
           }
-          onPress={() =>
-            router.back()
-          }
+          accessibilityLabel="Gå til toppen"
+          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
         >
           <Text
             style={
-              styles.floatingBackArrow
+              styles.scrollTopArrow
             }
           >
-            ←
-          </Text>
-
-
-          <Text
-            style={
-              styles.floatingBackText
-            }
-          >
-            Tilbake
+            ↑
           </Text>
         </TouchableOpacity>
       )}
@@ -990,17 +1042,15 @@ const styles =
         "700",
     },
 
-    floatingBackButton: {
+    scrollTopButton: {
       position:
         "absolute",
-      left: 14,
+      right: 14,
       zIndex: 30,
       elevation: 8,
-      minHeight: 44,
-      borderRadius: 22,
-      paddingHorizontal: 15,
-      flexDirection:
-        "row",
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       alignItems:
         "center",
       justifyContent:
@@ -1022,22 +1072,12 @@ const styles =
         5,
     },
 
-    floatingBackArrow: {
+    scrollTopArrow: {
       color:
         "#208AEF",
-      fontSize: 21,
+      fontSize: 25,
       fontWeight:
         "700",
-      marginRight: 6,
-      marginTop: -1,
-    },
-
-    floatingBackText: {
-      color:
-        "#208AEF",
-      fontSize: 14,
-      fontWeight:
-        "800",
     },
 
     cartHeaderButton: {
@@ -1168,13 +1208,23 @@ const styles =
         "800",
       color:
         "#111111",
-      marginBottom: 20,
+      marginBottom: 0,
+    },
+
+    stickyCategoryBar: {
+      backgroundColor: "#FFFFFF",
+      borderBottomWidth: 1,
+      borderBottomColor: "#E9E9E9",
+      paddingTop: 10,
+      zIndex: 20,
+      elevation: 5,
     },
 
     categoryTabs: {
       gap: 10,
+      paddingLeft: 22,
       paddingRight: 12,
-      paddingBottom: 20,
+      paddingBottom: 10,
     },
 
     categoryTab: {
@@ -1200,6 +1250,23 @@ const styles =
       color: "#FFFFFF",
     },
 
+    productsContainer: {
+      paddingHorizontal: 22,
+      paddingTop: 24,
+    },
+
+    categorySection: {
+      marginBottom: 12,
+    },
+
+    categoryHeading: {
+      color: "#111111",
+      fontSize: 25,
+      fontWeight: "800",
+      marginBottom: 14,
+      paddingTop: 4,
+    },
+
     menuLoading: {
       minHeight: 120,
       alignItems: "center",
@@ -1219,9 +1286,17 @@ const styles =
       borderRadius: 18,
       overflow:
         "hidden",
-      marginBottom: 24,
+      marginBottom: 14,
       backgroundColor:
         "#FFFFFF",
+      shadowColor: "#000000",
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.05,
+      shadowRadius: 7,
+      elevation: 2,
     },
 
     productUnavailable: {
@@ -1231,33 +1306,13 @@ const styles =
     productImage: {
       width:
         "100%",
-      height: 240,
+      height: 190,
       backgroundColor:
         "#F2F2F2",
     },
 
-    productImagePlaceholder: {
-      width:
-        "100%",
-      height: 240,
-      backgroundColor:
-        "#F2F7FC",
-      justifyContent:
-        "center",
-      alignItems:
-        "center",
-    },
-
-    productImageLetter: {
-      fontSize: 60,
-      fontWeight:
-        "800",
-      color:
-        "#208AEF",
-    },
-
     productContent: {
-      padding: 20,
+      padding: 16,
     },
 
     productTitleRow: {
@@ -1272,7 +1327,7 @@ const styles =
 
     productName: {
       flex: 1,
-      fontSize: 21,
+      fontSize: 18,
       fontWeight:
         "800",
       color:
@@ -1280,7 +1335,7 @@ const styles =
     },
 
     productDescription: {
-      fontSize: 15,
+      fontSize: 14,
       color:
         "#777777",
       lineHeight: 21,
@@ -1303,11 +1358,11 @@ const styles =
         "space-between",
       alignItems:
         "center",
-      marginTop: 18,
+      marginTop: 14,
     },
 
     productPrice: {
-      fontSize: 19,
+      fontSize: 18,
       fontWeight:
         "800",
       color:
@@ -1317,9 +1372,9 @@ const styles =
     addButton: {
       backgroundColor:
         "#208AEF",
-      paddingHorizontal: 18,
-      minHeight: 46,
-      borderRadius: 23,
+      paddingHorizontal: 16,
+      minHeight: 42,
+      borderRadius: 21,
       justifyContent:
         "center",
       alignItems:
