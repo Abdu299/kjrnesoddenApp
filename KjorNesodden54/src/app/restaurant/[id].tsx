@@ -30,8 +30,6 @@ import {
 } from "../../services/restaurantService";
 
 import {
-  getWebsiteMenuForRestaurant,
-  hasWebsiteMenu,
   Product,
   subscribeToProductsForRestaurant,
 } from "../../services/productService";
@@ -195,69 +193,37 @@ export default function RestaurantScreen() {
 
 
   // ==================================================
-  // WEBSITE MENU WITH FIRESTORE FALLBACK
+  // REALTIME PRODUCTS FROM FIRESTORE
   // ==================================================
 
   useEffect(
     () => {
-      if (
-        !id ||
-        !restaurant
-      ) {
+      if (!id) {
         return;
       }
 
-      let cancelled = false;
-      let unsubscribe: (() => void) | undefined;
-
-      const subscribeToFirestore = () => {
-        unsubscribe = subscribeToProductsForRestaurant(
-          id,
-          (updatedProducts) => {
-            if (!cancelled) {
-              setProducts(updatedProducts);
-              setProductsLoading(false);
-            }
-          },
-          (error) => {
-            console.log("Product listener error:", error);
-            if (!cancelled) {
-              setProductsLoading(false);
-            }
-          }
-        );
-      };
-
       setProductsLoading(true);
 
-      if (hasWebsiteMenu(restaurant.name)) {
-        getWebsiteMenuForRestaurant(id, restaurant.name)
-          .then((websiteProducts) => {
-            if (!cancelled) {
-              setProducts(websiteProducts);
-              setProductsLoading(false);
-            }
-          })
-          .catch((error) => {
-            console.log("Website menu error, using Firestore:", error);
-            if (!cancelled) {
-              subscribeToFirestore();
-            }
-          });
-      } else {
-        subscribeToFirestore();
-      }
+      const unsubscribe = subscribeToProductsForRestaurant(
+        id,
+        (updatedProducts) => {
+          setProducts(updatedProducts);
+          setProductsLoading(false);
+        },
+        (error) => {
+          console.log("Product listener error:", error);
+          setProductsLoading(false);
+        }
+      );
 
 
       return () => {
-        cancelled = true;
-        unsubscribe?.();
+        unsubscribe();
       };
 
     },
     [
       id,
-      restaurant,
     ]
   );
 
