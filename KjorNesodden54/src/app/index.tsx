@@ -386,7 +386,7 @@ function CustomerHomeScreen() {
                     style={
                       styles.restaurantImage
                     }
-                    resizeMode="cover"
+                    resizeMode="contain"
                   />
                 ) : (
                   <View
@@ -2628,11 +2628,14 @@ const styles =
 
     restaurantImage: {
       width: "100%",
-      height: 230,
+      height: 210,
+      backgroundColor: "#F8F8F8",
+      borderBottomWidth: 1,
+      borderBottomColor: "#EEEEEE",
     },
 
     restaurantImagePlaceholder: {
-      height: 230,
+      height: 210,
       backgroundColor:
         "#EAF5FF",
       justifyContent:
