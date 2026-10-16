@@ -86,7 +86,7 @@ service cloud.firestore {
     }
 
     match /restaurants/{restaurantId} {
-      allow read: if signedIn() &&
+      allow read: if
         (
           resource.data.active == true ||
           isAdmin() ||
@@ -100,24 +100,38 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read: if signedIn();
+      allow read: if true;
 
-      allow create: if isRestaurant() &&
-        request.resource.data.restaurantId == currentRestaurantId() &&
+      allow create: if
+        (
+          isAdmin() ||
+          (
+            isRestaurant() &&
+            request.resource.data.restaurantId == currentRestaurantId()
+          )
+        ) &&
         request.resource.data.keys().hasAll([
           "restaurantId", "name", "description", "price", "imageData",
           "available", "createdAt", "updatedAt"
         ]) &&
         request.resource.data.keys().hasOnly([
           "restaurantId", "name", "description", "price", "imageData",
-          "available", "createdAt", "updatedAt"
+          "available", "createdAt", "updatedAt", "category", "sortOrder"
         ]) &&
         request.resource.data.name is string &&
         request.resource.data.description is string &&
         request.resource.data.price is number &&
         request.resource.data.price > 0 &&
         request.resource.data.imageData is string &&
-        request.resource.data.available is bool;
+        request.resource.data.available is bool &&
+        (
+          !request.resource.data.keys().hasAny(["category"]) ||
+          request.resource.data.category is string
+        ) &&
+        (
+          !request.resource.data.keys().hasAny(["sortOrder"]) ||
+          request.resource.data.sortOrder is number
+        );
 
       allow update: if
         isAdmin()
