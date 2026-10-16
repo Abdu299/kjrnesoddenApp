@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useEffect,
   useState,
 } from "react";
@@ -118,6 +117,13 @@ export default function RestaurantScreen() {
     );
 
 
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] =
+    useState("");
+
+
   // ==================================================
   // LOAD RESTAURANT
   // ==================================================
@@ -188,6 +194,31 @@ export default function RestaurantScreen() {
     },
     [
       id,
+    ]
+  );
+
+
+  useEffect(
+    () => {
+      const availableCategories =
+        Array.from(
+          new Set(
+            products
+              .map((product) => product.category)
+              .filter((category): category is string => Boolean(category))
+          )
+        );
+
+      if (
+        availableCategories.length > 0 &&
+        !availableCategories.includes(selectedCategory)
+      ) {
+        setSelectedCategory(availableCategories[0]);
+      }
+    },
+    [
+      products,
+      selectedCategory,
     ]
   );
 
@@ -379,6 +410,21 @@ export default function RestaurantScreen() {
   // UI
   // ==================================================
 
+  const categories =
+    Array.from(
+      new Set(
+        products
+          .map((product) => product.category)
+          .filter((category): category is string => Boolean(category))
+      )
+    );
+
+
+  const visibleProducts =
+    selectedCategory
+      ? products.filter((product) => product.category === selectedCategory)
+      : products;
+
   return (
     <SafeAreaView
       style={
@@ -541,6 +587,39 @@ export default function RestaurantScreen() {
           </Text>
 
 
+          {categories.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTabs}
+            >
+              {categories.map((category) => {
+                const selected = category === selectedCategory;
+
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryTab,
+                      selected && styles.categoryTabSelected,
+                    ]}
+                    onPress={() => setSelectedCategory(category)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryTabText,
+                        selected && styles.categoryTabTextSelected,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
+
           {/* PRODUCTS */}
 
           {productsLoading ? (
@@ -577,10 +656,9 @@ export default function RestaurantScreen() {
               </Text>
             </View>
           ) : (
-            products.map(
+            visibleProducts.map(
               (
-                product,
-                index
+                product
               ) => {
                 const cartItem =
                   items.find(
@@ -593,20 +671,10 @@ export default function RestaurantScreen() {
 
 
                 return (
-                  <Fragment
+                  <View
                     key={
                       product.id
                     }
-                  >
-                    {product.category &&
-                      (index === 0 ||
-                        products[index - 1].category !== product.category) && (
-                        <Text style={styles.categoryTitle}>
-                          {product.category}
-                        </Text>
-                      )}
-
-                  <View
                     style={[
                       styles.productCard,
 
@@ -628,25 +696,7 @@ export default function RestaurantScreen() {
                         }
                         resizeMode="cover"
                       />
-                    ) : (
-                      <View
-                        style={
-                          styles.productImagePlaceholder
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.productImageLetter
-                          }
-                        >
-                          {product.name
-                            .charAt(
-                              0
-                            )
-                            .toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
+                    ) : null}
 
 
                     {/* PRODUCT CONTENT */}
@@ -752,7 +802,6 @@ export default function RestaurantScreen() {
                       </View>
                     </View>
                   </View>
-                  </Fragment>
                 );
               }
             )
@@ -1122,12 +1171,33 @@ const styles =
       marginBottom: 20,
     },
 
-    categoryTitle: {
-      fontSize: 20,
-      fontWeight: "800",
-      color: "#111111",
-      marginTop: 8,
-      marginBottom: 14,
+    categoryTabs: {
+      gap: 10,
+      paddingRight: 12,
+      paddingBottom: 20,
+    },
+
+    categoryTab: {
+      minHeight: 46,
+      paddingHorizontal: 18,
+      borderRadius: 23,
+      backgroundColor: "#F0EEE8",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    categoryTabSelected: {
+      backgroundColor: "#17213B",
+    },
+
+    categoryTabText: {
+      color: "#17213B",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    categoryTabTextSelected: {
+      color: "#FFFFFF",
     },
 
     menuLoading: {
