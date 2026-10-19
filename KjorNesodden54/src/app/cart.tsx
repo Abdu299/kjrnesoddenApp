@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
 } from "react";
 
@@ -30,6 +31,10 @@ import {
 import {
   submitCartOrder,
 } from "../services/orderService";
+
+import {
+  getCurrentProfile,
+} from "../services/profileService";
 
 
 // ==================================================
@@ -84,6 +89,27 @@ export default function CartScreen() {
     useState(
       false
     );
+
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [deliveryZone, setDeliveryZone] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      setDeliveryFee(null);
+      setDeliveryZone("");
+      return;
+    }
+
+    getCurrentProfile()
+      .then((profile) => {
+        setDeliveryFee(profile.deliveryFee);
+        setDeliveryZone(profile.deliveryZone);
+      })
+      .catch(() => {
+        setDeliveryFee(null);
+        setDeliveryZone("");
+      });
+  }, [user]);
 
 
   // ==================================================
@@ -329,7 +355,11 @@ export default function CartScreen() {
         0
           ? `\n\nRestaurantvarer: ${totalPrice.toLocaleString(
               "nb-NO"
-            )} kr${
+            )} kr\nLevering: ${
+              deliveryFee !== null
+                ? `${deliveryFee.toLocaleString("nb-NO")} kr${deliveryZone ? ` (${deliveryZone})` : ""}`
+                : "avtales"
+            }${
               customItems.length >
               0
                 ? "\nPris for frie bestillinger kommer i tillegg og avtales separat."
@@ -1013,11 +1043,7 @@ Vil du sende bestillingen?`,
           styles.checkoutContainer
         }
       >
-        <View
-          style={
-            styles.totalRow
-          }
-        >
+        <View style={styles.totalRow}>
           <Text
             style={
               styles.totalLabel
@@ -1029,7 +1055,7 @@ Vil du sende bestillingen?`,
                 0
                 ? "Restaurantvarer"
                 : "Pris"
-              : "Totalt"}
+              : "Varer"}
           </Text>
 
 
@@ -1048,6 +1074,24 @@ Vil du sende bestillingen?`,
                 )} kr`}
           </Text>
         </View>
+
+        <View style={styles.deliveryRow}>
+          <Text style={styles.deliveryLabel}>Levering</Text>
+          <Text style={styles.deliveryValue}>
+            {deliveryFee !== null
+              ? `${deliveryFee.toLocaleString("nb-NO")} kr`
+              : "Avtales"}
+          </Text>
+        </View>
+
+        {restaurantItems.length > 0 && deliveryFee !== null && (
+          <View style={styles.grandTotalRow}>
+            <Text style={styles.grandTotalLabel}>Totalt</Text>
+            <Text style={styles.grandTotalValue}>
+              {(totalPrice + deliveryFee).toLocaleString("nb-NO")} kr
+            </Text>
+          </View>
+        )}
 
 
         {customItems.length >
@@ -1466,6 +1510,47 @@ const styles =
     totalValue: {
       fontSize: 22,
       color: "#111111",
+      fontWeight: "800",
+    },
+
+    deliveryRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+
+    deliveryLabel: {
+      color: "#666666",
+      fontSize: 14,
+      fontWeight: "600",
+    },
+
+    deliveryValue: {
+      color: "#222222",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    grandTotalRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingTop: 10,
+      marginBottom: 13,
+      borderTopWidth: 1,
+      borderTopColor: "#E7E7E7",
+    },
+
+    grandTotalLabel: {
+      color: "#111111",
+      fontSize: 17,
+      fontWeight: "800",
+    },
+
+    grandTotalValue: {
+      color: "#111111",
+      fontSize: 22,
       fontWeight: "800",
     },
 
