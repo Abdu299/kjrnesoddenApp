@@ -21,10 +21,6 @@ import {
 } from "expo-router";
 
 import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-
-import {
   getRestaurantById,
   Restaurant,
 } from "../../services/restaurantService";
@@ -44,10 +40,6 @@ import {
 // ==================================================
 
 export default function RestaurantScreen() {
-  const insets =
-    useSafeAreaInsets();
-
-
   const {
     id,
   } =
@@ -631,9 +623,21 @@ export default function RestaurantScreen() {
 
         {categories.length > 0 && (
           <View style={styles.stickyCategoryBar}>
+            {showFloatingBack && (
+              <TouchableOpacity
+                style={styles.stickyNavigationButton}
+                activeOpacity={0.85}
+                accessibilityLabel="Gå tilbake"
+                onPress={() => router.back()}
+              >
+                <Text style={styles.stickyBackArrow}>←</Text>
+              </TouchableOpacity>
+            )}
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
               contentContainerStyle={styles.categoryTabs}
             >
               {categories.map((category) => {
@@ -660,6 +664,17 @@ export default function RestaurantScreen() {
                 );
               })}
             </ScrollView>
+
+            {showFloatingBack && (
+              <TouchableOpacity
+                style={styles.stickyNavigationButton}
+                activeOpacity={0.85}
+                accessibilityLabel="Gå til toppen"
+                onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+              >
+                <Text style={styles.stickyTopArrow}>↑</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -873,33 +888,6 @@ export default function RestaurantScreen() {
 
 
       {/* ==================================================
-          FLOATING BACK BUTTON
-      ================================================== */}
-
-      {showFloatingBack && (
-        <>
-          <TouchableOpacity
-            style={[styles.floatingBackButton, { top: insets.top + 10 }]}
-            activeOpacity={0.85}
-            accessibilityLabel="Gå tilbake"
-            onPress={() => router.back()}
-          >
-            <Text style={styles.floatingBackText}>← Tilbake</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.scrollTopButton, { top: insets.top + 10 }]}
-            activeOpacity={0.85}
-            accessibilityLabel="Gå til toppen"
-            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-          >
-            <Text style={styles.scrollTopArrow}>↑</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-
-      {/* ==================================================
           GO TO CART
       ================================================== */}
 
@@ -1037,69 +1025,6 @@ const styles =
         "700",
     },
 
-    scrollTopButton: {
-      position:
-        "absolute",
-      right: 14,
-      zIndex: 30,
-      elevation: 8,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems:
-        "center",
-      justifyContent:
-        "center",
-      backgroundColor:
-        "#FFFFFF",
-      borderWidth: 1,
-      borderColor:
-        "#E5E5E5",
-      shadowColor:
-        "#000000",
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity:
-        0.16,
-      shadowRadius:
-        5,
-    },
-
-    floatingBackButton: {
-      position: "absolute",
-      left: 14,
-      zIndex: 30,
-      elevation: 8,
-      minHeight: 48,
-      borderRadius: 24,
-      paddingHorizontal: 16,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#FFFFFF",
-      borderWidth: 1,
-      borderColor: "#E5E5E5",
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.16,
-      shadowRadius: 5,
-    },
-
-    floatingBackText: {
-      color: "#208AEF",
-      fontSize: 14,
-      fontWeight: "800",
-    },
-
-    scrollTopArrow: {
-      color:
-        "#208AEF",
-      fontSize: 25,
-      fontWeight:
-        "700",
-    },
-
     cartHeaderButton: {
       width: 48,
       height: 48,
@@ -1232,19 +1157,56 @@ const styles =
     },
 
     stickyCategoryBar: {
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor: "#FFFFFF",
       borderBottomWidth: 1,
       borderBottomColor: "#E9E9E9",
-      paddingTop: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      gap: 8,
       zIndex: 20,
       elevation: 5,
     },
 
+    categoryScroll: {
+      flex: 1,
+    },
+
     categoryTabs: {
       gap: 10,
-      paddingLeft: 22,
-      paddingRight: 12,
-      paddingBottom: 10,
+      paddingHorizontal: 12,
+    },
+
+    stickyNavigationButton: {
+      width: 44,
+      height: 44,
+      flexShrink: 0,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFFFFF",
+      borderWidth: 1,
+      borderColor: "#E5E5E5",
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+
+    stickyBackArrow: {
+      color: "#208AEF",
+      fontSize: 26,
+      fontWeight: "700",
+      lineHeight: 29,
+    },
+
+    stickyTopArrow: {
+      color: "#208AEF",
+      fontSize: 25,
+      fontWeight: "700",
+      lineHeight: 28,
     },
 
     categoryTab: {
