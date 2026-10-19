@@ -34,6 +34,10 @@ export type ProfileData = {
 
   address: string;
 
+  deliveryFee: number | null;
+
+  deliveryZone: string;
+
   restaurantName: string;
 
   loginName: string;
@@ -113,6 +117,14 @@ Promise<ProfileData> {
         userData.address ??
         "",
 
+      deliveryFee:
+        typeof userData.deliveryFee === "number"
+          ? userData.deliveryFee
+          : null,
+
+      deliveryZone:
+        userData.deliveryZone ?? "",
+
       restaurantName:
         "",
 
@@ -154,6 +166,12 @@ Promise<ProfileData> {
         "",
 
       address:
+        "",
+
+      deliveryFee:
+        null,
+
+      deliveryZone:
         "",
 
       restaurantName:
@@ -228,6 +246,12 @@ Promise<ProfileData> {
         "",
 
       address:
+        "",
+
+      deliveryFee:
+        null,
+
+      deliveryZone:
         "",
 
       restaurantName:
@@ -380,7 +404,11 @@ export async function updateCustomerPhone(
 // ==================================================
 
 export async function updateCustomerAddress(
-  address: string
+  address: string,
+  delivery?: {
+    fee: number;
+    zone: string;
+  } | null
 ) {
   const userReference =
     await getCustomerReference();
@@ -404,16 +432,17 @@ export async function updateCustomerAddress(
   }
 
 
-  await updateDoc(
-    userReference,
-    {
-      address:
-        cleanAddress,
+  const updates: Record<string, unknown> = {
+    address: cleanAddress,
+    updatedAt: serverTimestamp(),
+  };
 
-      updatedAt:
-        serverTimestamp(),
-    }
-  );
+  if (delivery !== undefined) {
+    updates.deliveryFee = delivery?.fee ?? null;
+    updates.deliveryZone = delivery?.zone ?? "";
+  }
+
+  await updateDoc(userReference, updates);
 
 
   return cleanAddress;
