@@ -4,7 +4,6 @@ import {
 } from "react";
 
 import {
-  Alert,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -37,6 +36,14 @@ import {
 import {
   getCurrentProfile,
 } from "../services/profileService";
+
+import {
+  getRestaurantById,
+} from "../services/restaurantService";
+
+import {
+  openingStatus,
+} from "../services/openingHoursService";
 
 
 // ==================================================
@@ -97,6 +104,7 @@ export default function CartScreen() {
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [showLoginConfirmation, setShowLoginConfirmation] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -255,24 +263,7 @@ export default function CartScreen() {
         clearCart();
 
 
-        Alert.alert(
-          "Bestilling mottatt",
-
-          "Vi har mottatt informasjonen din. Vi kontakter deg snart og henter bestillingen.",
-
-          [
-            {
-              text:
-                "OK",
-
-              onPress:
-                () =>
-                  router.replace(
-                    "/"
-                  ),
-            },
-          ]
-        );
+        router.replace("/");
 
       } catch (
         error: any
@@ -283,9 +274,7 @@ export default function CartScreen() {
         );
 
 
-        Alert.alert(
-          "Kunne ikke sende bestillingen",
-
+        setOrderError(
           error.message ||
             "Noe gikk galt. Prøv igjen."
         );
@@ -303,7 +292,7 @@ export default function CartScreen() {
   // ==================================================
 
   const handleBuy =
-    () => {
+    async () => {
       if (
         submittingOrder
       ) {
@@ -314,6 +303,29 @@ export default function CartScreen() {
       if (!user) {
         setShowLoginConfirmation(true);
 
+        return;
+      }
+
+      const currentRestaurants =
+        await Promise.all(
+          restaurantGroups.map((group) => getRestaurantById(group.restaurantId))
+        );
+
+      const closedRestaurant =
+        currentRestaurants.find(
+          (restaurant) =>
+            restaurant &&
+            !openingStatus(restaurant.openingHours, restaurant.closedUntil).open
+        );
+
+      if (closedRestaurant) {
+        const status = openingStatus(
+          closedRestaurant.openingHours,
+          closedRestaurant.closedUntil
+        );
+        setOrderError(
+          `${closedRestaurant.name} tar ikke imot bestillinger nå. ${status.text}.`
+        );
         return;
       }
 
@@ -1203,6 +1215,29 @@ export default function CartScreen() {
                 <Text style={styles.confirmationDeleteText}>Logg inn</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(orderError)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOrderError("")}
+      >
+        <View style={styles.confirmationBackdrop}>
+          <View style={styles.confirmationCard}>
+            <View style={styles.confirmationIcon}>
+              <Ionicons name="time-outline" size={29} color="#E04646" />
+            </View>
+            <Text style={styles.confirmationTitle}>Kan ikke bestille nå</Text>
+            <Text style={styles.confirmationText}>{orderError}</Text>
+            <TouchableOpacity
+              style={[styles.orderConfirmButton, { width: "100%" }]}
+              onPress={() => setOrderError("")}
+            >
+              <Text style={styles.confirmationDeleteText}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
