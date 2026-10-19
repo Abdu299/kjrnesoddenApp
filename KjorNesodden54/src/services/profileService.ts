@@ -15,6 +15,10 @@ import {
   normalizePhone,
 } from "./authService";
 
+import {
+  resolveNesoddenAddress,
+} from "./addressService";
+
 
 // ==================================================
 // PROFILE TYPE
@@ -96,6 +100,35 @@ Promise<ProfileData> {
     userData.role ===
     "customer"
   ) {
+    const address =
+      userData.address ??
+      "";
+
+    let deliveryFee =
+      typeof userData.deliveryFee === "number"
+        ? userData.deliveryFee
+        : null;
+
+    let deliveryZone =
+      userData.deliveryZone ??
+      "";
+
+    if (
+      address &&
+      deliveryFee === null
+    ) {
+      const resolvedAddress =
+        await resolveNesoddenAddress(address);
+
+      if (resolvedAddress) {
+        deliveryFee =
+          resolvedAddress.zone.fee;
+
+        deliveryZone =
+          resolvedAddress.zone.name;
+      }
+    }
+
     return {
       role:
         "customer",
@@ -114,16 +147,13 @@ Promise<ProfileData> {
         "",
 
       address:
-        userData.address ??
-        "",
+        address,
 
       deliveryFee:
-        typeof userData.deliveryFee === "number"
-          ? userData.deliveryFee
-          : null,
+        deliveryFee,
 
       deliveryZone:
-        userData.deliveryZone ?? "",
+        deliveryZone,
 
       restaurantName:
         "",
