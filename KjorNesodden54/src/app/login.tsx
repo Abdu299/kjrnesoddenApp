@@ -49,6 +49,10 @@ import type {
   AddressSuggestion,
 } from "../services/addressService";
 
+import {
+  resolveNesoddenAddress,
+} from "../services/addressService";
+
 
 // ==================================================
 // LOGIN / PROFILE
@@ -622,18 +626,41 @@ export default function LoginScreen() {
           true
         );
 
+        let deliveryUpdate:
+          | {
+              fee: number;
+              zone: string;
+            }
+          | null
+          | undefined;
+
+        if (selectedAddress) {
+          deliveryUpdate = {
+            fee: selectedAddress.zone.fee,
+            zone: selectedAddress.zone.name,
+          };
+        } else if (
+          address.trim() === profile?.address.trim() &&
+          profile.deliveryFee !== null
+        ) {
+          deliveryUpdate = undefined;
+        } else {
+          const resolvedAddress =
+            await resolveNesoddenAddress(address);
+
+          deliveryUpdate = resolvedAddress
+            ? {
+                fee: resolvedAddress.zone.fee,
+                zone: resolvedAddress.zone.name,
+              }
+            : null;
+        }
+
 
         const savedAddress =
           await updateCustomerAddress(
             address,
-            address.trim() === profile?.address.trim() && !selectedAddress
-              ? undefined
-              : selectedAddress
-              ? {
-                  fee: selectedAddress.zone.fee,
-                  zone: selectedAddress.zone.name,
-                }
-              : null
+            deliveryUpdate
           );
 
 
