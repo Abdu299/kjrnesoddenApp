@@ -122,9 +122,21 @@ async function sendOrderToVercel(data: {
   if (
     !response.ok
   ) {
+    let message =
+      "Kunne ikke sende bestillingen. Prøv igjen.";
+
     try {
       const errorData =
         await response.json();
+
+
+      if (
+        typeof errorData?.error ===
+        "string"
+      ) {
+        message =
+          errorData.error;
+      }
 
 
       console.log(
@@ -143,7 +155,7 @@ async function sendOrderToVercel(data: {
 
 
     throw new Error(
-      "Kunne ikke sende bestillingen. Prøv igjen."
+      message
     );
   }
 
@@ -473,15 +485,9 @@ export async function submitCartOrder(
 
 
   const deliveryType =
-    restaurantItems.length >
-      0 &&
-    customItems.length >
-      0
-      ? "Matbestilling og fri bestilling fra app"
-      : customItems.length >
-        0
-      ? "Fri bestilling fra app"
-      : "Matbestilling fra app";
+    restaurantItems.length > 0
+      ? "Restauranter"
+      : "Annet";
 
 
   // ==================================================
@@ -560,56 +566,34 @@ export async function submitCartOrder(
   // RESTAURANT-ONLY ORDER
   // ==================================================
 
+  // Telegram must confirm the message before the app reports success.
+  await sendOrderToVercel({
+    fullName:
+      profile.name,
+
+    phone:
+      profile.phone,
+
+    deliveryAddress:
+      profile.address,
+
+    deliveryType,
+
+    deliveryPlace:
+      allPlaces.join(
+        ", "
+      ),
+
+    description,
+  });
+
+
   const requestResult =
     await createRestaurantRequests(
       restaurantItems,
       profile.name,
       profile.phone
     );
-
-
-  /*
-    Firestore is the main source for normal restaurant
-    requests. Telegram remains an additional notification.
-  */
-
-  let telegramSent =
-    true;
-
-
-  try {
-    await sendOrderToVercel({
-      fullName:
-        profile.name,
-
-      phone:
-        profile.phone,
-
-      deliveryAddress:
-        profile.address,
-
-      deliveryType,
-
-      deliveryPlace:
-        allPlaces.join(
-          ", "
-        ),
-
-      description,
-    });
-
-  } catch (
-    error
-  ) {
-    telegramSent =
-      false;
-
-
-    console.log(
-      "Restaurant requests were saved, but Telegram notification failed:",
-      error
-    );
-  }
 
 
   return {
@@ -622,7 +606,8 @@ export async function submitCartOrder(
     orderGroupId:
       requestResult.orderGroupId,
 
-    telegramSent,
+    telegramSent:
+      true,
   };
 }
 
@@ -700,7 +685,7 @@ export async function submitCustomOrder(
       profile.address,
 
     deliveryType:
-      "Fri bestilling fra app",
+      "Annet",
 
     deliveryPlace:
       cleanPlace,
