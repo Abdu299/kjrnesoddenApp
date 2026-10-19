@@ -59,6 +59,13 @@ import {
   pickAndPrepareImage,
 } from "../services/imageService";
 
+import OpeningHoursEditor from "../components/OpeningHoursEditor";
+
+import {
+  openingStatus,
+  WeeklyOpeningHours,
+} from "../services/openingHoursService";
+
 // ==================================================
 // HOME
 // ==================================================
@@ -349,7 +356,13 @@ function CustomerHomeScreen() {
           restaurants.map(
             (
               restaurant
-            ) => (
+            ) => {
+              const status = openingStatus(
+                restaurant.openingHours,
+                restaurant.closedUntil
+              );
+
+              return (
               <TouchableOpacity
                 key={
                   restaurant.id
@@ -426,6 +439,17 @@ function CustomerHomeScreen() {
                     {restaurant.description}
                   </Text>
 
+                  <Text
+                    style={[
+                      styles.restaurantOpeningStatus,
+                      status.open
+                        ? styles.restaurantOpenText
+                        : styles.restaurantClosedText,
+                    ]}
+                  >
+                    {status.open ? "● " : "○ "}{status.text}
+                  </Text>
+
 
                   <Text
                     style={
@@ -436,7 +460,8 @@ function CustomerHomeScreen() {
                   </Text>
                 </View>
               </TouchableOpacity>
-            )
+              );
+            }
           )
         )}
 
@@ -1474,6 +1499,11 @@ function AdminHomeScreen() {
   ] =
     useState("");
 
+  const [
+    editOpeningHours,
+    setEditOpeningHours,
+  ] = useState<WeeklyOpeningHours>(Array(7).fill(null));
+
 
   const [
     loadingRestaurants,
@@ -1613,6 +1643,10 @@ function AdminHomeScreen() {
       setEditImageUrl(
         restaurant.imageUrl
       );
+
+      setEditOpeningHours(
+        restaurant.openingHours.map((period) => period ? { ...period } : null)
+      );
     };
 
 
@@ -1625,6 +1659,7 @@ function AdminHomeScreen() {
       setEditName("");
       setEditDescription("");
       setEditImageUrl("");
+      setEditOpeningHours(Array(7).fill(null));
     };
 
 
@@ -1645,7 +1680,8 @@ function AdminHomeScreen() {
           editingId,
           editName,
           editDescription,
-          editImageUrl
+          editImageUrl,
+          editOpeningHours
         );
 
 
@@ -2037,6 +2073,11 @@ function AdminHomeScreen() {
                       }
                     />
 
+                    <OpeningHoursEditor
+                      value={editOpeningHours}
+                      onChange={setEditOpeningHours}
+                    />
+
 
                     <View
                       style={
@@ -2134,6 +2175,10 @@ function AdminHomeScreen() {
                       }
                     >
                       {restaurant.description}
+                    </Text>
+
+                    <Text style={styles.adminHoursSummary}>
+                      {openingStatus(restaurant.openingHours, restaurant.closedUntil).text}
                     </Text>
 
 
@@ -2601,6 +2646,29 @@ const styles =
       color: "#208AEF",
       fontWeight: "700",
       fontSize: 15,
+    },
+
+    restaurantOpeningStatus: {
+      fontSize: 13,
+      fontWeight: "700",
+      marginTop: 10,
+      marginBottom: 2,
+    },
+
+    restaurantOpenText: {
+      color: "#218A4A",
+    },
+
+    restaurantClosedText: {
+      color: "#C84343",
+    },
+
+    adminHoursSummary: {
+      color: "#666666",
+      fontSize: 13,
+      fontWeight: "700",
+      marginTop: 8,
+      marginBottom: 6,
     },
 
 

@@ -11,6 +11,12 @@ import {
   db,
 } from "./firebase";
 
+import {
+  restaurantClosedUntil,
+  restaurantOpeningHours,
+  WeeklyOpeningHours,
+} from "./openingHoursService";
+
 
 // ==================================================
 // TYPE
@@ -22,6 +28,8 @@ export type Restaurant = {
   description: string;
   active: boolean;
   imageUrl: string;
+  openingHours: WeeklyOpeningHours;
+  closedUntil: string;
 };
 
 
@@ -70,6 +78,12 @@ Promise<Restaurant[]> {
 
           imageUrl:
             data.imageUrl ?? "",
+
+          openingHours:
+            restaurantOpeningHours(data.name ?? "", data.openingHours),
+
+          closedUntil:
+            restaurantClosedUntil(data.name ?? "", data.closedUntil),
         };
       }
     );
@@ -126,5 +140,11 @@ export async function getRestaurantById(
 
     imageUrl:
       data.imageUrl ?? "",
+
+    openingHours:
+      restaurantOpeningHours(data.name ?? "", data.openingHours),
+
+    closedUntil:
+      restaurantClosedUntil(data.name ?? "", data.closedUntil),
   };
 }

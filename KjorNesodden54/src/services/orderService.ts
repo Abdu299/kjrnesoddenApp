@@ -10,6 +10,14 @@ import {
   createRestaurantRequests,
 } from "./restaurantRequestService";
 
+import {
+  getRestaurantById,
+} from "./restaurantService";
+
+import {
+  openingStatus,
+} from "./openingHoursService";
+
 
 // ==================================================
 // API
@@ -198,7 +206,6 @@ function buildOrderDescription(
       items
     );
 
-
   const restaurantIds =
     [
       ...new Set(
@@ -382,6 +389,35 @@ export async function submitCartOrder(
     getRestaurantItems(
       items
     );
+
+
+  const restaurantIds =
+    [...new Set(restaurantItems.map((item) => item.restaurantId))];
+
+
+  const orderedRestaurants =
+    await Promise.all(
+      restaurantIds.map((restaurantId) => getRestaurantById(restaurantId))
+    );
+
+
+  const closedRestaurant =
+    orderedRestaurants.find(
+      (restaurant) =>
+        restaurant &&
+        !openingStatus(restaurant.openingHours, restaurant.closedUntil).open
+    );
+
+
+  if (closedRestaurant) {
+    const status = openingStatus(
+      closedRestaurant.openingHours,
+      closedRestaurant.closedUntil
+    );
+    throw new Error(
+      `${closedRestaurant.name} tar ikke imot bestillinger nå. ${status.text}.`
+    );
+  }
 
 
   const customItems =
