@@ -500,7 +500,7 @@ export default function RestaurantScreen() {
             style={
               styles.heroImage
             }
-            resizeMode="cover"
+            resizeMode="contain"
           />
         ) : (
           <View
@@ -877,30 +877,25 @@ export default function RestaurantScreen() {
       ================================================== */}
 
       {showFloatingBack && (
-        <TouchableOpacity
-          style={[
-            styles.scrollTopButton,
-
-            {
-              top:
-                insets.top +
-                10,
-            },
-          ]}
-          activeOpacity={
-            0.85
-          }
-          accessibilityLabel="Gå til toppen"
-          onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-        >
-          <Text
-            style={
-              styles.scrollTopArrow
-            }
+        <>
+          <TouchableOpacity
+            style={[styles.floatingBackButton, { top: insets.top + 10 }]}
+            activeOpacity={0.85}
+            accessibilityLabel="Gå tilbake"
+            onPress={() => router.back()}
           >
-            ↑
-          </Text>
-        </TouchableOpacity>
+            <Text style={styles.floatingBackText}>← Tilbake</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.scrollTopButton, { top: insets.top + 10 }]}
+            activeOpacity={0.85}
+            accessibilityLabel="Gå til toppen"
+            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          >
+            <Text style={styles.scrollTopArrow}>↑</Text>
+          </TouchableOpacity>
+        </>
       )}
 
 
@@ -991,7 +986,7 @@ const styles =
         "100%",
       height: 280,
       backgroundColor:
-        "#F2F2F2",
+        "#FFFFFF",
     },
 
     heroPlaceholder: {
@@ -1070,6 +1065,31 @@ const styles =
         0.16,
       shadowRadius:
         5,
+    },
+
+    floatingBackButton: {
+      position: "absolute",
+      left: 14,
+      zIndex: 30,
+      elevation: 8,
+      minHeight: 48,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#FFFFFF",
+      borderWidth: 1,
+      borderColor: "#E5E5E5",
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.16,
+      shadowRadius: 5,
+    },
+
+    floatingBackText: {
+      color: "#208AEF",
+      fontSize: 14,
+      fontWeight: "800",
     },
 
     scrollTopArrow: {
