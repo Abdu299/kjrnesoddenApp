@@ -28,6 +28,14 @@ import {
   firebaseConfig,
 } from "./firebase";
 
+import {
+  defaultClosedUntil,
+  defaultOpeningHours,
+  restaurantClosedUntil,
+  restaurantOpeningHours,
+  WeeklyOpeningHours,
+} from "./openingHoursService";
+
 
 // ==================================================
 // TYPE
@@ -41,6 +49,8 @@ export type Restaurant = {
   authUid?: string;
   imageUrl: string;
   loginName: string;
+  openingHours: WeeklyOpeningHours;
+  closedUntil: string;
 };
 
 
@@ -262,6 +272,12 @@ export async function createRestaurant(
           imageUrl:
             cleanImageUrl,
 
+          openingHours:
+            defaultOpeningHours(cleanName),
+
+          closedUntil:
+            defaultClosedUntil(cleanName),
+
           createdAt:
             serverTimestamp(),
 
@@ -384,6 +400,12 @@ Promise<Restaurant[]> {
 
         imageUrl:
           data.imageUrl ?? "",
+
+        openingHours:
+          restaurantOpeningHours(data.name ?? "", data.openingHours),
+
+        closedUntil:
+          restaurantClosedUntil(data.name ?? "", data.closedUntil),
       };
     }
   );
@@ -398,7 +420,8 @@ export async function updateRestaurant(
   restaurantId: string,
   name: string,
   description: string,
-  imageUrl: string
+  imageUrl: string,
+  openingHours: WeeklyOpeningHours
 ) {
   await requireAdmin();
 
@@ -424,6 +447,19 @@ export async function updateRestaurant(
     );
   }
 
+  if (
+    openingHours.length !== 7 ||
+    openingHours.some(
+      (period) =>
+        period !== null &&
+        (!/^([01]\d|2[0-3]):[0-5]\d$/.test(period.open) ||
+          !/^([01]\d|2[0-3]):[0-5]\d$/.test(period.close) ||
+          period.open >= period.close)
+    )
+  ) {
+    throw new Error("Kontroller åpningstidene. Bruk formatet TT:MM, og stenging må være etter åpning.");
+  }
+
 
   await updateDoc(
     doc(
@@ -440,6 +476,8 @@ export async function updateRestaurant(
 
       imageUrl:
         cleanImageUrl,
+
+      openingHours,
 
       updatedAt:
         serverTimestamp(),
