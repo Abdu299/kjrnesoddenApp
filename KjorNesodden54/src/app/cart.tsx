@@ -1,5 +1,5 @@
 import {
-  useEffect,
+  useCallback,
   useState,
 } from "react";
 
@@ -18,6 +18,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import {
   router,
+  useFocusEffect,
 } from "expo-router";
 
 import {
@@ -95,23 +96,41 @@ export default function CartScreen() {
   const [deliveryZone, setDeliveryZone] = useState("");
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      setDeliveryFee(null);
-      setDeliveryZone("");
-      return;
-    }
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    getCurrentProfile()
-      .then((profile) => {
-        setDeliveryFee(profile.deliveryFee);
-        setDeliveryZone(profile.deliveryZone);
-      })
-      .catch(() => {
+      if (!user) {
         setDeliveryFee(null);
         setDeliveryZone("");
-      });
-  }, [user]);
+        return () => {
+          active = false;
+        };
+      }
+
+      getCurrentProfile()
+        .then((profile) => {
+          if (!active) {
+            return;
+          }
+
+          setDeliveryFee(profile.deliveryFee);
+          setDeliveryZone(profile.deliveryZone);
+        })
+        .catch(() => {
+          if (!active) {
+            return;
+          }
+
+          setDeliveryFee(null);
+          setDeliveryZone("");
+        });
+
+      return () => {
+        active = false;
+      };
+    }, [user])
+  );
 
 
   // ==================================================
