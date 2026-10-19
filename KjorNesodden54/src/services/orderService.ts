@@ -183,7 +183,9 @@ function getCustomItems(
 
 function buildOrderDescription(
   items: CartItem[],
-  totalPrice: number
+  totalPrice: number,
+  deliveryFee: number | null,
+  deliveryZone: string
 ): string {
   const restaurantItems =
     getRestaurantItems(
@@ -314,6 +316,22 @@ function buildOrderDescription(
     );
   }
 
+  summaryLines.push(
+    deliveryFee !== null
+      ? `🚗 Levering: ${deliveryFee.toLocaleString("nb-NO")} kr${
+          deliveryZone ? ` (${deliveryZone})` : ""
+        }`
+      : "🚗 Levering: Pris avtales"
+  );
+
+  if (restaurantItems.length > 0 && deliveryFee !== null) {
+    summaryLines.push(
+      `💳 Totalt varer og levering: ${(
+        totalPrice + deliveryFee
+      ).toLocaleString("nb-NO")} kr`
+    );
+  }
+
 
   return [
     ...restaurantSections,
@@ -412,7 +430,9 @@ export async function submitCartOrder(
   const description =
     buildOrderDescription(
       items,
-      totalPrice
+      totalPrice,
+      profile.deliveryFee,
+      profile.deliveryZone
     );
 
 

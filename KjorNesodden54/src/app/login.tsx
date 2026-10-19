@@ -43,6 +43,12 @@ import {
   updateCustomerPhone,
 } from "../services/profileService";
 
+import AddressAutocomplete from "../components/AddressAutocomplete";
+
+import type {
+  AddressSuggestion,
+} from "../services/addressService";
+
 
 // ==================================================
 // LOGIN / PROFILE
@@ -188,6 +194,11 @@ export default function LoginScreen() {
     setSavingAddress,
   ] = useState(false);
 
+  const [
+    selectedAddress,
+    setSelectedAddress,
+  ] = useState<AddressSuggestion | null>(null);
+
 
   // DELETE ACCOUNT
 
@@ -250,6 +261,8 @@ export default function LoginScreen() {
         setAddress(
           data.address
         );
+
+        setSelectedAddress(null);
 
       } catch (
         error: any
@@ -605,7 +618,15 @@ export default function LoginScreen() {
 
         const savedAddress =
           await updateCustomerAddress(
-            address
+            address,
+            address.trim() === profile?.address.trim() && !selectedAddress
+              ? undefined
+              : selectedAddress
+              ? {
+                  fee: selectedAddress.zone.fee,
+                  zone: selectedAddress.zone.name,
+                }
+              : null
           );
 
 
@@ -1339,6 +1360,12 @@ export default function LoginScreen() {
                         >
                           {profile.address}
                         </Text>
+
+                        <Text style={styles.deliveryPriceText}>
+                          {profile.deliveryFee !== null
+                            ? `Levering: ${profile.deliveryFee} kr · ${profile.deliveryZone}`
+                            : "Leveringspris avtales"}
+                        </Text>
                       </View>
                     ) : (
                       <Text
@@ -1376,21 +1403,17 @@ export default function LoginScreen() {
                     ) : (
 
                       <View>
-                        <TextInput
-                          style={[
-                            styles.profileInput,
-                            styles.addressInput,
-                          ]}
-                          value={
-                            address
-                          }
-                          onChangeText={
-                            setAddress
-                          }
-                          placeholder="Tangenveien 10, 1450 Nesoddtangen"
-                          placeholderTextColor="#A0A0A0"
-                          multiline
-                          autoCapitalize="words"
+                        <AddressAutocomplete
+                          value={address}
+                          disabled={savingAddress}
+                          onChangeText={(text) => {
+                            setAddress(text);
+                            setSelectedAddress(null);
+                          }}
+                          onSelect={(suggestion) => {
+                            setAddress(suggestion.label);
+                            setSelectedAddress(suggestion);
+                          }}
                         />
 
 
@@ -1407,6 +1430,8 @@ export default function LoginScreen() {
                               setAddress(
                                 profile.address
                               );
+
+                              setSelectedAddress(null);
 
                               setEditingAddress(
                                 false
@@ -2605,6 +2630,13 @@ const styles =
         "#222222",
       lineHeight:
         23,
+    },
+
+    deliveryPriceText: {
+      marginTop: 8,
+      color: "#208AEF",
+      fontSize: 13,
+      fontWeight: "700",
     },
 
     addressInput: {
