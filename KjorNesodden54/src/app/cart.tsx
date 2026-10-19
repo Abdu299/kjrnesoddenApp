@@ -95,6 +95,8 @@ export default function CartScreen() {
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [deliveryZone, setDeliveryZone] = useState("");
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [showLoginConfirmation, setShowLoginConfirmation] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -310,95 +312,12 @@ export default function CartScreen() {
 
 
       if (!user) {
-        Alert.alert(
-          "Logg inn for å bestille",
-
-          "Du kan se restauranter og menyer uten konto. For å sende bestillingen må du logge inn eller registrere deg.",
-
-          [
-            {
-              text:
-                "Avbryt",
-
-              style:
-                "cancel",
-            },
-
-            {
-              text:
-                "Logg inn",
-
-              onPress:
-                () =>
-                  router.push(
-                    "/login"
-                  ),
-            },
-          ]
-        );
+        setShowLoginConfirmation(true);
 
         return;
       }
 
-
-      const placeCount =
-        restaurantGroups.length +
-        customItems.length;
-
-
-      const priceMessage =
-        restaurantItems.length >
-        0
-          ? `\n\nRestaurantvarer: ${totalPrice.toLocaleString(
-              "nb-NO"
-            )} kr\nLevering: ${
-              deliveryFee !== null
-                ? `${deliveryFee.toLocaleString("nb-NO")} kr${deliveryZone ? ` (${deliveryZone})` : ""}`
-                : "avtales"
-            }${
-              customItems.length >
-              0
-                ? "\nPris for frie bestillinger kommer i tillegg og avtales separat."
-                : ""
-            }`
-          : "\n\nPris for bestillingen avtales separat.";
-
-
-      Alert.alert(
-        "Bekreft bestilling",
-
-        `Du er i ferd med å bestille ${totalItems} ${
-          totalItems === 1
-            ? "vare/bestilling"
-            : "varer/bestillinger"
-        } fra ${placeCount} ${
-          placeCount === 1
-            ? "sted"
-            : "steder"
-        }.${priceMessage}
-
-Vil du sende bestillingen?`,
-
-        [
-          {
-            text:
-              "Avbryt",
-
-            style:
-              "cancel",
-          },
-
-          {
-            text:
-              "Ja, bestill",
-
-            onPress:
-              () => {
-                void submitConfirmedOrder();
-              },
-          },
-        ]
-      );
+      setShowOrderConfirmation(true);
     };
 
 
@@ -1175,6 +1094,118 @@ Vil du sende bestillingen?`,
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={showOrderConfirmation}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowOrderConfirmation(false)}
+      >
+        <View style={styles.confirmationBackdrop}>
+          <View style={styles.confirmationCard}>
+            <View style={styles.orderConfirmationIcon}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={31}
+                color="#208AEF"
+              />
+            </View>
+
+            <Text style={styles.confirmationTitle}>
+              Bekreft bestilling
+            </Text>
+
+            <Text style={styles.confirmationText}>
+              Du bestiller {totalItems} {totalItems === 1 ? "produkt" : "produkter"}.
+            </Text>
+
+            <View style={styles.orderSummaryBox}>
+              <View style={styles.orderSummaryRow}>
+                <Text style={styles.orderSummaryLabel}>Varer</Text>
+                <Text style={styles.orderSummaryValue}>
+                  {totalPrice.toLocaleString("nb-NO")} kr
+                </Text>
+              </View>
+
+              <View style={styles.orderSummaryRow}>
+                <Text style={styles.orderSummaryLabel}>Levering</Text>
+                <Text style={styles.orderSummaryValue}>
+                  {deliveryFee !== null
+                    ? `${deliveryFee.toLocaleString("nb-NO")} kr${deliveryZone ? ` (${deliveryZone})` : ""}`
+                    : "Avtales"}
+                </Text>
+              </View>
+
+              {restaurantItems.length > 0 && deliveryFee !== null && (
+                <View style={[styles.orderSummaryRow, styles.orderSummaryTotal]}>
+                  <Text style={styles.orderSummaryTotalText}>Totalt</Text>
+                  <Text style={styles.orderSummaryTotalText}>
+                    {(totalPrice + deliveryFee).toLocaleString("nb-NO")} kr
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.confirmationActions}>
+              <TouchableOpacity
+                style={styles.confirmationCancelButton}
+                onPress={() => setShowOrderConfirmation(false)}
+              >
+                <Text style={styles.confirmationCancelText}>Avbryt</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.orderConfirmButton}
+                onPress={() => {
+                  setShowOrderConfirmation(false);
+                  void submitConfirmedOrder();
+                }}
+              >
+                <Text style={styles.confirmationDeleteText}>Ja, bestill</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showLoginConfirmation}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLoginConfirmation(false)}
+      >
+        <View style={styles.confirmationBackdrop}>
+          <View style={styles.confirmationCard}>
+            <View style={styles.orderConfirmationIcon}>
+              <Ionicons name="person-outline" size={28} color="#208AEF" />
+            </View>
+
+            <Text style={styles.confirmationTitle}>Logg inn for å bestille</Text>
+            <Text style={styles.confirmationText}>
+              Du kan se menyen uten konto, men må logge inn eller registrere deg for å sende bestillingen.
+            </Text>
+
+            <View style={styles.confirmationActions}>
+              <TouchableOpacity
+                style={styles.confirmationCancelButton}
+                onPress={() => setShowLoginConfirmation(false)}
+              >
+                <Text style={styles.confirmationCancelText}>Avbryt</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.orderConfirmButton}
+                onPress={() => {
+                  setShowLoginConfirmation(false);
+                  router.push("/login");
+                }}
+              >
+                <Text style={styles.confirmationDeleteText}>Logg inn</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1655,6 +1686,16 @@ const styles =
       marginBottom: 16,
     },
 
+    orderConfirmationIcon: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: "#EAF5FF",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+
     confirmationTitle: {
       color: "#111111",
       fontSize: 21,
@@ -1704,6 +1745,55 @@ const styles =
     confirmationDeleteText: {
       color: "#FFFFFF",
       fontSize: 15,
+      fontWeight: "800",
+    },
+
+    orderConfirmButton: {
+      flex: 1,
+      minHeight: 48,
+      borderRadius: 12,
+      backgroundColor: "#208AEF",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    orderSummaryBox: {
+      width: "100%",
+      backgroundColor: "#F7F9FB",
+      borderRadius: 13,
+      padding: 14,
+      marginBottom: 20,
+    },
+
+    orderSummaryRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 5,
+    },
+
+    orderSummaryLabel: {
+      color: "#666666",
+      fontSize: 14,
+      fontWeight: "600",
+    },
+
+    orderSummaryValue: {
+      color: "#222222",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    orderSummaryTotal: {
+      borderTopWidth: 1,
+      borderTopColor: "#DFE3E8",
+      marginTop: 7,
+      paddingTop: 12,
+    },
+
+    orderSummaryTotalText: {
+      color: "#111111",
+      fontSize: 16,
       fontWeight: "800",
     },
 
