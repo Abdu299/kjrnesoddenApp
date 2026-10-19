@@ -139,3 +139,59 @@ export async function searchNesoddenAddresses(
     })
     .filter((address: AddressSuggestion | null): address is AddressSuggestion => Boolean(address));
 }
+
+export async function resolveNesoddenAddress(
+  address: string
+): Promise<AddressSuggestion | null> {
+  const cleanAddress = address.trim().replace(/\s+/g, " ");
+
+  if (cleanAddress.length < 3) {
+    return null;
+  }
+
+  const streetPart = cleanAddress
+    .split(",")[0]
+    .replace(/\s+\d{4}\s+.*$/i, "")
+    .trim();
+
+  const queries = Array.from(
+    new Set([cleanAddress, streetPart].filter((query) => query.length >= 3))
+  );
+
+  for (const query of queries) {
+    try {
+      const suggestions = await searchNesoddenAddresses(query);
+
+      if (suggestions.length === 0) {
+        continue;
+      }
+
+      const normalize = (value: string) =>
+        value
+          .toLocaleLowerCase("nb-NO")
+          .replace(/,/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const normalizedInput = normalize(cleanAddress);
+      const normalizedStreet = normalize(streetPart);
+      const exact = suggestions.find(
+        (suggestion) =>
+          normalize(suggestion.label) === normalizedInput ||
+          normalize(suggestion.streetAddress) === normalizedStreet
+      );
+
+      if (exact) {
+        return exact;
+      }
+
+      if (suggestions.length === 1) {
+        return suggestions[0];
+      }
+    } catch {
+      // Keep manual address saving available if the lookup service is down.
+    }
+  }
+
+  return null;
+}
