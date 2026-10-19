@@ -5,6 +5,7 @@ import {
 
 import {
   Alert,
+  Modal,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -92,6 +93,7 @@ export default function CartScreen() {
 
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [deliveryZone, setDeliveryZone] = useState("");
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -199,32 +201,7 @@ export default function CartScreen() {
 
   const handleClearCart =
     () => {
-      Alert.alert(
-        "Tøm handlekurv",
-
-        "Vil du fjerne alle produktene fra handlekurven?",
-
-        [
-          {
-            text:
-              "Avbryt",
-
-            style:
-              "cancel",
-          },
-
-          {
-            text:
-              "Tøm",
-
-            style:
-              "destructive",
-
-            onPress:
-              clearCart,
-          },
-        ]
-      );
+      setShowClearConfirmation(true);
     };
 
 
@@ -1133,6 +1110,52 @@ Vil du sende bestillingen?`,
           </Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={showClearConfirmation}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowClearConfirmation(false)}
+      >
+        <View style={styles.confirmationBackdrop}>
+          <View style={styles.confirmationCard}>
+            <View style={styles.confirmationIcon}>
+              <Ionicons
+                name="trash-outline"
+                size={28}
+                color="#E04646"
+              />
+            </View>
+
+            <Text style={styles.confirmationTitle}>
+              Tøm handlekurv?
+            </Text>
+
+            <Text style={styles.confirmationText}>
+              Vil du fjerne alle produktene fra handlekurven?
+            </Text>
+
+            <View style={styles.confirmationActions}>
+              <TouchableOpacity
+                style={styles.confirmationCancelButton}
+                onPress={() => setShowClearConfirmation(false)}
+              >
+                <Text style={styles.confirmationCancelText}>Avbryt</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmationDeleteButton}
+                onPress={() => {
+                  setShowClearConfirmation(false);
+                  clearCart();
+                }}
+              >
+                <Text style={styles.confirmationDeleteText}>Tøm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1578,6 +1601,90 @@ const styles =
     buyButtonText: {
       color: "#FFFFFF",
       fontSize: 17,
+      fontWeight: "800",
+    },
+
+    confirmationBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.42)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    },
+
+    confirmationCard: {
+      width: "100%",
+      maxWidth: 380,
+      backgroundColor: "#FFFFFF",
+      borderRadius: 20,
+      padding: 24,
+      alignItems: "center",
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.2,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+
+    confirmationIcon: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: "#FDEEEE",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+
+    confirmationTitle: {
+      color: "#111111",
+      fontSize: 21,
+      fontWeight: "800",
+      marginBottom: 8,
+    },
+
+    confirmationText: {
+      color: "#666666",
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: "center",
+      marginBottom: 22,
+    },
+
+    confirmationActions: {
+      width: "100%",
+      flexDirection: "row",
+      gap: 10,
+    },
+
+    confirmationCancelButton: {
+      flex: 1,
+      minHeight: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: "#D8D8D8",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    confirmationCancelText: {
+      color: "#555555",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    confirmationDeleteButton: {
+      flex: 1,
+      minHeight: 48,
+      borderRadius: 12,
+      backgroundColor: "#E04646",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    confirmationDeleteText: {
+      color: "#FFFFFF",
+      fontSize: 15,
       fontWeight: "800",
     },
 
