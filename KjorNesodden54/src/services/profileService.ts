@@ -442,8 +442,32 @@ export async function updateCustomerAddress(
     updates.deliveryZone = delivery?.zone ?? "";
   }
 
-  await updateDoc(userReference, updates);
+  try {
+    await updateDoc(userReference, updates);
 
+    return {
+      address: cleanAddress,
+      deliverySaved: true,
+    };
+  } catch (error: any) {
+    const permissionDenied =
+      error?.code === "permission-denied" ||
+      error?.code === "firestore/permission-denied";
 
-  return cleanAddress;
+    if (!permissionDenied || delivery === undefined) {
+      throw error;
+    }
+
+    // Older deployed Firestore rules may not allow the new delivery fields yet.
+    // Save the address with the already-supported fields instead of losing it.
+    await updateDoc(userReference, {
+      address: cleanAddress,
+      updatedAt: serverTimestamp(),
+    });
+
+    return {
+      address: cleanAddress,
+      deliverySaved: false,
+    };
+  }
 }
