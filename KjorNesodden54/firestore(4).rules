@@ -68,7 +68,7 @@ service cloud.firestore {
             resource.data.role == "customer" &&
             request.resource.data.role == "customer" &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              "name", "phone", "address", "updatedAt"
+              "name", "phone", "address", "deliveryFee", "deliveryZone", "updatedAt"
             ])
           )
           ||
