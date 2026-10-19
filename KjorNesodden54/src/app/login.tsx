@@ -199,6 +199,11 @@ export default function LoginScreen() {
     setSelectedAddress,
   ] = useState<AddressSuggestion | null>(null);
 
+  const [
+    addressSaveError,
+    setAddressSaveError,
+  ] = useState("");
+
 
   // DELETE ACCOUNT
 
@@ -611,6 +616,8 @@ export default function LoginScreen() {
   const handleSaveAddress =
     async () => {
       try {
+        setAddressSaveError("");
+
         setSavingAddress(
           true
         );
@@ -631,7 +638,7 @@ export default function LoginScreen() {
 
 
         setAddress(
-          savedAddress
+          savedAddress.address
         );
 
 
@@ -645,16 +652,23 @@ export default function LoginScreen() {
 
         Alert.alert(
           "Adresse lagret",
-          "Adressen din er oppdatert."
+          savedAddress.deliverySaved
+            ? "Adressen din er oppdatert."
+            : "Adressen er lagret. Leveringsprisen avtales inntil de nye Firestore-reglene er publisert."
         );
 
       } catch (
         error: any
       ) {
+        const message =
+          error.message ||
+          "Kunne ikke lagre adressen.";
+
+        setAddressSaveError(message);
+
         Alert.alert(
           "Feil",
-          error.message ||
-            "Kunne ikke lagre adressen."
+          message
         );
 
       } finally {
@@ -1407,14 +1421,22 @@ export default function LoginScreen() {
                           value={address}
                           disabled={savingAddress}
                           onChangeText={(text) => {
+                            setAddressSaveError("");
                             setAddress(text);
                             setSelectedAddress(null);
                           }}
                           onSelect={(suggestion) => {
+                            setAddressSaveError("");
                             setAddress(suggestion.label);
                             setSelectedAddress(suggestion);
                           }}
                         />
+
+                        {addressSaveError ? (
+                          <Text style={styles.addressSaveError}>
+                            {addressSaveError}
+                          </Text>
+                        ) : null}
 
 
                         <View
@@ -1432,6 +1454,8 @@ export default function LoginScreen() {
                               );
 
                               setSelectedAddress(null);
+
+                              setAddressSaveError("");
 
                               setEditingAddress(
                                 false
@@ -2637,6 +2661,13 @@ const styles =
       color: "#208AEF",
       fontSize: 13,
       fontWeight: "700",
+    },
+
+    addressSaveError: {
+      color: "#C62828",
+      fontSize: 13,
+      lineHeight: 18,
+      marginTop: 8,
     },
 
     addressInput: {
