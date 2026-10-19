@@ -34,6 +34,11 @@ import {
   useCart,
 } from "../../context/CartContext";
 
+import {
+  openingDayLabels,
+  openingStatus,
+} from "../../services/openingHoursService";
+
 
 // ==================================================
 // PAGE
@@ -108,6 +113,12 @@ export default function RestaurantScreen() {
     useState(
       false
     );
+
+
+  const [
+    showOpeningHours,
+    setShowOpeningHours,
+  ] = useState(false);
 
 
   const [
@@ -358,7 +369,8 @@ export default function RestaurantScreen() {
         Product
     ) => {
       if (
-        !product.available
+        !product.available ||
+        !restaurantIsOpen
       ) {
         return;
       }
@@ -458,6 +470,15 @@ export default function RestaurantScreen() {
           .map((product) => product.category?.trim() || "Annet")
       )
     );
+
+  const currentOpeningStatus =
+    openingStatus(
+      restaurant.openingHours,
+      restaurant.closedUntil
+    );
+
+  const restaurantIsOpen =
+    currentOpeningStatus.open;
 
 
   return (
@@ -602,6 +623,62 @@ export default function RestaurantScreen() {
           >
             {restaurant.description}
           </Text>
+
+          <View
+            style={[
+              styles.openingBanner,
+              restaurantIsOpen
+                ? styles.openingBannerOpen
+                : styles.openingBannerClosed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.openingBannerText,
+                restaurantIsOpen
+                  ? styles.openingTextOpen
+                  : styles.openingTextClosed,
+              ]}
+            >
+              {restaurantIsOpen ? "● " : "○ "}{currentOpeningStatus.text}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.openingHoursToggle}
+            activeOpacity={0.8}
+            onPress={() => setShowOpeningHours((visible) => !visible)}
+          >
+            <Text style={styles.openingHoursToggleText}>
+              {showOpeningHours ? "Skjul åpningstider" : "Se åpningstider"}
+            </Text>
+            <Text style={styles.openingHoursToggleIcon}>
+              {showOpeningHours ? "▲" : "▼"}
+            </Text>
+          </TouchableOpacity>
+
+          {showOpeningHours && (
+            <View style={styles.openingHoursList}>
+              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
+                const period = restaurant.openingHours[day];
+                return (
+                  <View key={day} style={styles.openingHoursRow}>
+                    <Text style={styles.openingHoursDay}>
+                      {openingDayLabels[day]}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.openingHoursTime,
+                        !period && styles.openingHoursClosed,
+                      ]}
+                    >
+                      {period ? `${period.open}–${period.close}` : "Stengt"}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
 
           <View
@@ -855,11 +932,11 @@ export default function RestaurantScreen() {
                           style={[
                             styles.addButton,
 
-                            !product.available &&
+                            (!product.available || !restaurantIsOpen) &&
                               styles.addButtonDisabled,
                           ]}
                           disabled={
-                            !product.available
+                            !product.available || !restaurantIsOpen
                           }
                           onPress={() =>
                             handleAddProduct(
@@ -872,7 +949,9 @@ export default function RestaurantScreen() {
                               styles.addButtonText
                             }
                           >
-                            + Legg til
+                            {!restaurantIsOpen
+                              ? "Stengt"
+                              : "+ Legg til"}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -1138,6 +1217,87 @@ const styles =
       color:
         "#777777",
       lineHeight: 23,
+    },
+
+    openingBanner: {
+      alignSelf: "flex-start",
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginTop: 14,
+    },
+
+    openingBannerOpen: {
+      backgroundColor: "#EAF7EF",
+    },
+
+    openingBannerClosed: {
+      backgroundColor: "#FDEEEE",
+    },
+
+    openingBannerText: {
+      fontSize: 14,
+      fontWeight: "800",
+    },
+
+    openingTextOpen: {
+      color: "#218A4A",
+    },
+
+    openingTextClosed: {
+      color: "#C84343",
+    },
+
+    openingHoursToggle: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      paddingVertical: 12,
+    },
+
+    openingHoursToggleText: {
+      color: "#208AEF",
+      fontSize: 15,
+      fontWeight: "800",
+    },
+
+    openingHoursToggleIcon: {
+      color: "#208AEF",
+      fontSize: 11,
+    },
+
+    openingHoursList: {
+      width: "100%",
+      borderWidth: 1,
+      borderColor: "#E6E6E6",
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      backgroundColor: "#FAFAFA",
+    },
+
+    openingHoursRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+
+    openingHoursDay: {
+      color: "#333333",
+      fontSize: 15,
+      fontWeight: "600",
+    },
+
+    openingHoursTime: {
+      color: "#222222",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+
+    openingHoursClosed: {
+      color: "#888888",
     },
 
     divider: {
