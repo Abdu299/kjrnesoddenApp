@@ -25,6 +25,22 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Oppstartsskjerm
+
+Oppstartsskjermen konfigureres i `app.json` med `expo-splash-screen`. Den bruker `assets/images/splash-brand.png` på hvit bakgrunn, eller `#101620` når mobilen bruker mørk modus.
+
+Expo Go viser sin egen lasteskjerm med appikon, appnavn og fremdrift. Teksten og skyggen der styres av Expo Go og kan ikke fjernes med appens splash-innstillinger. Test den faktiske oppstartsskjermen i en ny preview- eller produksjonsbygging. En omstart av Metro eller en JavaScript-oppdatering endrer ikke oppstartsskjermen i en installert app.
+
+Fra denne mappen kan du bygge en iOS-preview med prosjektets eksisterende EAS-profil:
+
+```bash
+npx eas-cli build --platform ios --profile preview
+```
+
+Installer den nye byggingen og test oppstart med både lys og mørk systeminnstilling.
+
+[Expo: splash screen og appikon](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)
+
 ## Get a fresh project
 
 When you're ready, run:
