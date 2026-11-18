@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import {
   useCallback,
   useState,
@@ -67,6 +69,8 @@ type RestaurantCartGroup = {
 // ==================================================
 
 export default function CartScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     user,
   } =
@@ -363,7 +367,7 @@ export default function CartScreen() {
             <Ionicons
               name="arrow-back"
               size={24}
-              color="#111111"
+              color={colors.text}
             />
           </TouchableOpacity>
 
@@ -398,7 +402,7 @@ export default function CartScreen() {
             <Ionicons
               name="cart-outline"
               size={42}
-              color="#208AEF"
+              color={colors.primary}
             />
           </View>
 
@@ -473,7 +477,7 @@ export default function CartScreen() {
           <Ionicons
             name="arrow-back"
             size={24}
-            color="#111111"
+            color={colors.text}
           />
         </TouchableOpacity>
 
@@ -517,7 +521,7 @@ export default function CartScreen() {
           <Ionicons
             name="trash-outline"
             size={22}
-            color="#E04646"
+            color={colors.danger}
           />
         </TouchableOpacity>
       </View>
@@ -580,7 +584,7 @@ export default function CartScreen() {
                       <Ionicons
                         name="restaurant-outline"
                         size={20}
-                        color="#208AEF"
+                        color={colors.primary}
                       />
                     </View>
 
@@ -713,7 +717,7 @@ export default function CartScreen() {
                               <Ionicons
                                 name="remove"
                                 size={18}
-                                color="#208AEF"
+                                color={colors.primary}
                               />
                             </TouchableOpacity>
 
@@ -740,7 +744,7 @@ export default function CartScreen() {
                               <Ionicons
                                 name="add"
                                 size={18}
-                                color="#208AEF"
+                                color={colors.primary}
                               />
                             </TouchableOpacity>
                           </View>
@@ -761,7 +765,7 @@ export default function CartScreen() {
                             <Ionicons
                               name="trash-outline"
                               size={18}
-                              color="#E04646"
+                              color={colors.danger}
                             />
                           </TouchableOpacity>
                         </View>
@@ -838,7 +842,7 @@ export default function CartScreen() {
                     <Ionicons
                       name="bag-handle-outline"
                       size={21}
-                      color="#208AEF"
+                      color={colors.primary}
                     />
                   </View>
 
@@ -882,7 +886,7 @@ export default function CartScreen() {
                   <Ionicons
                     name="trash-outline"
                     size={19}
-                    color="#E04646"
+                    color={colors.danger}
                   />
                 </TouchableOpacity>
               </View>
@@ -921,7 +925,7 @@ export default function CartScreen() {
                 <Ionicons
                   name="information-circle-outline"
                   size={18}
-                  color="#777777"
+                  color={colors.textMuted}
                 />
 
                 <Text
@@ -947,7 +951,7 @@ export default function CartScreen() {
           <Ionicons
             name="information-circle-outline"
             size={21}
-            color="#777777"
+            color={colors.textMuted}
           />
 
           <Text
@@ -1073,7 +1077,7 @@ export default function CartScreen() {
               <Ionicons
                 name="trash-outline"
                 size={28}
-                color="#E04646"
+                color={colors.danger}
               />
             </View>
 
@@ -1119,7 +1123,7 @@ export default function CartScreen() {
               <Ionicons
                 name="checkmark-circle-outline"
                 size={31}
-                color="#208AEF"
+                color={colors.primary}
               />
             </View>
 
@@ -1189,7 +1193,7 @@ export default function CartScreen() {
         <View style={styles.confirmationBackdrop}>
           <View style={styles.confirmationCard}>
             <View style={styles.orderConfirmationIcon}>
-              <Ionicons name="person-outline" size={28} color="#208AEF" />
+              <Ionicons name="person-outline" size={28} color={colors.primary} />
             </View>
 
             <Text style={styles.confirmationTitle}>Logg inn for å bestille</Text>
@@ -1228,7 +1232,7 @@ export default function CartScreen() {
         <View style={styles.confirmationBackdrop}>
           <View style={styles.confirmationCard}>
             <View style={styles.confirmationIcon}>
-              <Ionicons name="time-outline" size={29} color="#E04646" />
+              <Ionicons name="time-outline" size={29} color={colors.danger} />
             </View>
             <Text style={styles.confirmationTitle}>Kan ikke bestille nå</Text>
             <Text style={styles.confirmationText}>{orderError}</Text>
@@ -1250,12 +1254,12 @@ export default function CartScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#F7F8FA",
+        colors.background,
     },
 
     header: {
@@ -1266,10 +1270,10 @@ const styles =
       justifyContent:
         "space-between",
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderBottomWidth: 1,
       borderBottomColor:
-        "#EEEEEE",
+        colors.border,
     },
 
     headerIconButton: {
@@ -1293,12 +1297,12 @@ const styles =
     headerTitle: {
       fontSize: 20,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
     },
 
     headerSubtitle: {
       fontSize: 12,
-      color: "#888888",
+      color: colors.textMuted,
       marginTop: 2,
     },
 
@@ -1313,13 +1317,13 @@ const styles =
 
     restaurantCard: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderRadius: 18,
       padding: 18,
       marginBottom: 18,
       borderWidth: 1,
       borderColor:
-        "#E8E8E8",
+        colors.border,
     },
 
     restaurantHeader: {
@@ -1346,7 +1350,7 @@ const styles =
       alignItems:
         "center",
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       marginRight: 10,
     },
 
@@ -1354,11 +1358,11 @@ const styles =
       flex: 1,
       fontSize: 18,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
     },
 
     addMoreText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
       fontSize: 13,
     },
@@ -1366,7 +1370,7 @@ const styles =
     divider: {
       height: 1,
       backgroundColor:
-        "#EEEEEE",
+        colors.divider,
       marginVertical: 16,
     },
 
@@ -1384,18 +1388,18 @@ const styles =
     productName: {
       fontSize: 16,
       fontWeight: "700",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 5,
     },
 
     productUnitPrice: {
-      color: "#888888",
+      color: colors.textMuted,
       fontSize: 12,
       marginBottom: 6,
     },
 
     productTotal: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 15,
       fontWeight: "700",
     },
@@ -1411,11 +1415,11 @@ const styles =
       alignItems: "center",
       borderWidth: 1,
       borderColor:
-        "#DDE8F3",
+        colors.primaryBorder,
       borderRadius: 12,
       overflow: "hidden",
       backgroundColor:
-        "#F8FBFE",
+        colors.primarySoft,
     },
 
     quantityButton: {
@@ -1432,7 +1436,7 @@ const styles =
       textAlign: "center",
       fontSize: 15,
       fontWeight: "700",
-      color: "#111111",
+      color: colors.text,
     },
 
     removeButton: {
@@ -1441,7 +1445,7 @@ const styles =
       borderRadius: 9,
       borderWidth: 1,
       borderColor:
-        "#F3CCCC",
+        colors.dangerBorder,
       justifyContent:
         "center",
       alignItems:
@@ -1454,32 +1458,32 @@ const styles =
         "space-between",
       borderTopWidth: 1,
       borderTopColor:
-        "#EEEEEE",
+        colors.border,
       paddingTop: 16,
       marginTop: 18,
     },
 
     restaurantTotalLabel: {
       fontSize: 14,
-      color: "#777777",
+      color: colors.textMuted,
       fontWeight: "600",
     },
 
     restaurantTotalValue: {
       fontSize: 16,
-      color: "#111111",
+      color: colors.text,
       fontWeight: "800",
     },
 
     customOrderCard: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderRadius: 18,
       padding: 18,
       marginBottom: 18,
       borderWidth: 1,
       borderColor:
-        "#D8E9F8",
+        colors.primaryBorder,
     },
 
     customOrderHeader: {
@@ -1502,7 +1506,7 @@ const styles =
       height: 40,
       borderRadius: 12,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -1516,14 +1520,14 @@ const styles =
 
     customOrderLabel: {
       fontSize: 12,
-      color: "#777777",
+      color: colors.textMuted,
       fontWeight: "600",
       marginBottom: 2,
     },
 
     customOrderPlace: {
       fontSize: 18,
-      color: "#111111",
+      color: colors.text,
       fontWeight: "800",
     },
 
@@ -1533,7 +1537,7 @@ const styles =
       borderRadius: 10,
       borderWidth: 1,
       borderColor:
-        "#F3CCCC",
+        colors.dangerBorder,
       justifyContent:
         "center",
       alignItems:
@@ -1542,20 +1546,20 @@ const styles =
 
     customOrderRequestBox: {
       backgroundColor:
-        "#F7F8FA",
+        colors.surfaceMuted,
       borderRadius: 12,
       padding: 14,
     },
 
     customOrderRequestLabel: {
       fontSize: 12,
-      color: "#777777",
+      color: colors.textMuted,
       fontWeight: "700",
       marginBottom: 6,
     },
 
     customOrderRequest: {
-      color: "#222222",
+      color: colors.text,
       fontSize: 15,
       lineHeight: 21,
     },
@@ -1569,7 +1573,7 @@ const styles =
 
     customOrderPriceText: {
       flex: 1,
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 12,
       lineHeight: 18,
     },
@@ -1584,20 +1588,20 @@ const styles =
 
     multiRestaurantInfoText: {
       flex: 1,
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 13,
       lineHeight: 19,
     },
 
     checkoutContainer: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       paddingHorizontal: 20,
       paddingTop: 15,
       paddingBottom: 15,
       borderTopWidth: 1,
       borderTopColor:
-        "#E7E7E7",
+        colors.border,
     },
 
     totalRow: {
@@ -1611,13 +1615,13 @@ const styles =
 
     totalLabel: {
       fontSize: 16,
-      color: "#555555",
+      color: colors.textSecondary,
       fontWeight: "600",
     },
 
     totalValue: {
       fontSize: 22,
-      color: "#111111",
+      color: colors.text,
       fontWeight: "800",
     },
 
@@ -1629,13 +1633,13 @@ const styles =
     },
 
     deliveryLabel: {
-      color: "#666666",
+      color: colors.textSecondary,
       fontSize: 14,
       fontWeight: "600",
     },
 
     deliveryValue: {
-      color: "#222222",
+      color: colors.text,
       fontSize: 15,
       fontWeight: "700",
     },
@@ -1647,23 +1651,23 @@ const styles =
       paddingTop: 10,
       marginBottom: 13,
       borderTopWidth: 1,
-      borderTopColor: "#E7E7E7",
+      borderTopColor: colors.border,
     },
 
     grandTotalLabel: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 17,
       fontWeight: "800",
     },
 
     grandTotalValue: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 22,
       fontWeight: "800",
     },
 
     checkoutCustomNote: {
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 12,
       lineHeight: 18,
       marginTop: -3,
@@ -1672,7 +1676,7 @@ const styles =
 
     buyButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       borderRadius: 13,
       paddingVertical: 16,
       alignItems:
@@ -1684,14 +1688,14 @@ const styles =
     },
 
     buyButtonText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontSize: 17,
       fontWeight: "800",
     },
 
     confirmationBackdrop: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.42)",
+      backgroundColor: colors.backdrop,
       justifyContent: "center",
       alignItems: "center",
       padding: 24,
@@ -1700,11 +1704,11 @@ const styles =
     confirmationCard: {
       width: "100%",
       maxWidth: 380,
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderRadius: 20,
       padding: 24,
       alignItems: "center",
-      shadowColor: "#000000",
+      shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.2,
       shadowRadius: 20,
@@ -1715,7 +1719,7 @@ const styles =
       width: 58,
       height: 58,
       borderRadius: 29,
-      backgroundColor: "#FDEEEE",
+      backgroundColor: colors.dangerSoft,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 16,
@@ -1725,21 +1729,21 @@ const styles =
       width: 58,
       height: 58,
       borderRadius: 29,
-      backgroundColor: "#EAF5FF",
+      backgroundColor: colors.primarySoft,
       justifyContent: "center",
       alignItems: "center",
       marginBottom: 16,
     },
 
     confirmationTitle: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 21,
       fontWeight: "800",
       marginBottom: 8,
     },
 
     confirmationText: {
-      color: "#666666",
+      color: colors.textSecondary,
       fontSize: 15,
       lineHeight: 22,
       textAlign: "center",
@@ -1757,13 +1761,13 @@ const styles =
       minHeight: 48,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: "#D8D8D8",
+      borderColor: colors.border,
       alignItems: "center",
       justifyContent: "center",
     },
 
     confirmationCancelText: {
-      color: "#555555",
+      color: colors.textSecondary,
       fontSize: 15,
       fontWeight: "700",
     },
@@ -1772,13 +1776,13 @@ const styles =
       flex: 1,
       minHeight: 48,
       borderRadius: 12,
-      backgroundColor: "#E04646",
+      backgroundColor: colors.dangerFill,
       alignItems: "center",
       justifyContent: "center",
     },
 
     confirmationDeleteText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontSize: 15,
       fontWeight: "800",
     },
@@ -1787,14 +1791,14 @@ const styles =
       flex: 1,
       minHeight: 48,
       borderRadius: 12,
-      backgroundColor: "#208AEF",
+      backgroundColor: colors.primaryFill,
       alignItems: "center",
       justifyContent: "center",
     },
 
     orderSummaryBox: {
       width: "100%",
-      backgroundColor: "#F7F9FB",
+      backgroundColor: colors.surfaceMuted,
       borderRadius: 13,
       padding: 14,
       marginBottom: 20,
@@ -1808,26 +1812,26 @@ const styles =
     },
 
     orderSummaryLabel: {
-      color: "#666666",
+      color: colors.textSecondary,
       fontSize: 14,
       fontWeight: "600",
     },
 
     orderSummaryValue: {
-      color: "#222222",
+      color: colors.text,
       fontSize: 15,
       fontWeight: "700",
     },
 
     orderSummaryTotal: {
       borderTopWidth: 1,
-      borderTopColor: "#DFE3E8",
+      borderTopColor: colors.border,
       marginTop: 7,
       paddingTop: 12,
     },
 
     orderSummaryTotalText: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 16,
       fontWeight: "800",
     },
@@ -1846,7 +1850,7 @@ const styles =
       height: 86,
       borderRadius: 43,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -1857,29 +1861,30 @@ const styles =
     emptyTitle: {
       fontSize: 23,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 8,
     },
 
     emptyDescription: {
       fontSize: 15,
       lineHeight: 22,
-      color: "#777777",
+      color: colors.textMuted,
       textAlign: "center",
       marginBottom: 25,
     },
 
     exploreButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       borderRadius: 11,
       paddingHorizontal: 30,
       paddingVertical: 14,
     },
 
     exploreButtonText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontWeight: "700",
       fontSize: 15,
     },
   });
+

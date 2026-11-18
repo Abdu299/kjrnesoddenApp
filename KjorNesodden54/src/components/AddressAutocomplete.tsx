@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -26,6 +28,8 @@ export default function AddressAutocomplete({
   onSelect,
   disabled,
 }: Props) {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -72,7 +76,7 @@ export default function AddressAutocomplete({
           value={value}
           editable={!disabled}
           placeholder="Begynn å skrive gate og husnummer"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor={colors.placeholder}
           autoCapitalize="words"
           autoCorrect={false}
           onFocus={() => setFocused(true)}
@@ -81,7 +85,7 @@ export default function AddressAutocomplete({
             onChangeText(text);
           }}
         />
-        {loading && <ActivityIndicator size="small" color="#208AEF" />}
+        {loading && <ActivityIndicator size="small" color={colors.primary} />}
       </View>
 
       {showSuggestions && (
@@ -122,40 +126,41 @@ export default function AddressAutocomplete({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppThemeColors) => StyleSheet.create({
   container: { marginBottom: 4, zIndex: 20 },
   inputWrapper: {
     minHeight: 52,
     borderWidth: 1,
-    borderColor: "#D8D8D8",
+    borderColor: colors.inputBorder,
     borderRadius: 10,
     paddingHorizontal: 14,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.inputBackground,
     flexDirection: "row",
     alignItems: "center",
   },
-  input: { flex: 1, minHeight: 50, fontSize: 16, color: "#111111" },
+  input: { flex: 1, minHeight: 50, fontSize: 16, color: colors.text },
   suggestions: {
     marginTop: 6,
     borderWidth: 1,
-    borderColor: "#E2E2E2",
+    borderColor: colors.border,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
   },
   suggestion: {
     minHeight: 64,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#E5E5E5",
+    borderBottomColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
   },
   suggestionText: { flex: 1 },
-  street: { color: "#111111", fontSize: 15, fontWeight: "700" },
-  place: { color: "#777777", fontSize: 13, marginTop: 3 },
-  fee: { color: "#208AEF", fontSize: 15, fontWeight: "800", marginLeft: 12 },
-  emptyText: { color: "#666666", fontSize: 14, lineHeight: 20, padding: 14 },
-  helper: { color: "#777777", fontSize: 12, lineHeight: 17, marginTop: 8 },
+  street: { color: colors.text, fontSize: 15, fontWeight: "700" },
+  place: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
+  fee: { color: colors.primary, fontSize: 15, fontWeight: "800", marginLeft: 12 },
+  emptyText: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, padding: 14 },
+  helper: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 8 },
 });
+

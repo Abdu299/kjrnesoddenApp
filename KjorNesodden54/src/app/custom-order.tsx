@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import {
   useCallback,
   useState,
@@ -34,6 +36,8 @@ import {
 // ==================================================
 
 export default function CustomOrderScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     addCustomItem,
   } =
@@ -392,7 +396,7 @@ export default function CustomOrderScreen() {
               setPlace
             }
             placeholder="F.eks. Meny, Kiwi, Floriss eller restaurantnavn"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             autoCapitalize="words"
           />
 
@@ -418,7 +422,7 @@ export default function CustomOrderScreen() {
               setRequest
             }
             placeholder="F.eks. 2 grove brød, melk, bananer og en bukett blomster..."
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             multiline
             textAlignVertical="top"
           />
@@ -443,7 +447,7 @@ export default function CustomOrderScreen() {
             {loadingProfile ? (
               <ActivityIndicator
                 size="small"
-                color="#208AEF"
+                color={colors.primary}
               />
 
             ) : address ? (
@@ -523,7 +527,7 @@ export default function CustomOrderScreen() {
           >
             {checkingAddress ? (
               <ActivityIndicator
-                color="#FFFFFF"
+                color={colors.onPrimary}
               />
 
             ) : (
@@ -557,12 +561,12 @@ export default function CustomOrderScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#FFFFFF",
+        colors.background,
     },
 
     content: {
@@ -579,7 +583,7 @@ const styles =
 
     backText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontSize: 15,
       fontWeight: "700",
     },
@@ -588,7 +592,7 @@ const styles =
       height: 210,
       borderRadius: 18,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       alignItems:
         "center",
       justifyContent:
@@ -597,6 +601,7 @@ const styles =
     },
 
     heroEmoji: {
+      color: colors.text,
       fontSize: 70,
     },
 
@@ -604,13 +609,13 @@ const styles =
       fontSize: 30,
       fontWeight: "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom: 10,
     },
 
     subtitle: {
       color:
-        "#707070",
+        colors.textMuted,
       fontSize: 16,
       lineHeight: 23,
       marginBottom: 20,
@@ -618,7 +623,7 @@ const styles =
 
     infoBox: {
       backgroundColor:
-        "#F3F8FD",
+        colors.primarySoft,
       borderRadius: 12,
       padding: 15,
       marginBottom: 22,
@@ -626,7 +631,7 @@ const styles =
 
     infoText: {
       color:
-        "#666666",
+        colors.textSecondary,
       fontSize: 14,
       lineHeight: 20,
     },
@@ -634,37 +639,38 @@ const styles =
     formCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       padding: 20,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     label: {
       fontSize: 14,
       fontWeight: "700",
       color:
-        "#222222",
+        colors.text,
       marginBottom: 8,
     },
 
     input: {
       borderWidth: 1,
       borderColor:
-        "#DDDDDD",
+        colors.inputBorder,
       borderRadius: 11,
       paddingHorizontal: 14,
       paddingVertical: 14,
       fontSize: 16,
       color:
-        "#111111",
+        colors.text,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       marginBottom: 20,
     },
 
     messageInput: {
+      color: colors.text,
       minHeight: 140,
       textAlignVertical:
         "top",
@@ -673,7 +679,7 @@ const styles =
     addressBox: {
       borderTopWidth: 1,
       borderTopColor:
-        "#EEEEEE",
+        colors.border,
       paddingTop: 18,
       marginBottom: 22,
     },
@@ -682,28 +688,28 @@ const styles =
       fontSize: 14,
       fontWeight: "700",
       color:
-        "#222222",
+        colors.text,
       marginBottom: 7,
     },
 
     addressText: {
       fontSize: 15,
       color:
-        "#555555",
+        colors.textSecondary,
       lineHeight: 21,
       marginBottom: 8,
     },
 
     noAddressText: {
       color:
-        "#C84343",
+        colors.danger,
       fontSize: 14,
       marginBottom: 8,
     },
 
     profileLink: {
       color:
-        "#208AEF",
+        colors.primary,
       fontWeight: "700",
       fontSize: 14,
     },
@@ -712,7 +718,7 @@ const styles =
       minHeight: 54,
       borderRadius: 12,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       alignItems:
         "center",
       justifyContent:
@@ -726,14 +732,14 @@ const styles =
 
     submitButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize: 16,
       fontWeight: "800",
     },
 
     footerText: {
       color:
-        "#888888",
+        colors.textMuted,
       fontSize: 13,
       textAlign:
         "center",

@@ -1,7 +1,10 @@
+import { useThemedStyles } from "../../context/ThemeContext";
+import type { AppThemeColors } from "../../constants/app-theme";
 import {
   useEffect,
   useRef,
   useState,
+  type ComponentRef,
 } from "react";
 
 import {
@@ -45,6 +48,8 @@ import {
 // ==================================================
 
 export default function RestaurantScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     id,
   } =
@@ -129,7 +134,7 @@ export default function RestaurantScreen() {
 
 
   const scrollRef =
-    useRef<ScrollView>(null);
+    useRef<ComponentRef<typeof ScrollView>>(null);
 
 
   const categoryOffsets =
@@ -292,7 +297,7 @@ export default function RestaurantScreen() {
         >
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
 
 
@@ -768,7 +773,7 @@ export default function RestaurantScreen() {
             <View style={styles.menuLoading}>
               <ActivityIndicator
                 size="small"
-                color="#208AEF"
+                color={colors.primary}
               />
               <Text style={styles.menuLoadingText}>
                 Laster meny...
@@ -1025,12 +1030,12 @@ export default function RestaurantScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#FFFFFF",
+        colors.background,
     },
 
     center: {
@@ -1045,7 +1050,7 @@ const styles =
     loadingText: {
       marginTop: 14,
       color:
-        "#777777",
+        colors.textMuted,
     },
 
     heroImage: {
@@ -1053,7 +1058,7 @@ const styles =
         "100%",
       height: 280,
       backgroundColor:
-        "#FFFFFF",
+        colors.imageBackground,
     },
 
     heroPlaceholder: {
@@ -1061,7 +1066,7 @@ const styles =
         "100%",
       height: 280,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -1073,7 +1078,7 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#208AEF",
+        colors.primary,
     },
 
     content: {
@@ -1098,7 +1103,7 @@ const styles =
 
     backText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontSize: 15,
       fontWeight:
         "700",
@@ -1116,6 +1121,7 @@ const styles =
     },
 
     cartIcon: {
+      color: colors.text,
       fontSize: 26,
     },
 
@@ -1128,7 +1134,7 @@ const styles =
       height: 20,
       borderRadius: 10,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       justifyContent:
         "center",
       alignItems:
@@ -1138,7 +1144,7 @@ const styles =
 
     cartBadgeText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize: 10,
       fontWeight:
         "800",
@@ -1146,10 +1152,10 @@ const styles =
 
     cartFooter: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderTopWidth: 1,
       borderTopColor:
-        "#E7E7E7",
+        colors.border,
       paddingHorizontal: 18,
       paddingTop: 12,
       paddingBottom: 12,
@@ -1159,7 +1165,7 @@ const styles =
       minHeight: 56,
       borderRadius: 14,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       flexDirection:
         "row",
       alignItems:
@@ -1173,7 +1179,7 @@ const styles =
 
     cartFooterButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize: 17,
       fontWeight:
         "800",
@@ -1187,7 +1193,7 @@ const styles =
       height: 30,
       borderRadius: 15,
       backgroundColor:
-        "#FFFFFF",
+        colors.onPrimary,
       alignItems:
         "center",
       justifyContent:
@@ -1197,7 +1203,7 @@ const styles =
 
     cartFooterCountText: {
       color:
-        "#208AEF",
+        colors.primaryFill,
       fontSize: 13,
       fontWeight:
         "800",
@@ -1208,14 +1214,14 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom: 8,
     },
 
     description: {
       fontSize: 16,
       color:
-        "#777777",
+        colors.textMuted,
       lineHeight: 23,
     },
 
@@ -1228,24 +1234,25 @@ const styles =
     },
 
     openingBannerOpen: {
-      backgroundColor: "#EAF7EF",
+      backgroundColor: colors.successSoft,
     },
 
     openingBannerClosed: {
-      backgroundColor: "#FDEEEE",
+      backgroundColor: colors.dangerSoft,
     },
 
     openingBannerText: {
+      color: colors.text,
       fontSize: 14,
       fontWeight: "800",
     },
 
     openingTextOpen: {
-      color: "#218A4A",
+      color: colors.success,
     },
 
     openingTextClosed: {
-      color: "#C84343",
+      color: colors.danger,
     },
 
     openingHoursToggle: {
@@ -1257,24 +1264,24 @@ const styles =
     },
 
     openingHoursToggleText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontSize: 15,
       fontWeight: "800",
     },
 
     openingHoursToggleIcon: {
-      color: "#208AEF",
+      color: colors.primary,
       fontSize: 11,
     },
 
     openingHoursList: {
       width: "100%",
       borderWidth: 1,
-      borderColor: "#E6E6E6",
+      borderColor: colors.border,
       borderRadius: 14,
       paddingHorizontal: 14,
       paddingVertical: 6,
-      backgroundColor: "#FAFAFA",
+      backgroundColor: colors.surfaceMuted,
     },
 
     openingHoursRow: {
@@ -1285,25 +1292,25 @@ const styles =
     },
 
     openingHoursDay: {
-      color: "#333333",
+      color: colors.text,
       fontSize: 15,
       fontWeight: "600",
     },
 
     openingHoursTime: {
-      color: "#222222",
+      color: colors.text,
       fontSize: 15,
       fontWeight: "700",
     },
 
     openingHoursClosed: {
-      color: "#888888",
+      color: colors.textMuted,
     },
 
     divider: {
       height: 1,
       backgroundColor:
-        "#EEEEEE",
+        colors.divider,
       marginVertical: 25,
     },
 
@@ -1312,16 +1319,16 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom: 0,
     },
 
     stickyCategoryBar: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderBottomWidth: 1,
-      borderBottomColor: "#E9E9E9",
+      borderBottomColor: colors.border,
       paddingVertical: 10,
       paddingHorizontal: 10,
       gap: 8,
@@ -1345,10 +1352,10 @@ const styles =
       borderRadius: 22,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: colors.surface,
       borderWidth: 1,
-      borderColor: "#E5E5E5",
-      shadowColor: "#000000",
+      borderColor: colors.border,
+      shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.12,
       shadowRadius: 4,
@@ -1356,14 +1363,14 @@ const styles =
     },
 
     stickyBackArrow: {
-      color: "#208AEF",
+      color: colors.primary,
       fontSize: 26,
       fontWeight: "700",
       lineHeight: 29,
     },
 
     stickyTopArrow: {
-      color: "#208AEF",
+      color: colors.primary,
       fontSize: 25,
       fontWeight: "700",
       lineHeight: 28,
@@ -1373,23 +1380,23 @@ const styles =
       minHeight: 46,
       paddingHorizontal: 18,
       borderRadius: 23,
-      backgroundColor: "#F0EEE8",
+      backgroundColor: colors.chipBackground,
       alignItems: "center",
       justifyContent: "center",
     },
 
     categoryTabSelected: {
-      backgroundColor: "#17213B",
+      backgroundColor: colors.chipSelectedBackground,
     },
 
     categoryTabText: {
-      color: "#17213B",
+      color: colors.chipText,
       fontSize: 15,
       fontWeight: "700",
     },
 
     categoryTabTextSelected: {
-      color: "#FFFFFF",
+      color: colors.chipSelectedText,
     },
 
     productsContainer: {
@@ -1402,7 +1409,7 @@ const styles =
     },
 
     categoryHeading: {
-      color: "#111111",
+      color: colors.text,
       fontSize: 25,
       fontWeight: "800",
       marginBottom: 14,
@@ -1417,21 +1424,21 @@ const styles =
 
     menuLoadingText: {
       marginTop: 10,
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 14,
     },
 
     productCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       overflow:
         "hidden",
       marginBottom: 14,
       backgroundColor:
-        "#FFFFFF",
-      shadowColor: "#000000",
+        colors.surface,
+      shadowColor: colors.shadow,
       shadowOffset: {
         width: 0,
         height: 2,
@@ -1450,7 +1457,7 @@ const styles =
         "100%",
       height: 190,
       backgroundColor:
-        "#F2F2F2",
+        colors.surfaceMuted,
     },
 
     productContent: {
@@ -1473,20 +1480,20 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
     },
 
     productDescription: {
       fontSize: 14,
       color:
-        "#777777",
+        colors.textMuted,
       lineHeight: 21,
       marginTop: 8,
     },
 
     inCartText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontSize: 13,
       fontWeight:
         "700",
@@ -1508,12 +1515,12 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
     },
 
     addButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingHorizontal: 16,
       minHeight: 42,
       borderRadius: 21,
@@ -1525,12 +1532,12 @@ const styles =
 
     addButtonDisabled: {
       backgroundColor:
-        "#CCCCCC",
+        colors.disabled,
     },
 
     addButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize: 14,
       fontWeight:
         "700",
@@ -1538,7 +1545,7 @@ const styles =
 
     soldOutBadge: {
       backgroundColor:
-        "#FDECEC",
+        colors.dangerSoft,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 20,
@@ -1546,7 +1553,7 @@ const styles =
 
     soldOutText: {
       color:
-        "#C84343",
+        colors.danger,
       fontSize: 12,
       fontWeight:
         "700",
@@ -1555,11 +1562,11 @@ const styles =
     emptyProducts: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 15,
       padding: 25,
       backgroundColor:
-        "#FAFAFA",
+        colors.surfaceMuted,
       alignItems:
         "center",
     },
@@ -1569,14 +1576,14 @@ const styles =
       fontWeight:
         "700",
       color:
-        "#111111",
+        colors.text,
       marginBottom: 6,
     },
 
     emptyProductsText: {
       fontSize: 14,
       color:
-        "#777777",
+        colors.textMuted,
       textAlign:
         "center",
       lineHeight: 20,
@@ -1587,7 +1594,7 @@ const styles =
       fontWeight:
         "700",
       color:
-        "#111111",
+        colors.text,
       textAlign:
         "center",
       marginBottom: 20,
@@ -1595,7 +1602,7 @@ const styles =
 
     backButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingHorizontal: 30,
       paddingVertical: 13,
       borderRadius: 10,
@@ -1603,8 +1610,9 @@ const styles =
 
     backButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontWeight:
         "700",
     },
   });
+

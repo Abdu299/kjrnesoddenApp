@@ -5,11 +5,18 @@ import {
 
 import {
   Tabs,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
 } from "expo-router";
 
 import {
+  ActivityIndicator,
   Text,
+  View,
 } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 
 import {
   AuthProvider,
@@ -35,6 +42,7 @@ import {
 // ==================================================
 
 function AppTabs() {
+  const { colors } = useAppTheme();
   const {
     user,
     role,
@@ -134,10 +142,12 @@ function AppTabs() {
           false,
 
         tabBarActiveTintColor:
-          "#208AEF",
+          colors.primary,
 
         tabBarInactiveTintColor:
-          "#888888",
+          colors.textMuted,
+
+        sceneStyle: { backgroundColor: colors.background },
 
         tabBarStyle: {
           height:
@@ -150,10 +160,10 @@ function AppTabs() {
             8,
 
           backgroundColor:
-            "#FFFFFF",
+            colors.surface,
 
           borderTopColor:
-            "#E5E5E5",
+            colors.border,
 
           borderTopWidth:
             1,
@@ -232,10 +242,10 @@ function AppTabs() {
 
           tabBarBadgeStyle: {
             backgroundColor:
-              "#E53935",
+              colors.dangerFill,
 
             color:
-              "#FFFFFF",
+              colors.onPrimary,
 
             fontSize:
               10,
@@ -360,6 +370,36 @@ function AppTabs() {
   );
 }
 
+function ThemedApp() {
+  const { colorScheme, colors, ready } = useAppTheme();
+  const baseTheme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
+      notification: colors.dangerFill,
+    },
+  };
+
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      <View testID="app-surface" style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        {ready ? <AppTabs /> : (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator color={colors.primary} accessibilityLabel="Laster utseende" />
+          </View>
+        )}
+      </View>
+    </NavigationThemeProvider>
+  );
+}
+
 
 // ==================================================
 // ROOT
@@ -367,12 +407,14 @@ function AppTabs() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RestaurantLanguageProvider>
-        <CartProvider>
-          <AppTabs />
-        </CartProvider>
-      </RestaurantLanguageProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RestaurantLanguageProvider>
+          <CartProvider>
+            <ThemedApp />
+          </CartProvider>
+        </RestaurantLanguageProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

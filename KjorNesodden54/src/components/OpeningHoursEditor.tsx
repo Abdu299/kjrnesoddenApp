@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import type { WeeklyOpeningHours } from "../services/openingHoursService";
 import { openingDayLabels } from "../services/openingHoursService";
@@ -8,6 +10,8 @@ type Props = {
 };
 
 export default function OpeningHoursEditor({ value, onChange }: Props) {
+  const { styles } = useThemedStyles(createStyles);
+
   const updateDay = (day: number, field: "open" | "close", text: string) => {
     const next = value.map((period) => (period ? { ...period } : null));
     next[day] = { open: next[day]?.open ?? "10:00", close: next[day]?.close ?? "22:00", [field]: text };
@@ -49,15 +53,16 @@ export default function OpeningHoursEditor({ value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppThemeColors) => StyleSheet.create({
   container: { marginTop: 18, marginBottom: 18 },
-  title: { color: "#111111", fontSize: 16, fontWeight: "800", marginBottom: 10 },
-  row: { minHeight: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E5E5E5", gap: 8 },
-  day: { width: 67, color: "#333333", fontSize: 13, fontWeight: "700" },
+  title: { color: colors.text, fontSize: 16, fontWeight: "800", marginBottom: 10 },
+  row: { minHeight: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, gap: 8 },
+  day: { width: 67, color: colors.text, fontSize: 13, fontWeight: "700" },
   timeRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 5 },
-  timeInput: { width: 58, height: 36, borderWidth: 1, borderColor: "#D8D8D8", borderRadius: 8, textAlign: "center", color: "#111111", backgroundColor: "#FFFFFF", fontSize: 13 },
-  dash: { color: "#777777" },
-  closed: { flex: 1, color: "#888888", fontSize: 13 },
-  toggle: { minWidth: 51, minHeight: 34, borderRadius: 8, backgroundColor: "#EEF6FE", alignItems: "center", justifyContent: "center", paddingHorizontal: 7 },
-  toggleText: { color: "#208AEF", fontSize: 12, fontWeight: "700" },
+  timeInput: { width: 58, height: 36, borderWidth: 1, borderColor: colors.inputBorder, borderRadius: 8, textAlign: "center", color: colors.text, backgroundColor: colors.inputBackground, fontSize: 13 },
+  dash: { color: colors.textMuted },
+  closed: { flex: 1, color: colors.textMuted, fontSize: 13 },
+  toggle: { minWidth: 51, minHeight: 34, borderRadius: 8, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", paddingHorizontal: 7 },
+  toggleText: { color: colors.primary, fontSize: 12, fontWeight: "700" },
 });
+

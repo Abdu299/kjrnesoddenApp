@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import {
   useEffect,
   useMemo,
@@ -98,6 +100,8 @@ function formatDate(
 // ==================================================
 
 export default function RequestsScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     user,
     role,
@@ -408,7 +412,7 @@ export default function RequestsScreen() {
         >
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
         </View>
       </SafeAreaView>
@@ -641,7 +645,7 @@ export default function RequestsScreen() {
           >
             <ActivityIndicator
               size="large"
-              color="#208AEF"
+              color={colors.primary}
             />
 
 
@@ -972,7 +976,7 @@ export default function RequestsScreen() {
                     {completingId ===
                     request.id ? (
                       <ActivityIndicator
-                        color="#FFFFFF"
+                        color={colors.onPrimary}
                       />
 
                     ) : (
@@ -1000,12 +1004,12 @@ export default function RequestsScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#F7F8FA",
+        colors.background,
     },
 
     header: {
@@ -1014,16 +1018,16 @@ const styles =
       justifyContent:
         "center",
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderBottomWidth: 1,
       borderBottomColor:
-        "#EEEEEE",
+        colors.border,
     },
 
     logo: {
       fontSize: 22,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
     },
 
     scroll: {
@@ -1038,14 +1042,14 @@ const styles =
     pageTitle: {
       fontSize: 30,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 6,
     },
 
     pageSubtitle: {
       fontSize: 15,
       lineHeight: 21,
-      color: "#777777",
+      color: colors.textMuted,
       marginBottom: 22,
     },
 
@@ -1053,7 +1057,7 @@ const styles =
       flexDirection: "row",
       padding: 4,
       backgroundColor:
-        "#EDEFF2",
+        colors.surfaceMuted,
       borderRadius: 14,
       marginBottom: 22,
     },
@@ -1071,17 +1075,17 @@ const styles =
 
     switchButtonActive: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     switchText: {
       fontSize: 15,
       fontWeight: "700",
-      color: "#777777",
+      color: colors.textMuted,
     },
 
     switchTextActive: {
-      color: "#208AEF",
+      color: colors.primary,
     },
 
     countBadge: {
@@ -1093,22 +1097,22 @@ const styles =
         "center",
       alignItems: "center",
       backgroundColor:
-        "#DADDE2",
+        colors.surfaceMuted,
     },
 
     countBadgeActive: {
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
     },
 
     countBadgeText: {
       fontSize: 11,
       fontWeight: "800",
-      color: "#666666",
+      color: colors.textSecondary,
     },
 
     countBadgeTextActive: {
-      color: "#208AEF",
+      color: colors.primary,
     },
 
     loadingContainer: {
@@ -1118,22 +1122,23 @@ const styles =
 
     loadingText: {
       marginTop: 12,
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 14,
     },
 
     emptyCard: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       padding: 35,
       alignItems: "center",
     },
 
     emptyIcon: {
+      color: colors.text,
       fontSize: 40,
       marginBottom: 12,
     },
@@ -1141,23 +1146,23 @@ const styles =
     emptyTitle: {
       fontSize: 18,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 7,
     },
 
     emptyText: {
       textAlign: "center",
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 14,
       lineHeight: 20,
     },
 
     requestCard: {
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       padding: 18,
       marginBottom: 18,
@@ -1173,7 +1178,7 @@ const styles =
       height: 46,
       borderRadius: 23,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       alignItems: "center",
       justifyContent:
         "center",
@@ -1181,6 +1186,7 @@ const styles =
     },
 
     customerIconText: {
+      color: colors.text,
       fontSize: 22,
     },
 
@@ -1191,13 +1197,13 @@ const styles =
     customerName: {
       fontSize: 17,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 3,
     },
 
     customerPhone: {
       fontSize: 14,
-      color: "#666666",
+      color: colors.textSecondary,
     },
 
     newBadge: {
@@ -1205,13 +1211,13 @@ const styles =
       paddingVertical: 6,
       borderRadius: 20,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
     },
 
     newBadgeText: {
       fontSize: 12,
       fontWeight: "800",
-      color: "#208AEF",
+      color: colors.primary,
     },
 
     completedBadge: {
@@ -1219,25 +1225,25 @@ const styles =
       paddingVertical: 6,
       borderRadius: 20,
       backgroundColor:
-        "#EAF8EF",
+        colors.successSoft,
     },
 
     completedBadgeText: {
       fontSize: 12,
       fontWeight: "800",
-      color: "#27894A",
+      color: colors.success,
     },
 
     dateText: {
       marginTop: 12,
       fontSize: 12,
-      color: "#999999",
+      color: colors.textMuted,
     },
 
     divider: {
       height: 1,
       backgroundColor:
-        "#EEEEEE",
+        colors.divider,
       marginVertical: 17,
     },
 
@@ -1252,7 +1258,7 @@ const styles =
       height: 38,
       borderRadius: 10,
       backgroundColor:
-        "#F3F5F7",
+        colors.surfaceMuted,
       alignItems: "center",
       justifyContent:
         "center",
@@ -1262,7 +1268,7 @@ const styles =
     quantityText: {
       fontSize: 14,
       fontWeight: "800",
-      color: "#333333",
+      color: colors.text,
     },
 
     productInfo: {
@@ -1273,19 +1279,19 @@ const styles =
     productName: {
       fontSize: 15,
       fontWeight: "700",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 3,
     },
 
     productPrice: {
       fontSize: 12,
-      color: "#888888",
+      color: colors.textMuted,
     },
 
     lineTotal: {
       fontSize: 14,
       fontWeight: "700",
-      color: "#111111",
+      color: colors.text,
     },
 
     totalRow: {
@@ -1295,7 +1301,7 @@ const styles =
       alignItems: "center",
       borderTopWidth: 1,
       borderTopColor:
-        "#EEEEEE",
+        colors.border,
       paddingTop: 16,
       marginTop: 3,
     },
@@ -1303,19 +1309,19 @@ const styles =
     totalLabel: {
       fontSize: 16,
       fontWeight: "700",
-      color: "#555555",
+      color: colors.textSecondary,
     },
 
     totalValue: {
       fontSize: 19,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
     },
 
     completeButton: {
       minHeight: 50,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       borderRadius: 12,
       justifyContent:
         "center",
@@ -1328,7 +1334,7 @@ const styles =
     },
 
     completeButtonText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontSize: 15,
       fontWeight: "800",
     },
@@ -1344,12 +1350,12 @@ const styles =
     accessTitle: {
       fontSize: 21,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 8,
     },
 
     accessText: {
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 14,
       textAlign: "center",
     },

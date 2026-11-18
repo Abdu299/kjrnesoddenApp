@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../../context/ThemeContext";
+import type { AppThemeColors } from "../../constants/app-theme";
 import {
   useState,
 } from "react";
@@ -29,6 +31,8 @@ import {
 // ==================================================
 
 export default function CustomerRegisterScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const [
     name,
     setName,
@@ -256,7 +260,7 @@ export default function CustomerRegisterScreen() {
               styles.input
             }
             placeholder="Ola Nordmann"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               name
             }
@@ -291,7 +295,7 @@ export default function CustomerRegisterScreen() {
               styles.input
             }
             placeholder="navn@eksempel.no"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               email
             }
@@ -327,7 +331,7 @@ export default function CustomerRegisterScreen() {
               styles.input
             }
             placeholder="999 99 999"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               phone
             }
@@ -368,7 +372,7 @@ export default function CustomerRegisterScreen() {
               styles.input
             }
             placeholder="Minst 6 tegn"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               password
             }
@@ -399,7 +403,7 @@ export default function CustomerRegisterScreen() {
               styles.input
             }
             placeholder="Gjenta passord"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               confirmPassword
             }
@@ -487,12 +491,12 @@ export default function CustomerRegisterScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#FFFFFF",
+        colors.background,
     },
 
     content: {
@@ -507,7 +511,7 @@ const styles =
 
     backText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontSize:
         15,
       fontWeight:
@@ -522,7 +526,7 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom:
         8,
     },
@@ -531,7 +535,7 @@ const styles =
       fontSize:
         16,
       color:
-        "#777777",
+        colors.textMuted,
       lineHeight:
         23,
       marginBottom:
@@ -544,7 +548,7 @@ const styles =
       fontWeight:
         "600",
       color:
-        "#222222",
+        colors.text,
       marginBottom:
         8,
     },
@@ -553,7 +557,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#DDDDDD",
+        colors.inputBorder,
       borderRadius:
         10,
       paddingHorizontal:
@@ -563,16 +567,16 @@ const styles =
       fontSize:
         16,
       color:
-        "#111111",
+        colors.text,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       marginBottom:
         18,
     },
 
     helperText: {
       color:
-        "#888888",
+        colors.textMuted,
       fontSize:
         12,
       lineHeight:
@@ -585,11 +589,11 @@ const styles =
 
     errorBox: {
       backgroundColor:
-        "#FFF1F1",
+        colors.dangerSoft,
       borderWidth:
         1,
       borderColor:
-        "#F2B8B5",
+        colors.dangerBorder,
       borderRadius:
         10,
       paddingHorizontal:
@@ -602,7 +606,7 @@ const styles =
 
     errorText: {
       color:
-        "#B3261E",
+        colors.danger,
       fontSize:
         14,
       lineHeight:
@@ -613,7 +617,7 @@ const styles =
 
     registerButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical:
         16,
       borderRadius:
@@ -626,7 +630,7 @@ const styles =
 
     registerButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize:
         16,
       fontWeight:
@@ -642,7 +646,7 @@ const styles =
       textAlign:
         "center",
       color:
-        "#208AEF",
+        colors.primary,
       fontSize:
         15,
       fontWeight:

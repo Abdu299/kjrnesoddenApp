@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import {
   useEffect,
   useState,
@@ -71,6 +73,8 @@ import {
 // ==================================================
 
 export default function HomeScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     user,
     role,
@@ -93,7 +97,7 @@ export default function HomeScreen() {
         >
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
 
           <Text
@@ -172,6 +176,8 @@ export default function HomeScreen() {
 // ==================================================
 
 function CustomerHomeScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     totalItems,
   } =
@@ -269,7 +275,7 @@ function CustomerHomeScreen() {
           <Ionicons
             name="cart-outline"
             size={28}
-            color="#111111"
+            color={colors.text}
           />
 
 
@@ -327,7 +333,7 @@ function CustomerHomeScreen() {
         {loadingRestaurants ? (
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
         ) : restaurants.length ===
           0 ? (
@@ -496,7 +502,7 @@ function CustomerHomeScreen() {
               <Ionicons
                 name="bag-handle-outline"
                 size={50}
-                color="#208AEF"
+                color={colors.primary}
               />
             </View>
           </View>
@@ -545,6 +551,8 @@ function CustomerHomeScreen() {
 // ==================================================
 
 function RestaurantHomeScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     language,
     setLanguage,
@@ -965,7 +973,7 @@ function RestaurantHomeScreen() {
               styles.input
             }
             placeholder="Cheeseburger"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               name
             }
@@ -989,7 +997,7 @@ function RestaurantHomeScreen() {
               styles.multilineInput,
             ]}
             placeholder={tr("Burger med ost, salat og dressing", "Burger with cheese, lettuce and dressing")}
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               description
             }
@@ -1013,7 +1021,7 @@ function RestaurantHomeScreen() {
               styles.input
             }
             placeholder="149"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               price
             }
@@ -1166,7 +1174,7 @@ function RestaurantHomeScreen() {
           <Ionicons
             name="search-outline"
             size={19}
-            color="#888888"
+            color={colors.textMuted}
           />
 
 
@@ -1181,7 +1189,7 @@ function RestaurantHomeScreen() {
               setProductSearch
             }
             placeholder={tr("Søk etter produkt...", "Search products...")}
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             autoCapitalize="none"
             autoCorrect={
               false
@@ -1205,7 +1213,7 @@ function RestaurantHomeScreen() {
               <Ionicons
                 name="close-circle"
                 size={20}
-                color="#A0A0A0"
+                color={colors.placeholder}
               />
             </TouchableOpacity>
           )}
@@ -1215,7 +1223,7 @@ function RestaurantHomeScreen() {
         {loadingProducts ? (
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
         ) : products.length ===
           0 ? (
@@ -1433,6 +1441,8 @@ function RestaurantHomeScreen() {
 // ==================================================
 
 function AdminHomeScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const [
     restaurants,
     setRestaurants,
@@ -1884,7 +1894,7 @@ function AdminHomeScreen() {
               styles.input
             }
             placeholder="https://..."
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               imageUrl
             }
@@ -1908,7 +1918,7 @@ function AdminHomeScreen() {
               styles.input
             }
             placeholder="Minst 6 tegn"
-            placeholderTextColor="#A0A0A0"
+            placeholderTextColor={colors.placeholder}
             value={
               code
             }
@@ -1955,7 +1965,7 @@ function AdminHomeScreen() {
         {loadingRestaurants ? (
           <ActivityIndicator
             size="large"
-            color="#208AEF"
+            color={colors.primary}
           />
         ) : (
           restaurants.map(
@@ -2238,12 +2248,12 @@ function AdminHomeScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor:
-        "#FFFFFF",
+        colors.background,
     },
 
     header: {
@@ -2256,13 +2266,13 @@ const styles =
         "space-between",
       borderBottomWidth: 1,
       borderBottomColor:
-        "#EEEEEE",
+        colors.border,
     },
 
     logo: {
       fontSize: 22,
       fontWeight: "800",
-      color: "#208AEF",
+      color: colors.primary,
     },
 
 
@@ -2293,11 +2303,11 @@ const styles =
       alignItems:
         "center",
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
     },
 
     headerCartBadgeText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontSize: 10,
       fontWeight: "800",
     },
@@ -2326,18 +2336,18 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#208AEF",
+        colors.primary,
       alignItems:
         "center",
       justifyContent:
         "center",
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     languageQuickButtonText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontWeight:
         "800",
       fontSize:
@@ -2346,14 +2356,14 @@ const styles =
 
     roleBadge: {
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 20,
     },
 
     roleBadgeText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
     },
 
@@ -2368,10 +2378,11 @@ const styles =
 
     loadingText: {
       marginTop: 15,
-      color: "#777777",
+      color: colors.textMuted,
     },
 
     welcomeTitle: {
+      color: colors.text,
       fontSize: 28,
       fontWeight: "800",
       textAlign:
@@ -2380,7 +2391,7 @@ const styles =
     },
 
     description: {
-      color: "#777777",
+      color: colors.textMuted,
       textAlign:
         "center",
       fontSize: 16,
@@ -2390,14 +2401,14 @@ const styles =
 
     loginButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingHorizontal: 40,
       paddingVertical: 15,
       borderRadius: 10,
     },
 
     loginButtonText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontWeight: "700",
     },
 
@@ -2411,6 +2422,7 @@ const styles =
     },
 
     pageTitle: {
+      color: colors.text,
       fontSize: 28,
       fontWeight: "800",
       marginBottom: 5,
@@ -2418,11 +2430,12 @@ const styles =
 
     pageSubtitle: {
       fontSize: 16,
-      color: "#777777",
+      color: colors.textMuted,
       marginBottom: 25,
     },
 
     sectionTitle: {
+      color: colors.text,
       fontSize: 20,
       fontWeight: "800",
       marginBottom: 18,
@@ -2433,10 +2446,10 @@ const styles =
       flexDirection: "row",
       alignItems: "center",
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       borderWidth: 1,
       borderColor:
-        "#E2E2E2",
+        colors.border,
       borderRadius: 12,
       paddingLeft: 13,
       paddingRight: 8,
@@ -2450,7 +2463,7 @@ const styles =
       paddingVertical: 0,
       fontSize: 15,
       color:
-        "#111111",
+        colors.text,
     },
 
     productSearchClearButton: {
@@ -2464,26 +2477,28 @@ const styles =
     formCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 15,
       padding: 18,
       backgroundColor:
-        "#FAFAFA",
+        colors.surfaceMuted,
       marginBottom: 30,
     },
 
     inputLabel: {
+      color: colors.text,
       fontSize: 14,
       fontWeight: "600",
       marginBottom: 7,
     },
 
     input: {
+      color: colors.text,
       borderWidth: 1,
       borderColor:
-        "#DDDDDD",
+        colors.inputBorder,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       borderRadius: 10,
       paddingHorizontal: 14,
       paddingVertical: 13,
@@ -2492,6 +2507,7 @@ const styles =
     },
 
     multilineInput: {
+      color: colors.text,
       minHeight: 85,
       textAlignVertical:
         "top",
@@ -2499,7 +2515,7 @@ const styles =
 
     primaryButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical: 15,
       borderRadius: 10,
       alignItems:
@@ -2510,7 +2526,7 @@ const styles =
     primarySmallButton: {
       flex: 1,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical: 13,
       borderRadius: 10,
       alignItems:
@@ -2518,7 +2534,7 @@ const styles =
     },
 
     primaryButtonText: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
       fontWeight: "700",
       fontSize: 15,
     },
@@ -2533,18 +2549,18 @@ const styles =
     imagePickerButton: {
       borderWidth: 1,
       borderColor:
-        "#208AEF",
+        colors.primary,
       borderRadius: 10,
       paddingVertical: 14,
       alignItems:
         "center",
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       marginBottom: 12,
     },
 
     imagePickerButtonText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
       fontSize: 15,
     },
@@ -2555,11 +2571,11 @@ const styles =
       borderRadius: 12,
       marginBottom: 8,
       backgroundColor:
-        "#EEEEEE",
+        colors.surfaceMuted,
     },
 
     removeImageText: {
-      color: "#E04646",
+      color: colors.danger,
       fontWeight: "600",
       textAlign:
         "center",
@@ -2572,7 +2588,7 @@ const styles =
       borderStyle:
         "dashed",
       borderColor:
-        "#CCCCCC",
+        colors.border,
       borderRadius: 10,
       justifyContent:
         "center",
@@ -2580,11 +2596,11 @@ const styles =
         "center",
       marginBottom: 17,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     noImageText: {
-      color: "#999999",
+      color: colors.textMuted,
     },
 
 
@@ -2593,26 +2609,26 @@ const styles =
     customerRestaurantCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       overflow: "hidden",
       marginBottom: 24,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     restaurantImage: {
       width: "100%",
       height: 210,
-      backgroundColor: "#F8F8F8",
+      backgroundColor: colors.imageBackground,
       borderBottomWidth: 1,
-      borderBottomColor: "#EEEEEE",
+      borderBottomColor: colors.border,
     },
 
     restaurantImagePlaceholder: {
       height: 210,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -2621,7 +2637,7 @@ const styles =
 
     restaurantImageLetter: {
       fontSize: 60,
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "800",
     },
 
@@ -2630,25 +2646,27 @@ const styles =
     },
 
     customerRestaurantName: {
+      color: colors.text,
       fontSize: 22,
       fontWeight: "800",
       marginBottom: 7,
     },
 
     customerRestaurantDescription: {
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 15,
       lineHeight: 21,
       marginBottom: 14,
     },
 
     openRestaurantText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
       fontSize: 15,
     },
 
     restaurantOpeningStatus: {
+      color: colors.text,
       fontSize: 13,
       fontWeight: "700",
       marginTop: 10,
@@ -2656,15 +2674,15 @@ const styles =
     },
 
     restaurantOpenText: {
-      color: "#218A4A",
+      color: colors.success,
     },
 
     restaurantClosedText: {
-      color: "#C84343",
+      color: colors.danger,
     },
 
     adminHoursSummary: {
-      color: "#666666",
+      color: colors.textSecondary,
       fontSize: 13,
       fontWeight: "700",
       marginTop: 8,
@@ -2677,19 +2695,19 @@ const styles =
     customOrderCard: {
       borderWidth: 1,
       borderColor:
-        "#D8E9F8",
+        colors.primaryBorder,
       borderRadius: 18,
       overflow: "hidden",
       marginBottom: 24,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     customOrderImage: {
       width: "100%",
       height: 230,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -2701,7 +2719,7 @@ const styles =
       height: 105,
       borderRadius: 53,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
       justifyContent:
         "center",
       alignItems:
@@ -2715,19 +2733,19 @@ const styles =
     customOrderTitle: {
       fontSize: 22,
       fontWeight: "800",
-      color: "#111111",
+      color: colors.text,
       marginBottom: 9,
     },
 
     customOrderDescription: {
-      color: "#6F6F6F",
+      color: colors.textMuted,
       fontSize: 15,
       lineHeight: 22,
       marginBottom: 14,
     },
 
     customOrderLink: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
       fontSize: 15,
     },
@@ -2738,12 +2756,12 @@ const styles =
     manageProductCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 18,
       overflow: "hidden",
       marginBottom: 24,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     manageProductImage: {
@@ -2754,7 +2772,7 @@ const styles =
     manageProductPlaceholder: {
       height: 230,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -2763,7 +2781,7 @@ const styles =
 
     manageProductLetter: {
       fontSize: 55,
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "800",
     },
 
@@ -2781,19 +2799,21 @@ const styles =
     },
 
     manageProductName: {
+      color: colors.text,
       flex: 1,
       fontSize: 20,
       fontWeight: "800",
     },
 
     manageProductDescription: {
-      color: "#777777",
+      color: colors.textMuted,
       fontSize: 15,
       lineHeight: 21,
       marginTop: 7,
     },
 
     manageProductPrice: {
+      color: colors.text,
       fontSize: 18,
       fontWeight: "800",
       marginTop: 14,
@@ -2807,25 +2827,26 @@ const styles =
 
     activeBadge: {
       backgroundColor:
-        "#E8F8EE",
+        colors.successSoft,
     },
 
     inactiveBadge: {
       backgroundColor:
-        "#FDECEC",
+        colors.dangerSoft,
     },
 
     statusText: {
+      color: colors.text,
       fontSize: 11,
       fontWeight: "700",
     },
 
     activeText: {
-      color: "#278A4B",
+      color: colors.success,
     },
 
     inactiveText: {
-      color: "#C84343",
+      color: colors.danger,
     },
 
     availabilityButton: {
@@ -2839,24 +2860,25 @@ const styles =
 
     makeUnavailableButton: {
       borderColor:
-        "#E04646",
+        colors.dangerBorder,
     },
 
     makeAvailableButton: {
       borderColor:
-        "#208AEF",
+        colors.primary,
     },
 
     availabilityButtonText: {
+      color: colors.text,
       fontWeight: "700",
     },
 
     makeUnavailableText: {
-      color: "#E04646",
+      color: colors.danger,
     },
 
     makeAvailableText: {
-      color: "#208AEF",
+      color: colors.primary,
     },
 
 
@@ -2865,7 +2887,7 @@ const styles =
     adminRestaurantCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       borderRadius: 15,
       overflow: "hidden",
       marginBottom: 18,
@@ -2879,7 +2901,7 @@ const styles =
     adminRestaurantPlaceholder: {
       height: 200,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
       justifyContent:
         "center",
       alignItems:
@@ -2889,7 +2911,7 @@ const styles =
     adminRestaurantLetter: {
       fontSize: 50,
       fontWeight: "800",
-      color: "#208AEF",
+      color: colors.primary,
     },
 
     adminCardContent: {
@@ -2909,7 +2931,7 @@ const styles =
       flex: 1,
       borderWidth: 1,
       borderColor:
-        "#CCCCCC",
+        colors.border,
       borderRadius: 10,
       paddingVertical: 13,
       alignItems:
@@ -2917,7 +2939,7 @@ const styles =
     },
 
     secondaryButtonText: {
-      color: "#555555",
+      color: colors.textSecondary,
       fontWeight: "700",
     },
 
@@ -2925,7 +2947,7 @@ const styles =
       marginTop: 15,
       borderWidth: 1,
       borderColor:
-        "#208AEF",
+        colors.primary,
       paddingVertical: 11,
       borderRadius: 9,
       alignItems:
@@ -2933,7 +2955,7 @@ const styles =
     },
 
     editButtonText: {
-      color: "#208AEF",
+      color: colors.primary,
       fontWeight: "700",
     },
 
@@ -2941,7 +2963,7 @@ const styles =
       marginTop: 10,
       borderWidth: 1,
       borderColor:
-        "#E04646",
+        colors.dangerBorder,
       paddingVertical: 11,
       borderRadius: 9,
       alignItems:
@@ -2949,7 +2971,7 @@ const styles =
     },
 
     secondaryActionText: {
-      color: "#E04646",
+      color: colors.danger,
       fontWeight: "700",
     },
 
@@ -2959,9 +2981,9 @@ const styles =
     emptyCard: {
       borderWidth: 1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       backgroundColor:
-        "#FAFAFA",
+        colors.surfaceMuted,
       borderRadius: 15,
       padding: 25,
       alignItems:
@@ -2969,14 +2991,16 @@ const styles =
     },
 
     emptyTitle: {
+      color: colors.text,
       fontSize: 17,
       fontWeight: "700",
       marginBottom: 5,
     },
 
     emptyText: {
-      color: "#777777",
+      color: colors.textMuted,
       textAlign:
         "center",
     },
   });
+

@@ -1,3 +1,5 @@
+import { useThemedStyles } from "../context/ThemeContext";
+import type { AppThemeColors } from "../constants/app-theme";
 import {
   useEffect,
   useState,
@@ -44,6 +46,7 @@ import {
 } from "../services/profileService";
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
+import AppearanceSettings from "../components/AppearanceSettings";
 
 import type {
   AddressSuggestion,
@@ -59,6 +62,8 @@ import {
 // ==================================================
 
 export default function LoginScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
+
   const {
     user,
     role,
@@ -983,12 +988,14 @@ export default function LoginScreen() {
           </Text>
 
 
+          <AppearanceSettings english={restaurantEnglish} />
+
           {loadingProfile ||
           !profile ? (
 
             <ActivityIndicator
               size="large"
-              color="#208AEF"
+              color={colors.primary}
               style={{
                 marginTop:
                   50,
@@ -1074,7 +1081,7 @@ export default function LoginScreen() {
                               setName
                             }
                             placeholder="Navnet ditt"
-                            placeholderTextColor="#A0A0A0"
+                            placeholderTextColor={colors.placeholder}
                             autoCapitalize="words"
                           />
 
@@ -1244,7 +1251,7 @@ export default function LoginScreen() {
                             }
                             keyboardType="phone-pad"
                             placeholder="999 99 999"
-                            placeholderTextColor="#A0A0A0"
+                            placeholderTextColor={colors.placeholder}
                           />
 
 
@@ -1596,7 +1603,7 @@ export default function LoginScreen() {
                             setDeletePassword
                           }
                           placeholder="Passord"
-                          placeholderTextColor="#A0A0A0"
+                          placeholderTextColor={colors.placeholder}
                           secureTextEntry
                           autoCapitalize="none"
                           autoCorrect={
@@ -1650,7 +1657,7 @@ export default function LoginScreen() {
                           >
                             {deletingAccount ? (
                               <ActivityIndicator
-                                color="#FFFFFF"
+                                color={colors.onPrimary}
                               />
 
                             ) : (
@@ -2012,6 +2019,7 @@ export default function LoginScreen() {
           Logg inn på KjørNesodden
         </Text>
 
+        <AppearanceSettings />
 
         <Text
           style={
@@ -2026,7 +2034,7 @@ export default function LoginScreen() {
             styles.input
           }
           placeholder="E-post eller restaurantnavn"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor={colors.placeholder}
           value={
             identifier
           }
@@ -2059,7 +2067,7 @@ export default function LoginScreen() {
             styles.input
           }
           placeholder="Passord"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor={colors.placeholder}
           value={
             password
           }
@@ -2173,7 +2181,7 @@ export default function LoginScreen() {
                 styles.input
               }
               placeholder="navn@eksempel.no"
-              placeholderTextColor="#A0A0A0"
+              placeholderTextColor={colors.placeholder}
               value={
                 resetEmail
               }
@@ -2253,13 +2261,13 @@ export default function LoginScreen() {
 // STYLES
 // ==================================================
 
-const styles =
+const createStyles = (colors: AppThemeColors) =>
   StyleSheet.create({
     container: {
       flex:
         1,
       backgroundColor:
-        "#FFFFFF",
+        colors.background,
     },
 
     loginContent: {
@@ -2288,7 +2296,7 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom:
         7,
     },
@@ -2297,7 +2305,7 @@ const styles =
       fontSize:
         16,
       color:
-        "#777777",
+        colors.textMuted,
       marginBottom:
         30,
     },
@@ -2308,7 +2316,7 @@ const styles =
       fontWeight:
         "600",
       color:
-        "#222222",
+        colors.text,
       marginBottom:
         8,
     },
@@ -2317,7 +2325,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#DDDDDD",
+        colors.inputBorder,
       borderRadius:
         10,
       paddingHorizontal:
@@ -2327,20 +2335,20 @@ const styles =
       fontSize:
         16,
       color:
-        "#111111",
+        colors.text,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       marginBottom:
         18,
     },
 
     loginErrorBox: {
       backgroundColor:
-        "#FFF1F1",
+        colors.dangerSoft,
       borderWidth:
         1,
       borderColor:
-        "#F2B8B5",
+        colors.dangerBorder,
       borderRadius:
         10,
       paddingHorizontal:
@@ -2353,7 +2361,7 @@ const styles =
 
     loginErrorText: {
       color:
-        "#B3261E",
+        colors.danger,
       fontSize:
         14,
       lineHeight:
@@ -2364,7 +2372,7 @@ const styles =
 
     loginButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical:
         16,
       borderRadius:
@@ -2375,7 +2383,7 @@ const styles =
 
     loginButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontSize:
         16,
       fontWeight:
@@ -2389,7 +2397,7 @@ const styles =
 
     forgotPasswordText: {
       color:
-        "#208AEF",
+        colors.primary,
       textAlign:
         "center",
       fontWeight:
@@ -2402,7 +2410,7 @@ const styles =
       textAlign:
         "center",
       color:
-        "#208AEF",
+        colors.primary,
       fontWeight:
         "600",
       marginTop:
@@ -2422,7 +2430,7 @@ const styles =
 
     privacyLoginText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontSize:
         14,
       fontWeight:
@@ -2435,9 +2443,9 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#E5E5E5",
+        colors.border,
       backgroundColor:
-        "#FAFAFA",
+        colors.surfaceMuted,
       padding:
         18,
       borderRadius:
@@ -2447,6 +2455,7 @@ const styles =
     },
 
     resetTitle: {
+      color: colors.text,
       fontSize:
         18,
       fontWeight:
@@ -2457,7 +2466,7 @@ const styles =
 
     resetButton: {
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical:
         14,
       borderRadius:
@@ -2468,14 +2477,14 @@ const styles =
 
     resetButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontWeight:
         "700",
     },
 
     cancelResetText: {
       color:
-        "#777777",
+        colors.textMuted,
       textAlign:
         "center",
       marginTop:
@@ -2488,7 +2497,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#E8E8E8",
+        colors.border,
       borderRadius:
         16,
       padding:
@@ -2496,7 +2505,7 @@ const styles =
       marginBottom:
         18,
       backgroundColor:
-        "#FFFFFF",
+        colors.surface,
     },
 
     sectionTitle: {
@@ -2505,7 +2514,7 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#111111",
+        colors.text,
       marginBottom:
         20,
     },
@@ -2528,7 +2537,7 @@ const styles =
       fontSize:
         13,
       color:
-        "#888888",
+        colors.textMuted,
       marginBottom:
         6,
     },
@@ -2539,21 +2548,21 @@ const styles =
       fontWeight:
         "600",
       color:
-        "#222222",
+        colors.text,
     },
 
     divider: {
       height:
         1,
       backgroundColor:
-        "#EEEEEE",
+        colors.divider,
       marginVertical:
         18,
     },
 
     editText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontWeight:
         "700",
       fontSize:
@@ -2561,10 +2570,11 @@ const styles =
     },
 
     profileInput: {
+      color: colors.text,
       borderWidth:
         1,
       borderColor:
-        "#D5D5D5",
+        colors.inputBorder,
       borderRadius:
         10,
       paddingHorizontal:
@@ -2578,7 +2588,7 @@ const styles =
       marginBottom:
         12,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
     },
 
     editButtons: {
@@ -2594,7 +2604,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#CCCCCC",
+        colors.border,
       paddingVertical:
         12,
       borderRadius:
@@ -2605,7 +2615,7 @@ const styles =
 
     cancelButtonText: {
       color:
-        "#666666",
+        colors.textSecondary,
       fontWeight:
         "700",
     },
@@ -2614,7 +2624,7 @@ const styles =
       flex:
         1,
       backgroundColor:
-        "#208AEF",
+        colors.primaryFill,
       paddingVertical:
         12,
       borderRadius:
@@ -2625,14 +2635,14 @@ const styles =
 
     saveButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontWeight:
         "700",
     },
 
     cardDescription: {
       color:
-        "#777777",
+        colors.textMuted,
       fontSize:
         14,
       lineHeight:
@@ -2645,7 +2655,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#208AEF",
+        colors.primary,
       borderRadius:
         10,
       paddingVertical:
@@ -2656,14 +2666,14 @@ const styles =
 
     blueOutlineButtonText: {
       color:
-        "#208AEF",
+        colors.primary,
       fontWeight:
         "700",
     },
 
     currentAddressBox: {
       backgroundColor:
-        "#F7F9FB",
+        colors.surfaceMuted,
       borderRadius:
         10,
       padding:
@@ -2678,20 +2688,20 @@ const styles =
       fontWeight:
         "600",
       color:
-        "#222222",
+        colors.text,
       lineHeight:
         23,
     },
 
     deliveryPriceText: {
       marginTop: 8,
-      color: "#208AEF",
+      color: colors.primary,
       fontSize: 13,
       fontWeight: "700",
     },
 
     addressSaveError: {
-      color: "#C62828",
+      color: colors.danger,
       fontSize: 13,
       lineHeight: 18,
       marginTop: 8,
@@ -2717,9 +2727,9 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#D8DDE3",
+        colors.inputBorder,
       backgroundColor:
-        "#FFFFFF",
+        colors.inputBackground,
       borderRadius:
         10,
       paddingVertical:
@@ -2732,14 +2742,14 @@ const styles =
 
     languageOptionActive: {
       borderColor:
-        "#208AEF",
+        colors.primary,
       backgroundColor:
-        "#EAF5FF",
+        colors.primarySoft,
     },
 
     languageOptionText: {
       color:
-        "#555555",
+        colors.textSecondary,
       fontWeight:
         "700",
       fontSize:
@@ -2748,10 +2758,11 @@ const styles =
 
     languageOptionTextActive: {
       color:
-        "#208AEF",
+        colors.primary,
     },
 
     restaurantProfileName: {
+      color: colors.text,
       fontSize:
         24,
       fontWeight:
@@ -2762,7 +2773,7 @@ const styles =
 
     restaurantProfileDescription: {
       color:
-        "#777777",
+        colors.textMuted,
       fontSize:
         15,
       lineHeight:
@@ -2771,9 +2782,9 @@ const styles =
 
     dangerCard: {
       borderColor:
-        "#F0CACA",
+        colors.dangerBorder,
       backgroundColor:
-        "#FFF9F9",
+        colors.dangerSoft,
     },
 
     dangerTitle: {
@@ -2782,7 +2793,7 @@ const styles =
       fontWeight:
         "800",
       color:
-        "#C83D3D",
+        colors.danger,
       marginBottom:
         10,
     },
@@ -2791,7 +2802,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#E04646",
+        colors.dangerBorder,
       borderRadius:
         10,
       paddingVertical:
@@ -2802,7 +2813,7 @@ const styles =
 
     dangerButtonText: {
       color:
-        "#E04646",
+        colors.danger,
       fontWeight:
         "700",
       fontSize:
@@ -2811,7 +2822,7 @@ const styles =
 
     deleteConfirmText: {
       color:
-        "#555555",
+        colors.textSecondary,
       fontSize:
         14,
       lineHeight:
@@ -2824,7 +2835,7 @@ const styles =
       flex:
         1,
       backgroundColor:
-        "#E04646",
+        colors.dangerFill,
       paddingVertical:
         12,
       borderRadius:
@@ -2839,7 +2850,7 @@ const styles =
 
     deleteConfirmButtonText: {
       color:
-        "#FFFFFF",
+        colors.onPrimary,
       fontWeight:
         "700",
     },
@@ -2848,7 +2859,7 @@ const styles =
       borderWidth:
         1,
       borderColor:
-        "#E04646",
+        colors.dangerBorder,
       paddingVertical:
         15,
       borderRadius:
@@ -2861,10 +2872,11 @@ const styles =
 
     logoutText: {
       color:
-        "#E04646",
+        colors.danger,
       fontSize:
         16,
       fontWeight:
         "700",
     },
   });
+
