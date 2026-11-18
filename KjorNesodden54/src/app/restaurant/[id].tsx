@@ -703,49 +703,50 @@ export default function RestaurantScreen() {
           </View>
 
           {categories.length > 0 && (
-            <View style={styles.stickyCategoryBar}>
-              {showScrollControls && (
+            <View style={styles.stickyCategoryContainer}>
+              {/* The native sticky-header wrapper replaces its child's style; keep the row one level inside. */}
+              <View style={styles.stickyCategoryBar}>
                 <TouchableOpacity
                   style={styles.stickyNavigationButton}
                   activeOpacity={0.85}
+                  accessibilityRole="button"
                   accessibilityLabel="Gå tilbake"
                   onPress={() => router.back()}
                 >
-                  <Text style={styles.stickyBackArrow}>←</Text>
+                  <Ionicons name="arrow-back" size={24} color={colors.primary} />
                 </TouchableOpacity>
-              )}
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryScroll}
-                contentContainerStyle={styles.categoryTabs}
-              >
-                {categories.map((category) => {
-                  const selected = category === selectedCategory;
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.categoryScroll}
+                  contentContainerStyle={styles.categoryTabs}
+                >
+                  {categories.map((category) => {
+                    const selected = category === selectedCategory;
 
-                  return (
-                    <TouchableOpacity
-                      key={category}
-                      style={[
-                        styles.categoryTab,
-                        selected && styles.categoryTabSelected,
-                      ]}
-                      onPress={() => scrollToCategory(category)}
-                    >
-                      <Text
+                    return (
+                      <TouchableOpacity
+                        key={category}
                         style={[
-                          styles.categoryTabText,
-                          selected && styles.categoryTabTextSelected,
+                          styles.categoryTab,
+                          selected && styles.categoryTabSelected,
                         ]}
+                        onPress={() => scrollToCategory(category)}
                       >
-                        {category}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
+                        <Text
+                          style={[
+                            styles.categoryTabText,
+                            selected && styles.categoryTabTextSelected,
+                          ]}
+                        >
+                          {category}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
             </View>
           )}
 
@@ -1346,21 +1347,25 @@ const createStyles = (colors: AppThemeColors) =>
       marginBottom: 0,
     },
 
+    stickyCategoryContainer: {
+      backgroundColor: colors.surface,
+      zIndex: 20,
+      elevation: 5,
+    },
+
     stickyCategoryBar: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
       paddingVertical: 10,
       paddingHorizontal: 10,
       gap: 8,
-      zIndex: 20,
-      elevation: 5,
     },
 
     categoryScroll: {
       flex: 1,
+      minWidth: 0,
     },
 
     categoryTabs: {
@@ -1383,13 +1388,6 @@ const createStyles = (colors: AppThemeColors) =>
       shadowOpacity: 0.12,
       shadowRadius: 4,
       elevation: 4,
-    },
-
-    stickyBackArrow: {
-      color: colors.primary,
-      fontSize: 26,
-      fontWeight: "700",
-      lineHeight: 29,
     },
 
     categoryTab: {
