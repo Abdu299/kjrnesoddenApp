@@ -309,8 +309,9 @@ function AppTabs() {
       <Tabs.Screen
         name="auth"
         options={{
-          href:
-            null,
+          // Keep this route reachable in SDK 58; hide only its tab button.
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
         }}
       />
 
@@ -322,8 +323,9 @@ function AppTabs() {
       <Tabs.Screen
         name="restaurant/[id]"
         options={{
-          href:
-            null,
+          // Keep this route reachable in SDK 58; hide only its tab button.
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
         }}
       />
 
@@ -335,8 +337,9 @@ function AppTabs() {
       <Tabs.Screen
         name="cart"
         options={{
-          href:
-            null,
+          // Keep this route reachable in SDK 58; hide only its tab button.
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
         }}
       />
 
@@ -348,8 +351,9 @@ function AppTabs() {
       <Tabs.Screen
         name="custom-order"
         options={{
-          href:
-            null,
+          // Keep this route reachable in SDK 58; hide only its tab button.
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
         }}
       />
     </Tabs>
