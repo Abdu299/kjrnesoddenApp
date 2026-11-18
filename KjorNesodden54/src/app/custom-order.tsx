@@ -1,3 +1,4 @@
+import KeyboardScrollView from "../components/KeyboardScrollView";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
 import {
@@ -9,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -288,7 +288,7 @@ export default function CustomOrderScreen() {
         styles.container
       }
     >
-      <ScrollView
+      <KeyboardScrollView
         contentContainerStyle={
           styles.content
         }
@@ -551,7 +551,7 @@ export default function CustomOrderScreen() {
           Ingenting sendes før du går til handlekurven og bekrefter bestillingen.
         </Text>
 
-      </ScrollView>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }

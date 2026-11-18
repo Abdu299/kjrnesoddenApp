@@ -1,5 +1,6 @@
 import { useThemedStyles } from "../../context/ThemeContext";
 import type { AppThemeColors } from "../../constants/app-theme";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   useEffect,
   useRef,
@@ -112,8 +113,8 @@ export default function RestaurantScreen() {
 
 
   const [
-    showFloatingBack,
-    setShowFloatingBack,
+    showScrollControls,
+    setShowScrollControls,
   ] =
     useState(
       false
@@ -418,9 +419,9 @@ export default function RestaurantScreen() {
 
       if (
         shouldShow !==
-        showFloatingBack
+        showScrollControls
       ) {
-        setShowFloatingBack(
+        setShowScrollControls(
           shouldShow
         );
       }
@@ -492,483 +493,484 @@ export default function RestaurantScreen() {
         styles.container
       }
     >
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={{
-          paddingBottom:
-            40,
-        }}
-        onScroll={
-          handleScroll
-        }
-        scrollEventThrottle={
-          16
-        }
-        stickyHeaderIndices={categories.length > 0 ? [2] : undefined}
-      >
+      <View style={styles.menuViewport}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={{ paddingBottom: 88 }}
+          onScroll={
+            handleScroll
+          }
+          scrollEventThrottle={
+            16
+          }
+          stickyHeaderIndices={categories.length > 0 ? [2] : undefined}
+        >
 
-        {/* RESTAURANT IMAGE */}
+          {/* RESTAURANT IMAGE */}
 
-        {restaurant.imageUrl ? (
-          <Image
-            source={{
-              uri:
-                restaurant.imageUrl,
-            }}
-            style={
-              styles.heroImage
-            }
-            resizeMode="contain"
-          />
-        ) : (
-          <View
-            style={
-              styles.heroPlaceholder
-            }
-          >
-            <Text
+          {restaurant.imageUrl ? (
+            <Image
+              source={{
+                uri:
+                  restaurant.imageUrl,
+              }}
               style={
-                styles.heroPlaceholderText
+                styles.heroImage
               }
-            >
-              {restaurant.name
-                .charAt(
-                  0
-                )
-                .toUpperCase()}
-            </Text>
-          </View>
-        )}
-
-
-        <View style={styles.content}>
-
-          {/* TOP */}
-
-          <View
-            style={
-              styles.topActions
-            }
-          >
-            <TouchableOpacity
+              resizeMode="contain"
+            />
+          ) : (
+            <View
               style={
-                styles.backAction
-              }
-              onPress={() =>
-                router.back()
+                styles.heroPlaceholder
               }
             >
               <Text
                 style={
-                  styles.backText
+                  styles.heroPlaceholderText
                 }
               >
-                ← Tilbake
+                {restaurant.name
+                  .charAt(
+                    0
+                  )
+                  .toUpperCase()}
               </Text>
-            </TouchableOpacity>
-
-
-            <TouchableOpacity
-              style={
-                styles.cartHeaderButton
-              }
-              onPress={() =>
-                router.push(
-                  "/cart" as any
-                )
-              }
-            >
-              <Text
-                style={
-                  styles.cartIcon
-                }
-              >
-                🛒
-              </Text>
-
-
-              {totalItems >
-                0 && (
-                <View
-                  style={
-                    styles.cartBadge
-                  }
-                >
-                  <Text
-                    style={
-                      styles.cartBadgeText
-                    }
-                  >
-                    {totalItems >
-                    99
-                      ? "99+"
-                      : totalItems}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-
-          {/* RESTAURANT INFO */}
-
-          <Text
-            style={
-              styles.name
-            }
-          >
-            {restaurant.name}
-          </Text>
-
-
-          <Text
-            style={
-              styles.description
-            }
-          >
-            {restaurant.description}
-          </Text>
-
-          <View
-            style={[
-              styles.openingBanner,
-              restaurantIsOpen
-                ? styles.openingBannerOpen
-                : styles.openingBannerClosed,
-            ]}
-          >
-            <Text
-              style={[
-                styles.openingBannerText,
-                restaurantIsOpen
-                  ? styles.openingTextOpen
-                  : styles.openingTextClosed,
-              ]}
-            >
-              {restaurantIsOpen ? "● " : "○ "}{currentOpeningStatus.text}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.openingHoursToggle}
-            activeOpacity={0.8}
-            onPress={() => setShowOpeningHours((visible) => !visible)}
-          >
-            <Text style={styles.openingHoursToggleText}>
-              {showOpeningHours ? "Skjul åpningstider" : "Se åpningstider"}
-            </Text>
-            <Text style={styles.openingHoursToggleIcon}>
-              {showOpeningHours ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-
-          {showOpeningHours && (
-            <View style={styles.openingHoursList}>
-              {[1, 2, 3, 4, 5, 6, 0].map((day) => {
-                const period = restaurant.openingHours[day];
-                return (
-                  <View key={day} style={styles.openingHoursRow}>
-                    <Text style={styles.openingHoursDay}>
-                      {openingDayLabels[day]}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.openingHoursTime,
-                        !period && styles.openingHoursClosed,
-                      ]}
-                    >
-                      {period ? `${period.open}–${period.close}` : "Stengt"}
-                    </Text>
-                  </View>
-                );
-              })}
             </View>
           )}
 
 
-          <View
-            style={
-              styles.divider
-            }
-          />
+          <View style={styles.content}>
 
+            {/* TOP */}
 
-          <Text
-            style={
-              styles.menuTitle
-            }
-          >
-            Meny
-          </Text>
-
-        </View>
-
-        {categories.length > 0 && (
-          <View style={styles.stickyCategoryBar}>
-            {showFloatingBack && (
-              <TouchableOpacity
-                style={styles.stickyNavigationButton}
-                activeOpacity={0.85}
-                accessibilityLabel="Gå tilbake"
-                onPress={() => router.back()}
-              >
-                <Text style={styles.stickyBackArrow}>←</Text>
-              </TouchableOpacity>
-            )}
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoryScroll}
-              contentContainerStyle={styles.categoryTabs}
-            >
-              {categories.map((category) => {
-                const selected = category === selectedCategory;
-
-                return (
-                  <TouchableOpacity
-                    key={category}
-                    style={[
-                      styles.categoryTab,
-                      selected && styles.categoryTabSelected,
-                    ]}
-                    onPress={() => scrollToCategory(category)}
-                  >
-                    <Text
-                      style={[
-                        styles.categoryTabText,
-                        selected && styles.categoryTabTextSelected,
-                      ]}
-                    >
-                      {category}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {showFloatingBack && (
-              <TouchableOpacity
-                style={styles.stickyNavigationButton}
-                activeOpacity={0.85}
-                accessibilityLabel="Gå til toppen"
-                onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-              >
-                <Text style={styles.stickyTopArrow}>↑</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-
-        {/* PRODUCTS */}
-
-        <View
-          style={styles.productsContainer}
-          onLayout={(event) => {
-            productsOffset.current = event.nativeEvent.layout.y;
-          }}
-        >
-          {productsLoading ? (
-            <View style={styles.menuLoading}>
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-              />
-              <Text style={styles.menuLoadingText}>
-                Laster meny...
-              </Text>
-            </View>
-          ) : products.length === 0 ? (
             <View
               style={
-                styles.emptyProducts
+                styles.topActions
               }
             >
-              <Text
+              <TouchableOpacity
                 style={
-                  styles.emptyProductsTitle
+                  styles.backAction
+                }
+                onPress={() =>
+                  router.back()
                 }
               >
-                Ingen produkter enda
-              </Text>
+                <Text
+                  style={
+                    styles.backText
+                  }
+                >
+                  ← Tilbake
+                </Text>
+              </TouchableOpacity>
 
 
-              <Text
+              <TouchableOpacity
                 style={
-                  styles.emptyProductsText
+                  styles.cartHeaderButton
+                }
+                onPress={() =>
+                  router.push(
+                    "/cart" as any
+                  )
                 }
               >
-                Restauranten har ikke lagt til noen produkter enda.
-              </Text>
-            </View>
-          ) : (
-            categories.map((category) => (
-              <View
-                key={category}
-                style={styles.categorySection}
-                onLayout={(event) => {
-                  categoryOffsets.current[category] =
-                    productsOffset.current + event.nativeEvent.layout.y;
-                }}
-              >
-                <Text style={styles.categoryHeading}>
-                  {category}
+                <Text
+                  style={
+                    styles.cartIcon
+                  }
+                >
+                  🛒
                 </Text>
 
-                {products
-                  .filter(
-                    (product) =>
-                      (product.category?.trim() || "Annet") === category
-                  )
-                  .map((product) => {
-                const cartItem =
-                  items.find(
-                    (
-                      item
-                    ) =>
-                      item.productId ===
-                      product.id
-                  );
 
-
-                return (
+                {totalItems >
+                  0 && (
                   <View
-                    key={
-                      product.id
+                    style={
+                      styles.cartBadge
                     }
-                    style={[
-                      styles.productCard,
-
-                      !product.available &&
-                        styles.productUnavailable,
-                    ]}
                   >
-
-                    {product.imageData ? (
-                      <Image
-                        source={{
-                          uri:
-                            product.imageData,
-                        }}
-                        style={
-                          styles.productImage
-                        }
-                        resizeMode="cover"
-                      />
-                    ) : null}
-
-
-                    <View
+                    <Text
                       style={
-                        styles.productContent
+                        styles.cartBadgeText
                       }
                     >
-                      <View
-                        style={
-                          styles.productTitleRow
-                        }
-                      >
-                        <Text
-                          style={
-                            styles.productName
-                          }
-                        >
-                          {product.name}
-                        </Text>
+                      {totalItems >
+                      99
+                        ? "99+"
+                        : totalItems}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
 
 
-                        {!product.available && (
-                          <View
-                            style={
-                              styles.soldOutBadge
-                            }
-                          >
-                            <Text
-                              style={
-                                styles.soldOutText
-                              }
-                            >
-                              Utsolgt
-                            </Text>
-                          </View>
-                        )}
-                      </View>
+            {/* RESTAURANT INFO */}
+
+            <Text
+              style={
+                styles.name
+              }
+            >
+              {restaurant.name}
+            </Text>
 
 
-                      <Text
-                        style={
-                          styles.productDescription
-                        }
-                      >
-                        {product.description}
+            <Text
+              style={
+                styles.description
+              }
+            >
+              {restaurant.description}
+            </Text>
+
+            <View
+              style={[
+                styles.openingBanner,
+                restaurantIsOpen
+                  ? styles.openingBannerOpen
+                  : styles.openingBannerClosed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.openingBannerText,
+                  restaurantIsOpen
+                    ? styles.openingTextOpen
+                    : styles.openingTextClosed,
+                ]}
+              >
+                {restaurantIsOpen ? "● " : "○ "}{currentOpeningStatus.text}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.openingHoursToggle}
+              activeOpacity={0.8}
+              onPress={() => setShowOpeningHours((visible) => !visible)}
+            >
+              <Text style={styles.openingHoursToggleText}>
+                {showOpeningHours ? "Skjul åpningstider" : "Se åpningstider"}
+              </Text>
+              <Text style={styles.openingHoursToggleIcon}>
+                {showOpeningHours ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+
+            {showOpeningHours && (
+              <View style={styles.openingHoursList}>
+                {[1, 2, 3, 4, 5, 6, 0].map((day) => {
+                  const period = restaurant.openingHours[day];
+                  return (
+                    <View key={day} style={styles.openingHoursRow}>
+                      <Text style={styles.openingHoursDay}>
+                        {openingDayLabels[day]}
                       </Text>
+                      <Text
+                        style={[
+                          styles.openingHoursTime,
+                          !period && styles.openingHoursClosed,
+                        ]}
+                      >
+                        {period ? `${period.open}–${period.close}` : "Stengt"}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
 
 
-                      {cartItem && (
-                        <Text
+            <View
+              style={
+                styles.divider
+              }
+            />
+
+
+            <Text
+              style={
+                styles.menuTitle
+              }
+            >
+              Meny
+            </Text>
+
+          </View>
+
+          {categories.length > 0 && (
+            <View style={styles.stickyCategoryBar}>
+              {showScrollControls && (
+                <TouchableOpacity
+                  style={styles.stickyNavigationButton}
+                  activeOpacity={0.85}
+                  accessibilityLabel="Gå tilbake"
+                  onPress={() => router.back()}
+                >
+                  <Text style={styles.stickyBackArrow}>←</Text>
+                </TouchableOpacity>
+              )}
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.categoryScroll}
+                contentContainerStyle={styles.categoryTabs}
+              >
+                {categories.map((category) => {
+                  const selected = category === selectedCategory;
+
+                  return (
+                    <TouchableOpacity
+                      key={category}
+                      style={[
+                        styles.categoryTab,
+                        selected && styles.categoryTabSelected,
+                      ]}
+                      onPress={() => scrollToCategory(category)}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryTabText,
+                          selected && styles.categoryTabTextSelected,
+                        ]}
+                      >
+                        {category}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+            </View>
+          )}
+
+
+          {/* PRODUCTS */}
+
+          <View
+            style={styles.productsContainer}
+            onLayout={(event) => {
+              productsOffset.current = event.nativeEvent.layout.y;
+            }}
+          >
+            {productsLoading ? (
+              <View style={styles.menuLoading}>
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                />
+                <Text style={styles.menuLoadingText}>
+                  Laster meny...
+                </Text>
+              </View>
+            ) : products.length === 0 ? (
+              <View
+                style={
+                  styles.emptyProducts
+                }
+              >
+                <Text
+                  style={
+                    styles.emptyProductsTitle
+                  }
+                >
+                  Ingen produkter enda
+                </Text>
+
+
+                <Text
+                  style={
+                    styles.emptyProductsText
+                  }
+                >
+                  Restauranten har ikke lagt til noen produkter enda.
+                </Text>
+              </View>
+            ) : (
+              categories.map((category) => (
+                <View
+                  key={category}
+                  style={styles.categorySection}
+                  onLayout={(event) => {
+                    categoryOffsets.current[category] =
+                      productsOffset.current + event.nativeEvent.layout.y;
+                  }}
+                >
+                  <Text style={styles.categoryHeading}>
+                    {category}
+                  </Text>
+
+                  {products
+                    .filter(
+                      (product) =>
+                        (product.category?.trim() || "Annet") === category
+                    )
+                    .map((product) => {
+                  const cartItem =
+                    items.find(
+                      (
+                        item
+                      ) =>
+                        item.productId ===
+                        product.id
+                    );
+
+
+                  return (
+                    <View
+                      key={
+                        product.id
+                      }
+                      style={[
+                        styles.productCard,
+
+                        !product.available &&
+                          styles.productUnavailable,
+                      ]}
+                    >
+
+                      {product.imageData ? (
+                        <Image
+                          source={{
+                            uri:
+                              product.imageData,
+                          }}
                           style={
-                            styles.inCartText
+                            styles.productImage
                           }
-                        >
-                          {cartItem.quantity} stk. i handlekurven
-                        </Text>
-                      )}
+                          resizeMode="cover"
+                        />
+                      ) : null}
 
 
                       <View
                         style={
-                          styles.productBottom
+                          styles.productContent
                         }
                       >
-                        <Text
+                        <View
                           style={
-                            styles.productPrice
-                          }
-                        >
-                          {product.price.toLocaleString(
-                            "nb-NO"
-                          )}{" "}
-                          kr
-                        </Text>
-
-
-                        <TouchableOpacity
-                          style={[
-                            styles.addButton,
-
-                            (!product.available || !restaurantIsOpen) &&
-                              styles.addButtonDisabled,
-                          ]}
-                          disabled={
-                            !product.available || !restaurantIsOpen
-                          }
-                          onPress={() =>
-                            handleAddProduct(
-                              product
-                            )
+                            styles.productTitleRow
                           }
                         >
                           <Text
                             style={
-                              styles.addButtonText
+                              styles.productName
                             }
                           >
-                            {!restaurantIsOpen
-                              ? "Stengt"
-                              : "+ Legg til"}
+                            {product.name}
                           </Text>
-                        </TouchableOpacity>
+
+
+                          {!product.available && (
+                            <View
+                              style={
+                                styles.soldOutBadge
+                              }
+                            >
+                              <Text
+                                style={
+                                  styles.soldOutText
+                                }
+                              >
+                                Utsolgt
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+
+
+                        <Text
+                          style={
+                            styles.productDescription
+                          }
+                        >
+                          {product.description}
+                        </Text>
+
+
+                        {cartItem && (
+                          <Text
+                            style={
+                              styles.inCartText
+                            }
+                          >
+                            {cartItem.quantity} stk. i handlekurven
+                          </Text>
+                        )}
+
+
+                        <View
+                          style={
+                            styles.productBottom
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.productPrice
+                            }
+                          >
+                            {product.price.toLocaleString(
+                              "nb-NO"
+                            )}{" "}
+                            kr
+                          </Text>
+
+
+                          <TouchableOpacity
+                            style={[
+                              styles.addButton,
+
+                              (!product.available || !restaurantIsOpen) &&
+                                styles.addButtonDisabled,
+                            ]}
+                            disabled={
+                              !product.available || !restaurantIsOpen
+                            }
+                            onPress={() =>
+                              handleAddProduct(
+                                product
+                              )
+                            }
+                          >
+                            <Text
+                              style={
+                                styles.addButtonText
+                              }
+                            >
+                              {!restaurantIsOpen
+                                ? "Stengt"
+                                : "+ Legg til"}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
-                  </View>
-                );
-                  })}
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
+                  );
+                    })}
+                </View>
+              ))
+            )}
+          </View>
+        </ScrollView>
+
+        {showScrollControls && (
+          <TouchableOpacity
+            style={styles.scrollToTopButton}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Gå til toppen"
+            onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          >
+            <Ionicons name="arrow-up" size={24} color={colors.onPrimary} />
+          </TouchableOpacity>
+        )}
+      </View>
 
 
       {/* ==================================================
@@ -1036,6 +1038,27 @@ const createStyles = (colors: AppThemeColors) =>
       flex: 1,
       backgroundColor:
         colors.background,
+    },
+
+    menuViewport: {
+      flex: 1,
+    },
+
+    scrollToTopButton: {
+      position: "absolute",
+      right: 18,
+      bottom: 16,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primaryFill,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.18,
+      shadowRadius: 5,
+      elevation: 6,
     },
 
     center: {
@@ -1367,13 +1390,6 @@ const createStyles = (colors: AppThemeColors) =>
       fontSize: 26,
       fontWeight: "700",
       lineHeight: 29,
-    },
-
-    stickyTopArrow: {
-      color: colors.primary,
-      fontSize: 25,
-      fontWeight: "700",
-      lineHeight: 28,
     },
 
     categoryTab: {

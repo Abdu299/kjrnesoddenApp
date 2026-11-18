@@ -12,6 +12,8 @@ import {
 
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Text,
   View,
 } from "react-native";
@@ -140,6 +142,8 @@ function AppTabs() {
       screenOptions={{
         headerShown:
           false,
+
+        tabBarHideOnKeyboard: true,
 
         tabBarActiveTintColor:
           colors.primary,
@@ -390,11 +394,13 @@ function ThemedApp() {
     <NavigationThemeProvider value={navigationTheme}>
       <View testID="app-surface" style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        {ready ? <AppTabs /> : (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <ActivityIndicator color={colors.primary} accessibilityLabel="Laster utseende" />
-          </View>
-        )}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" enabled={Platform.OS !== "web"}>
+          {ready ? <AppTabs /> : (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator color={colors.primary} accessibilityLabel="Laster utseende" />
+            </View>
+          )}
+        </KeyboardAvoidingView>
       </View>
     </NavigationThemeProvider>
   );

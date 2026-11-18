@@ -1,3 +1,4 @@
+import KeyboardScrollView from "../components/KeyboardScrollView";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
 import {
@@ -10,7 +11,6 @@ import {
   Alert,
   Linking,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -957,7 +957,7 @@ export default function LoginScreen() {
           styles.container
         }
       >
-        <ScrollView
+        <KeyboardScrollView
           contentContainerStyle={
             styles.profileContent
           }
@@ -1979,7 +1979,7 @@ export default function LoginScreen() {
             </>
           )}
 
-        </ScrollView>
+        </KeyboardScrollView>
       </SafeAreaView>
     );
   }
@@ -1995,7 +1995,7 @@ export default function LoginScreen() {
         styles.container
       }
     >
-      <ScrollView
+      <KeyboardScrollView
         contentContainerStyle={
           styles.loginContent
         }
@@ -2249,7 +2249,7 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-      </ScrollView>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }

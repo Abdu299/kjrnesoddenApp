@@ -1,3 +1,4 @@
+import KeyboardScrollView from "../../components/KeyboardScrollView";
 import { useThemedStyles } from "../../context/ThemeContext";
 import type { AppThemeColors } from "../../constants/app-theme";
 import {
@@ -6,10 +7,7 @@ import {
 
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -194,18 +192,7 @@ export default function CustomerRegisterScreen() {
         styles.container
       }
     >
-      <KeyboardAvoidingView
-        style={{
-          flex: 1,
-        }}
-        behavior={
-          Platform.OS ===
-          "ios"
-            ? "padding"
-            : undefined
-        }
-      >
-        <ScrollView
+        <KeyboardScrollView
           contentContainerStyle={
             styles.content
           }
@@ -480,8 +467,7 @@ export default function CustomerRegisterScreen() {
             </Text>
           </TouchableOpacity>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardScrollView>
     </SafeAreaView>
   );
 }

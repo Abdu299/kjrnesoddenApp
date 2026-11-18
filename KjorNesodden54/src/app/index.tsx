@@ -1,3 +1,4 @@
+import KeyboardScrollView from "../components/KeyboardScrollView";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
 import {
@@ -10,7 +11,6 @@ import {
   Alert,
   Image,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -304,7 +304,7 @@ function CustomerHomeScreen() {
 
       {/* RESTAURANTS */}
 
-      <ScrollView
+      <KeyboardScrollView
         style={
           styles.scroll
         }
@@ -540,7 +540,7 @@ function CustomerHomeScreen() {
             </Text>
           </View>
         </TouchableOpacity>
-      </ScrollView>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }
@@ -917,7 +917,7 @@ function RestaurantHomeScreen() {
       </View>
 
 
-      <ScrollView
+      <KeyboardScrollView
         style={
           styles.scroll
         }
@@ -1430,7 +1430,7 @@ function RestaurantHomeScreen() {
             )
           )
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }
@@ -1796,7 +1796,7 @@ function AdminHomeScreen() {
       </View>
 
 
-      <ScrollView
+      <KeyboardScrollView
         style={
           styles.scroll
         }
@@ -2238,7 +2238,7 @@ function AdminHomeScreen() {
             )
           )
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }
