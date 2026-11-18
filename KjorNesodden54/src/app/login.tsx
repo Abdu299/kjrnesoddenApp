@@ -988,8 +988,6 @@ export default function LoginScreen() {
           </Text>
 
 
-          <AppearanceSettings english={restaurantEnglish} />
-
           {loadingProfile ||
           !profile ? (
 
@@ -1903,6 +1901,8 @@ export default function LoginScreen() {
               )}
 
 
+              <AppearanceSettings english={restaurantEnglish} />
+
               {/* PRIVACY */}
 
               <View
@@ -2018,8 +2018,6 @@ export default function LoginScreen() {
         >
           Logg inn på KjørNesodden
         </Text>
-
-        <AppearanceSettings />
 
         <Text
           style={

@@ -2,12 +2,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useThemedStyles } from "../context/ThemeContext";
-import type { AppThemeColors, ThemePreference } from "../constants/app-theme";
+import type { AppThemeColors } from "../constants/app-theme";
 
 const choices = [
-  { value: "system", label: "Automatisk", english: "Automatic", icon: "phone-portrait-outline" },
-  { value: "light", label: "Lys", english: "Light", icon: "sunny-outline" },
-  { value: "dark", label: "Mørk", english: "Dark", icon: "moon-outline" },
+  { value: "system", label: "Automatisk", english: "Automatic" },
+  { value: "light", label: "Lys", english: "Light" },
+  { value: "dark", label: "Mørk", english: "Dark" },
 ] as const;
 
 export default function AppearanceSettings({ english = false }: { english?: boolean }) {
@@ -25,19 +25,10 @@ export default function AppearanceSettings({ english = false }: { english?: bool
   return (
     <View style={styles.card} testID="appearance-settings">
       <View style={styles.header}>
-        <View style={styles.icon}>
-          <Ionicons name="contrast-outline" size={25} color={colors.primary} />
-        </View>
-        <View style={styles.heading}>
-          <Text style={styles.title}>{english ? "Appearance" : "Utseende"}</Text>
-          <Text style={styles.current} accessibilityLiveRegion="polite">{selectedLabel}</Text>
-        </View>
+        <Ionicons name="contrast-outline" size={18} color={colors.textMuted} />
+        <Text style={styles.title}>{english ? "Appearance" : "Utseende"}</Text>
+        <Text style={styles.current} accessibilityLiveRegion="polite">{selectedLabel}</Text>
       </View>
-      <Text style={styles.description}>
-        {english
-          ? "Choose light or dark mode. Automatic follows your device's settings."
-          : "Velg lys eller mørk modus. Automatisk følger innstillingen på enheten din."}
-      </Text>
       <View style={styles.choices} accessibilityRole="radiogroup"
         accessibilityLabel={english ? "App appearance" : "Appens utseende"}>
         {choices.map((choice) => {
@@ -50,16 +41,11 @@ export default function AppearanceSettings({ english = false }: { english?: bool
               accessibilityLabel={english ? choice.english : choice.label}
               accessibilityHint={choice.value === "system" ? systemLabel : undefined}
               disabled={!ready}
-              onPress={() => setPreference(choice.value as ThemePreference)}
+              onPress={() => setPreference(choice.value)}
               style={[styles.choice, choice.value === "system" && styles.systemChoice,
                 selected && styles.choiceSelected]}
               activeOpacity={0.8}
             >
-              <View style={styles.choiceIcon}>
-                <Ionicons name={choice.icon} size={23}
-                  color={selected ? colors.primary : colors.textSecondary} />
-                {selected && <Ionicons name="checkmark-circle" size={17} color={colors.primary} />}
-              </View>
               <Text style={[styles.choiceLabel, selected && styles.choiceLabelSelected]}>
                 {english ? choice.english : choice.label}
               </Text>
@@ -67,13 +53,13 @@ export default function AppearanceSettings({ english = false }: { english?: bool
           );
         })}
       </View>
-      <Text style={[styles.note, saveError && styles.error]} accessibilityLiveRegion="polite">
-        {saveError
-          ? english
+      {saveError && (
+        <Text style={styles.error} accessibilityLiveRegion="polite">
+          {english
             ? "Could not save. Tap your choice again to retry."
-            : "Kunne ikke lagre. Trykk på valget ditt igjen for å prøve på nytt."
-          : english ? "Your choice is saved on this device." : "Valget ditt huskes på denne enheten."}
-      </Text>
+            : "Kunne ikke lagre. Trykk på valget ditt igjen for å prøve på nytt."}
+        </Text>
+      )}
     </View>
   );
 }
@@ -81,35 +67,26 @@ export default function AppearanceSettings({ english = false }: { english?: bool
 const createStyles = (colors: AppThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderColor: colors.primaryBorder,
-    borderWidth: 1.5,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 22,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 18,
   },
-  header: { flexDirection: "row", alignItems: "center", gap: 12 },
-  icon: {
-    width: 46, height: 46, borderRadius: 14,
-    backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center",
-  },
-  heading: { flex: 1 },
-  title: { color: colors.text, fontSize: 20, fontWeight: "800" },
-  current: { color: colors.primary, fontSize: 13, fontWeight: "600", marginTop: 3 },
-  description: { color: colors.textSecondary, fontSize: 14, lineHeight: 21, marginTop: 13 },
-  choices: { flexDirection: "row", gap: 8, marginTop: 16 },
+  header: { flexDirection: "row", alignItems: "center", gap: 8 },
+  title: { color: colors.text, fontSize: 15, fontWeight: "600", flex: 1 },
+  current: { color: colors.textMuted, fontSize: 12, flexShrink: 1, textAlign: "right" },
+  choices: { flexDirection: "row", gap: 6, marginTop: 10 },
   choice: {
-    flex: 1, minHeight: 88, paddingHorizontal: 8, paddingVertical: 13,
-    borderWidth: 1, borderColor: colors.inputBorder, borderRadius: 13,
+    flex: 1, minHeight: 44, paddingHorizontal: 6, paddingVertical: 10,
+    borderWidth: 1, borderColor: colors.inputBorder, borderRadius: 8,
     backgroundColor: colors.inputBackground, justifyContent: "center",
   },
   systemChoice: { flex: 1.3 },
   choiceSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  choiceIcon: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 5 },
   choiceLabel: {
-    color: colors.textSecondary, fontSize: 13, fontWeight: "600",
-    textAlign: "center", marginTop: 9,
+    color: colors.textSecondary, fontSize: 13, fontWeight: "500", textAlign: "center",
   },
-  choiceLabelSelected: { color: colors.primary, fontWeight: "800" },
-  note: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 12 },
-  error: { color: colors.danger },
+  choiceLabelSelected: { color: colors.primary, fontWeight: "700" },
+  error: { color: colors.danger, fontSize: 12, lineHeight: 18, marginTop: 8 },
 });
