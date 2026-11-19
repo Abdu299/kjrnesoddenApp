@@ -51,17 +51,16 @@ import {
 // ==================================================
 
 export default function RestaurantScreen() {
+  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const id = Array.isArray(params.id) ? params.id[0] ?? "" : params.id ?? "";
+
+  // Tabs reuse this route. A new ID must start with fresh data and scroll state in the same render.
+  return <RestaurantDetails key={id} id={id} />;
+}
+
+function RestaurantDetails({ id }: { id: string }) {
   const { styles, colors } = useThemedStyles(createStyles);
   const delivery = useDeliveryEstimate();
-
-  const {
-    id,
-  } =
-    useLocalSearchParams<{
-      id: string;
-    }>();
-
-
   const {
     items,
     addItem,
@@ -155,6 +154,7 @@ export default function RestaurantScreen() {
 
   useEffect(
     () => {
+      let active = true;
       const loadRestaurant =
         async () => {
           if (!id) {
@@ -176,6 +176,7 @@ export default function RestaurantScreen() {
                 id
               );
 
+            if (!active) return;
 
             if (
               !restaurantData ||
@@ -196,6 +197,7 @@ export default function RestaurantScreen() {
           } catch (
             error
           ) {
+            if (!active) return;
             console.log(
               "Restaurant page error:",
               error
@@ -207,14 +209,14 @@ export default function RestaurantScreen() {
             );
 
           } finally {
-            setLoading(
-              false
-            );
+            if (active) setLoading(false);
           }
         };
 
 
       loadRestaurant();
+
+      return () => { active = false; };
 
     },
     [
@@ -253,6 +255,7 @@ export default function RestaurantScreen() {
 
   useEffect(
     () => {
+      let active = true;
       if (!id) {
         return;
       }
@@ -262,10 +265,12 @@ export default function RestaurantScreen() {
       const unsubscribe = subscribeToProductsForRestaurant(
         id,
         (updatedProducts) => {
+          if (!active) return;
           setProducts(updatedProducts);
           setProductsLoading(false);
         },
         (error) => {
+          if (!active) return;
           console.log("Product listener error:", error);
           setProductsLoading(false);
         }
@@ -273,6 +278,7 @@ export default function RestaurantScreen() {
 
 
       return () => {
+        active = false;
         unsubscribe();
       };
 
