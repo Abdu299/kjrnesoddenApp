@@ -1,3 +1,4 @@
+import { FAGERSTRAND_GRILL_MENU } from "./fagerstrandGrill";
 export type WebsiteMenuItem = { name: string; description: string; price: number };
 export type WebsiteMenuCategory = { name: string; items: WebsiteMenuItem[] };
 export type WebsiteRestaurantMenu = { slug: string; name: string; aliases: string[]; categories: WebsiteMenuCategory[] };
@@ -2430,5 +2431,7 @@ export const WEBSITE_RESTAURANT_MENUS: WebsiteRestaurantMenu[] = [
         ]
       }
     ]
-  }
+  },
+  FAGERSTRAND_GRILL_MENU,
 ];
+

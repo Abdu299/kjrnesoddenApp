@@ -1,3 +1,4 @@
+import { sortRestaurants } from "./restaurantCatalog";
 import { restaurantDeliveryArea, isDeliveryAreaId, type DeliveryAreaId } from "./deliveryPricing";
 import {
   deleteApp,
@@ -376,7 +377,7 @@ Promise<Restaurant[]> {
       restaurantsQuery
     );
 
-  return snapshot.docs.map(
+  return sortRestaurants(snapshot.docs.map(
     (restaurantDocument) => {
       const data =
         restaurantDocument.data();
@@ -416,7 +417,7 @@ Promise<Restaurant[]> {
           restaurantClosedUntil(data.name ?? "", data.closedUntil),
       };
     }
-  );
+  ));
 }
 
 

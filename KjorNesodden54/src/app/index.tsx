@@ -1,3 +1,4 @@
+import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
 import DeliveryPricingEditor from "../components/DeliveryPricingEditor";
 import DeliveryAreaPicker from "../components/DeliveryAreaPicker";
 import DeliveryPrice from "../components/DeliveryPrice";
@@ -1449,6 +1450,7 @@ function RestaurantHomeScreen() {
 
 function AdminHomeScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
+  const [catalogImportError, setCatalogImportError] = useState("");
   const [deliveryAreaId, setDeliveryAreaId] = useState<DeliveryAreaId | null>(null);
   const [editDeliveryAreaId, setEditDeliveryAreaId] = useState<DeliveryAreaId | null>(null);
 
@@ -1556,6 +1558,13 @@ function AdminHomeScreen() {
           true
         );
 
+
+        try {
+          await ensureFagerstrandGrillCatalog();
+          setCatalogImportError("");
+        } catch {
+          setCatalogImportError("Kunne ikke legge til Fagerstrand Grill. Prøv igjen når du er på nett og innlogget som admin.");
+        }
 
         const data =
           await getRestaurants();
@@ -1834,6 +1843,13 @@ function AdminHomeScreen() {
         >
           Administrer restaurantene i KjørNesodden.
         </Text>
+
+        {!!catalogImportError && <View style={styles.formCard}>
+          <Text style={styles.manageProductDescription}>{catalogImportError}</Text>
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={loadRestaurants}>
+            <Text style={styles.secondaryActionText}>Prøv å legge til Fagerstrand Grill igjen</Text>
+          </TouchableOpacity>
+        </View>}
 
         <DeliveryPricingEditor />
 

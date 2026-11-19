@@ -25,6 +25,16 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Fagerstrand Grill og rekkefølgen på restaurantene
+
+Signalen Sjøbad står først i restaurantlistene for både kunder og admin. Resten sorteres alfabetisk.
+
+Fagerstrand Grill er klargjort fra [restaurantsiden](https://www.kjornesodden.no/restauranter/fagerstrand-grill), kontrollert 19. november 2026: logo, adresse, Fagerstrand som leveringsområde, åpningstider og sju menykategorier. De 42 rettene har totalt 70 valg med egne priser når størrelser regnes separat. Ingen leveringssatser hentes fra den statiske nettsideteksten; appens felles prisregler brukes.
+
+Etter oppdateringen åpner du **admin** i appen én gang. Den eksisterende admininnloggingen legger da restauranten og hele menyen inn i én databasetransaksjon. Importen kjøres bare av admin, krever ikke en ny restaurantkode og oppretter ingen restaurantinnlogging. Eksisterende restauranter og manuelt endrede produkter overskrives ikke. Gjentatte besøk lager ikke duplikater, og senere deaktivering eller sletting blir respektert for adminen som har fullført importen. Ved importfeil vises en knapp for å prøve igjen.
+
+Importen er klargjort i koden, men blir først utført i databasen når admin åpnes med en gyldig innlogging. Den bruker de eksisterende reglene som tillater admin å opprette restauranter og produkter. Katalogtestene kan kjøres med `npm run test:catalog`.
+
 ## Leveringspriser i appen
 
 Admin kan endre satsene under **Leveringspriser** på hovedsiden, og velge **Restaurantens område** ved oppretting eller redigering av en restaurant. Endringer lagres i ett felles dokument, `settings/deliveryPricing`, og oppdateres fortløpende i appen.

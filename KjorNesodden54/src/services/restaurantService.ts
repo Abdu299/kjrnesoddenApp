@@ -1,3 +1,4 @@
+import { sortRestaurants } from "./restaurantCatalog";
 import { restaurantDeliveryArea, type DeliveryAreaId } from "./deliveryPricing";
 import {
   collection,
@@ -94,15 +95,7 @@ Promise<Restaurant[]> {
       }
     );
 
-  // Sorter alfabetisk
-  restaurants.sort(
-    (a, b) =>
-      a.name.localeCompare(
-        b.name
-      )
-  );
-
-  return restaurants;
+  return sortRestaurants(restaurants);
 }
 
 
@@ -161,13 +154,13 @@ export async function getRestaurantById(
 
 export function subscribeToActiveRestaurants(onChange: (restaurants: Restaurant[]) => void, onError: (error: Error) => void) {
   return onSnapshot(query(collection(db, "restaurants"), where("active", "==", true)), (snapshot) => {
-    onChange(snapshot.docs.map((document) => {
+    onChange(sortRestaurants(snapshot.docs.map((document) => {
       const data = document.data();
       return { id: document.id, name: data.name ?? "", description: data.description ?? "",
         active: data.active === true, imageUrl: data.imageUrl ?? "",
         deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
         openingHours: restaurantOpeningHours(data.name ?? "", data.openingHours),
         closedUntil: restaurantClosedUntil(data.name ?? "", data.closedUntil) };
-    }));
+    })));
   }, onError);
 }
