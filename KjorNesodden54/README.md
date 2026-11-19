@@ -56,6 +56,8 @@ Versjonen leses fra den installerte native appen med `expo-application`, slik at
 
 ## TestFlight
 
+Appversjonen er nå **1.0.2**. Apple har lukket den tidligere godkjente **1.0.1** for nye opplastinger. Feil **90186 / 90062** krever en høyere `expo.version` i `app.json` og en ny bygging. EAS `autoIncrement` øker bare byggnummeret; et høyere byggnummer alene åpner ikke en lukket appversjon. Den gamle IPA-filen må derfor erstattes med et nytt bygg.
+
 Kjør fra `KjorNesodden54` etter å ha hentet siste `main` og installert avhengighetene:
 
 ```sh
@@ -68,6 +70,8 @@ Bruk Expo-kontoen som har tilgang til prosjektet til `abdu2003`, og følg Apple-
 Det tekniske `expo.name` er **KjorNesodden** med ASCII-tegn. SDK 58 og EAS CLI kan ellers tolke `ø` forskjellig og feile med **Could not find target 'KjrNesodden' in project.pbxproj**. iPhone viser fortsatt **KjørNesodden** fra `ios.infoPlist.CFBundleDisplayName`, og Android får samme navn fra `plugins/withAppDisplayName.js`. Behold denne delingen når appkonfigurasjonen endres. Bundle-ID og Android-pakken er fortsatt `com.kjornesodden.app`. EAS styrer iOS-byggnummeret eksternt; det er derfor ikke satt et lokalt `ios.buildNumber` i `app.json`.
 
 Innsendingen er knyttet til den eksisterende App Store Connect-appen med `ascAppId: 6810372524` i `eas.json`. For første nye forsøk etter target-feilen kan du bruke `npx eas-cli@latest build --platform ios --profile production --auto-submit --clear-cache`.
+
+Hvis VS Code viser **'--jsx' is not set** etter oppdatering av avhengighetene: `tsconfig.json` arver Expo-oppsettet og setter også `jsx: react-jsx` eksplisitt. Kjør `npm ci`, velg **TypeScript: Select TypeScript Version → Use Workspace Version** hvis valget finnes, og deretter **TypeScript: Restart TS Server** i kommandopaletten. Importer mellom `.tsx`-filer skal da bruke prosjektets JSX-innstilling.
 
 ## Leveringspriser i appen
 
