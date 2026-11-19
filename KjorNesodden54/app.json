@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "KjørNesodden",
+    "name": "KjorNesodden",
     "slug": "kjornesodden",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -11,8 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kjornesodden.app",
-      "buildNumber": "1",
       "infoPlist": {
+        "CFBundleDisplayName": "KjørNesodden",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -58,7 +58,8 @@
       "expo-font",
       "expo-image",
       "expo-web-browser",
-      "expo-status-bar"
+      "expo-status-bar",
+      "./plugins/withAppDisplayName.js"
     ],
     "experiments": {
       "typedRoutes": true,

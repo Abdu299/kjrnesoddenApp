@@ -59,11 +59,15 @@ Versjonen leses fra den installerte native appen med `expo-application`, slik at
 Kjør fra `KjorNesodden54` etter å ha hentet siste `main` og installert avhengighetene:
 
 ```sh
-npx eas-cli login
-npx eas-cli build --platform ios --profile production --auto-submit
+npx eas-cli@latest login
+npx eas-cli@latest build --platform ios --profile production --auto-submit
 ```
 
 Bruk Expo-kontoen som har tilgang til prosjektet til `abdu2003`, og følg Apple-innloggingen hvis EAS ber om den. Produksjonsprofilen bruker automatisk byggnummer og riktig ordre-API. Etter at Apple har behandlet opplastingen, velg bygget under **App Store Connect → KjørNesodden → TestFlight** og legg det til testgruppen. Denne kommandoen gjør bygget tilgjengelig for TestFlight; utgivelse i App Store krever et eget steg.
+
+Det tekniske `expo.name` er **KjorNesodden** med ASCII-tegn. SDK 58 og EAS CLI kan ellers tolke `ø` forskjellig og feile med **Could not find target 'KjrNesodden' in project.pbxproj**. iPhone viser fortsatt **KjørNesodden** fra `ios.infoPlist.CFBundleDisplayName`, og Android får samme navn fra `plugins/withAppDisplayName.js`. Behold denne delingen når appkonfigurasjonen endres. Bundle-ID og Android-pakken er fortsatt `com.kjornesodden.app`. EAS styrer iOS-byggnummeret eksternt; det er derfor ikke satt et lokalt `ios.buildNumber` i `app.json`.
+
+Innsendingen er knyttet til den eksisterende App Store Connect-appen med `ascAppId: 6810372524` i `eas.json`. For første nye forsøk etter target-feilen kan du bruke `npx eas-cli@latest build --platform ios --profile production --auto-submit --clear-cache`.
 
 ## Leveringspriser i appen
 
