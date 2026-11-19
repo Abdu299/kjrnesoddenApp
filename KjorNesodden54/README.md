@@ -25,6 +25,45 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Leveringspriser i appen
+
+Admin kan endre satsene under **Leveringspriser** på hovedsiden, og velge **Restaurantens område** ved oppretting eller redigering av en restaurant. Endringer lagres i ett felles dokument, `settings/deliveryPricing`, og oppdateres fortløpende i appen.
+
+Standardprisene er:
+
+| Område | Sats mellom ulike områder |
+| --- | ---: |
+| Tangen / Hellvik | 100 kr |
+| Bjørnemyr | 100 kr |
+| Alværn / Fjordvangen | 100 kr |
+| Fjellstrand | 150 kr |
+| Fagerstrand | 250 kr |
+
+Innen samme område brukes lokalprisen, som starter på **100 kr**. Mellom ulike områder brukes den høyeste av de to områdesatsene. Fagerstrand til Fagerstrand koster dermed 100 kr, mens Fagerstrand til Tangen, eller motsatt vei, koster 250 kr. Også lokalprisen kan endres av admin.
+
+En handlekurv med flere restauranter får én leveringspris: den høyeste aktuelle ruteprisen. Fri bestilling og eventuell ekstra levering for et ukjent hentested avtales separat. Ukjent adresse eller restaurantområde gir **pris avtales**, aldri en antatt lav pris.
+
+Kundens område finnes fra adresseoppslaget eller et lagret område som er knyttet til nøyaktig samme adresse. Gamle `deliveryFee`-verdier på kundeprofilen brukes ikke. Område og pris vises ved restaurantene og i handlekurven. Oppdatert pris og restaurantinformasjon hentes fra serveren før bekreftelse og på nytt før ordren sendes. Endringer krever ny bekreftelse. Ordren får et øyeblikksbilde av leveringsprisen; senere prisendringer endrer ikke tidligere bestillinger.
+
+Eksisterende restauranter med bekreftet plassering på kjornesodden.no får området automatisk. For **Nesodden Pizza** må admin velge riktig område; plasseringen var ikke oppgitt. Nye restauranter krever et områdevalg.
+
+### Aktivering av database-reglene
+
+Publiser de oppdaterte reglene én gang før den nye prisstyringen tas i bruk. Kjør fra `KjorNesodden54` med en Firebase-konto som har tilgang til prosjektet:
+
+```bash
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:rules --project kjornesodden
+```
+
+`firebase.json` peker på de oppdaterte reglene i `firestore(4).rules`. Prisene kan leses av alle, men bare admin kan endre dem. Beløp, felter og versjonsnummer kontrolleres også i database-reglene. Logg deretter inn som admin, velg eventuelle manglende restaurantområder og lagre leveringsprisene. Denne kodeendringen publiserer ikke database-reglene automatisk.
+
+Test beregning og bekreftelse uten å sende ekte bestillinger:
+
+```bash
+npm run test:delivery
+```
+
 ## Oppstartsskjerm
 
 Oppstartsskjermen konfigureres i `app.json` med `expo-splash-screen`. Den bruker `assets/images/splash-brand.png` på hvit bakgrunn, eller `#101620` når mobilen bruker mørk modus.

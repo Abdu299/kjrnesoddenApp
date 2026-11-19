@@ -1,8 +1,11 @@
+import { restaurantDeliveryArea, type DeliveryAreaId } from "./deliveryPricing";
 import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
+  onSnapshot,
   query,
   where,
 } from "firebase/firestore";
@@ -23,6 +26,7 @@ import {
 // ==================================================
 
 export type Restaurant = {
+  deliveryAreaId: DeliveryAreaId | null;
   id: string;
   name: string;
   description: string;
@@ -67,6 +71,8 @@ Promise<Restaurant[]> {
           id:
             restaurantDocument.id,
 
+          deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
+
           name:
             data.name ?? "",
 
@@ -105,10 +111,11 @@ Promise<Restaurant[]> {
 // ==================================================
 
 export async function getRestaurantById(
-  restaurantId: string
+  restaurantId: string,
+  fresh = false
 ): Promise<Restaurant | null> {
   const restaurantDocument =
-    await getDoc(
+    await (fresh ? getDocFromServer : getDoc)(
       doc(
         db,
         "restaurants",
@@ -129,6 +136,8 @@ export async function getRestaurantById(
     id:
       restaurantDocument.id,
 
+    deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
+
     name:
       data.name ?? "",
 
@@ -147,4 +156,18 @@ export async function getRestaurantById(
     closedUntil:
       restaurantClosedUntil(data.name ?? "", data.closedUntil),
   };
+}
+
+
+export function subscribeToActiveRestaurants(onChange: (restaurants: Restaurant[]) => void, onError: (error: Error) => void) {
+  return onSnapshot(query(collection(db, "restaurants"), where("active", "==", true)), (snapshot) => {
+    onChange(snapshot.docs.map((document) => {
+      const data = document.data();
+      return { id: document.id, name: data.name ?? "", description: data.description ?? "",
+        active: data.active === true, imageUrl: data.imageUrl ?? "",
+        deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
+        openingHours: restaurantOpeningHours(data.name ?? "", data.openingHours),
+        closedUntil: restaurantClosedUntil(data.name ?? "", data.closedUntil) };
+    }));
+  }, onError);
 }

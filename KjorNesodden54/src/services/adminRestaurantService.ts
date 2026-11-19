@@ -1,3 +1,4 @@
+import { restaurantDeliveryArea, isDeliveryAreaId, type DeliveryAreaId } from "./deliveryPricing";
 import {
   deleteApp,
   initializeApp,
@@ -42,6 +43,7 @@ import {
 // ==================================================
 
 export type Restaurant = {
+  deliveryAreaId: DeliveryAreaId | null;
   id: string;
   name: string;
   description: string;
@@ -165,9 +167,11 @@ export async function createRestaurant(
   name: string,
   description: string,
   code: string,
-  imageUrl: string
+  imageUrl: string,
+  deliveryAreaId: DeliveryAreaId | null
 ) {
   await requireAdmin();
+  if (!isDeliveryAreaId(deliveryAreaId)) throw new Error("Velg restaurantens leveringsområde.");
 
   const cleanName =
     name.trim();
@@ -252,6 +256,8 @@ export async function createRestaurant(
           "restaurants"
         ),
         {
+          deliveryAreaId,
+
           name:
             cleanName,
 
@@ -379,6 +385,8 @@ Promise<Restaurant[]> {
         id:
           restaurantDocument.id,
 
+        deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
+
         name:
           data.name ?? "",
 
@@ -421,9 +429,11 @@ export async function updateRestaurant(
   name: string,
   description: string,
   imageUrl: string,
-  openingHours: WeeklyOpeningHours
+  openingHours: WeeklyOpeningHours,
+  deliveryAreaId: DeliveryAreaId | null
 ) {
   await requireAdmin();
+  if (!isDeliveryAreaId(deliveryAreaId)) throw new Error("Velg restaurantens leveringsområde.");
 
   const cleanName =
     name.trim();
@@ -478,6 +488,7 @@ export async function updateRestaurant(
         cleanImageUrl,
 
       openingHours,
+      deliveryAreaId,
 
       updatedAt:
         serverTimestamp(),
@@ -536,3 +547,4 @@ export async function enableRestaurant(
     }
   );
 }
+

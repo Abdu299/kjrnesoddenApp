@@ -1,7 +1,9 @@
+import { useDeliveryEstimate } from "../hooks/use-delivery-estimate";
+import { areaName } from "../services/deliveryPricing";
+import { prepareCartDelivery, type CheckoutDeliveryQuote } from "../services/orderService";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
 import {
-  useCallback,
   useState,
 } from "react";
 
@@ -19,7 +21,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import {
   router,
-  useFocusEffect,
 } from "expo-router";
 
 import {
@@ -35,17 +36,8 @@ import {
   submitCartOrder,
 } from "../services/orderService";
 
-import {
-  getCurrentProfile,
-} from "../services/profileService";
 
-import {
-  getRestaurantById,
-} from "../services/restaurantService";
 
-import {
-  openingStatus,
-} from "../services/openingHoursService";
 
 
 // ==================================================
@@ -103,49 +95,16 @@ export default function CartScreen() {
       false
     );
 
-  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
-  const [deliveryZone, setDeliveryZone] = useState("");
+  const delivery = useDeliveryEstimate([...new Set(items.filter((item) => item.type !== "custom").map((item) => item.restaurantId))]);
+  const deliveryFee = delivery.quote.fee;
+  const [confirmedDeliveryQuote, setConfirmedDeliveryQuote] = useState<CheckoutDeliveryQuote | null>(null);
+  const confirmationDeliveryFee = confirmedDeliveryQuote?.fee ?? null;
+  const confirmationDeliveryZone = confirmedDeliveryQuote?.customerAreaId ? areaName(confirmedDeliveryQuote.customerAreaId) : "";
+  const [checkingOrder, setCheckingOrder] = useState(false);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [showLoginConfirmation, setShowLoginConfirmation] = useState(false);
   const [orderError, setOrderError] = useState("");
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-
-      if (!user) {
-        setDeliveryFee(null);
-        setDeliveryZone("");
-        return () => {
-          active = false;
-        };
-      }
-
-      getCurrentProfile()
-        .then((profile) => {
-          if (!active) {
-            return;
-          }
-
-          setDeliveryFee(profile.deliveryFee);
-          setDeliveryZone(profile.deliveryZone);
-        })
-        .catch(() => {
-          if (!active) {
-            return;
-          }
-
-          setDeliveryFee(null);
-          setDeliveryZone("");
-        });
-
-      return () => {
-        active = false;
-      };
-    }, [user])
-  );
-
 
   // ==================================================
   // SPLIT CART
@@ -259,7 +218,8 @@ export default function CartScreen() {
 
         await submitCartOrder(
           items,
-          totalPrice
+          totalPrice,
+          confirmedDeliveryQuote ?? undefined
         );
 
 
@@ -278,6 +238,7 @@ export default function CartScreen() {
         );
 
 
+        delivery.reloadEstimate();
         setOrderError(
           error.message ||
             "Noe gikk galt. Prøv igjen."
@@ -310,30 +271,15 @@ export default function CartScreen() {
         return;
       }
 
-      const currentRestaurants =
-        await Promise.all(
-          restaurantGroups.map((group) => getRestaurantById(group.restaurantId))
-        );
-
-      const closedRestaurant =
-        currentRestaurants.find(
-          (restaurant) =>
-            restaurant &&
-            !openingStatus(restaurant.openingHours, restaurant.closedUntil).open
-        );
-
-      if (closedRestaurant) {
-        const status = openingStatus(
-          closedRestaurant.openingHours,
-          closedRestaurant.closedUntil
-        );
-        setOrderError(
-          `${closedRestaurant.name} tar ikke imot bestillinger nå. ${status.text}.`
-        );
-        return;
-      }
-
-      setShowOrderConfirmation(true);
+      if (checkingOrder) return;
+      setCheckingOrder(true);
+      try {
+        const currentQuote = await prepareCartDelivery(items);
+        setConfirmedDeliveryQuote(currentQuote);
+        setShowOrderConfirmation(true);
+      } catch (error: any) {
+        setOrderError(error.message || "Kunne ikke kontrollere leveringsprisen. Prøv igjen.");
+      } finally { setCheckingOrder(false); }
     };
 
 
@@ -1009,13 +955,24 @@ export default function CartScreen() {
         <View style={styles.deliveryRow}>
           <Text style={styles.deliveryLabel}>Levering</Text>
           <Text style={styles.deliveryValue}>
-            {deliveryFee !== null
+            {delivery.loading && restaurantItems.length > 0 ? "Henter…" : delivery.error && restaurantItems.length > 0 ? "Utilgjengelig" : deliveryFee !== null
               ? `${deliveryFee.toLocaleString("nb-NO")} kr`
               : "Avtales"}
           </Text>
         </View>
 
-        {restaurantItems.length > 0 && deliveryFee !== null && (
+        {restaurantItems.length > 0 && (
+          <Text style={styles.checkoutCustomNote}>
+            {delivery.error || (delivery.loading ? "Henter leveringspris…" :
+              delivery.quote.routes.map((route) => `${route.restaurantName}: ${areaName(route.restaurantAreaId)} → ${areaName(delivery.quote.customerAreaId)} · ${route.fee === null ? "avtales" : `${route.fee} kr`}`).join("\n"))}
+            {delivery.quote.routes.length > 1 ? "\nDu betaler én leveringspris: den høyeste satsen." : ""}
+          </Text>
+        )}
+        {!!delivery.error && restaurantItems.length > 0 && <TouchableOpacity onPress={delivery.reloadEstimate}>
+          <Text style={styles.checkoutCustomNote}>Prøv å hente leveringsprisen igjen</Text>
+        </TouchableOpacity>}
+
+        {restaurantItems.length > 0 && deliveryFee !== null && !delivery.loading && !delivery.error && (
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Totalt</Text>
             <Text style={styles.grandTotalValue}>
@@ -1034,7 +991,7 @@ export default function CartScreen() {
               styles.checkoutCustomNote
             }
           >
-            Pris for fri bestilling er ikke inkludert og avtales separat.
+            Pris og eventuell ekstra levering for fri bestilling avtales separat.
           </Text>
         )}
 
@@ -1043,15 +1000,13 @@ export default function CartScreen() {
           style={[
             styles.buyButton,
 
-            submittingOrder &&
+            (submittingOrder || checkingOrder) &&
               styles.buyButtonDisabled,
           ]}
           onPress={
             handleBuy
           }
-          disabled={
-            submittingOrder
-          }
+          disabled={submittingOrder || checkingOrder}
         >
           <Text
             style={
@@ -1060,7 +1015,7 @@ export default function CartScreen() {
           >
             {submittingOrder
               ? "Sender bestilling..."
-              : "Kjøp"}
+              : checkingOrder ? "Kontrollerer pris…" : "Kjøp"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -1146,21 +1101,27 @@ export default function CartScreen() {
               <View style={styles.orderSummaryRow}>
                 <Text style={styles.orderSummaryLabel}>Levering</Text>
                 <Text style={styles.orderSummaryValue}>
-                  {deliveryFee !== null
-                    ? `${deliveryFee.toLocaleString("nb-NO")} kr${deliveryZone ? ` (${deliveryZone})` : ""}`
+                  {confirmationDeliveryFee !== null
+                    ? `${confirmationDeliveryFee.toLocaleString("nb-NO")} kr${confirmationDeliveryZone ? ` (${confirmationDeliveryZone})` : ""}`
                     : "Avtales"}
                 </Text>
               </View>
 
-              {restaurantItems.length > 0 && deliveryFee !== null && (
+              {restaurantItems.length > 0 && confirmationDeliveryFee !== null && (
                 <View style={[styles.orderSummaryRow, styles.orderSummaryTotal]}>
                   <Text style={styles.orderSummaryTotalText}>Totalt</Text>
                   <Text style={styles.orderSummaryTotalText}>
-                    {(totalPrice + deliveryFee).toLocaleString("nb-NO")} kr
+                    {(totalPrice + confirmationDeliveryFee).toLocaleString("nb-NO")} kr
                   </Text>
                 </View>
               )}
             </View>
+
+            <Text style={styles.confirmationText}>
+              {confirmedDeliveryQuote?.routes.map((route) => `${route.restaurantName}: ${areaName(route.restaurantAreaId)} → ${areaName(confirmedDeliveryQuote.customerAreaId)} · ${route.fee === null ? "pris avtales" : `${route.fee} kr`}`).join("\n")}
+              {confirmedDeliveryQuote && confirmedDeliveryQuote.routes.length > 1 ? "\nLevering belastes én gang med høyeste sats." : ""}
+              {customItems.length > 0 ? "\nFri bestilling og eventuell ekstra levering avtales separat." : ""}
+            </Text>
 
             <View style={styles.confirmationActions}>
               <TouchableOpacity

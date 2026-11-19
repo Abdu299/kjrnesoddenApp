@@ -1,3 +1,4 @@
+import type { DeliveryQuote } from "./deliveryPricing";
 import {
     collection,
     doc,
@@ -140,7 +141,8 @@ Promise<string> {
 export async function createRestaurantRequests(
   items: CartItem[],
   customerName: string,
-  customerPhone: string
+  customerPhone: string,
+  deliveryQuote?: DeliveryQuote
 ) {
   const currentUser =
     auth.currentUser;
@@ -329,6 +331,13 @@ export async function createRestaurantRequests(
             requestItems,
 
           subtotal,
+          ...(deliveryQuote ? { delivery: {
+            fee: deliveryQuote.fee,
+            routeFee: deliveryQuote.routes.find((route) => route.restaurantId === restaurantId)?.fee ?? null,
+            customerAreaId: deliveryQuote.customerAreaId,
+            restaurantAreaId: deliveryQuote.routes.find((route) => route.restaurantId === restaurantId)?.restaurantAreaId ?? null,
+            pricingRevision: deliveryQuote.revision,
+          } } : {}),
 
           status:
             "pending",

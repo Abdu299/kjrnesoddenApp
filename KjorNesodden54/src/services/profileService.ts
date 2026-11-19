@@ -1,3 +1,4 @@
+import { areaName, isDeliveryAreaId, type DeliveryAreaId } from "./deliveryPricing";
 import {
   doc,
   getDoc,
@@ -38,7 +39,7 @@ export type ProfileData = {
 
   address: string;
 
-  deliveryFee: number | null;
+  deliveryAreaId: DeliveryAreaId | null;
 
   deliveryZone: string;
 
@@ -104,30 +105,14 @@ Promise<ProfileData> {
       userData.address ??
       "";
 
-    let deliveryFee =
-      typeof userData.deliveryFee === "number"
-        ? userData.deliveryFee
-        : null;
-
-    let deliveryZone =
-      userData.deliveryZone ??
-      "";
-
-    if (
-      address &&
-      deliveryFee === null
-    ) {
-      const resolvedAddress =
-        await resolveNesoddenAddress(address);
-
-      if (resolvedAddress) {
-        deliveryFee =
-          resolvedAddress.zone.fee;
-
-        deliveryZone =
-          resolvedAddress.zone.name;
-      }
+    // Legacy fee fields are deliberately ignored: prices belong to the shared policy.
+    const savedAreaMatchesAddress = userData.deliveryAreaAddress === address;
+    let deliveryAreaId: DeliveryAreaId | null = savedAreaMatchesAddress && isDeliveryAreaId(userData.deliveryAreaId)
+      ? userData.deliveryAreaId : null;
+    if (address && !deliveryAreaId) {
+      deliveryAreaId = (await resolveNesoddenAddress(address))?.zone.id ?? null;
     }
+    const deliveryZone = deliveryAreaId ? areaName(deliveryAreaId) : "";
 
     return {
       role:
@@ -149,8 +134,7 @@ Promise<ProfileData> {
       address:
         address,
 
-      deliveryFee:
-        deliveryFee,
+      deliveryAreaId,
 
       deliveryZone:
         deliveryZone,
@@ -198,8 +182,7 @@ Promise<ProfileData> {
       address:
         "",
 
-      deliveryFee:
-        null,
+      deliveryAreaId: null,
 
       deliveryZone:
         "",
@@ -278,8 +261,7 @@ Promise<ProfileData> {
       address:
         "",
 
-      deliveryFee:
-        null,
+      deliveryAreaId: null,
 
       deliveryZone:
         "",
@@ -436,8 +418,7 @@ export async function updateCustomerPhone(
 export async function updateCustomerAddress(
   address: string,
   delivery?: {
-    fee: number;
-    zone: string;
+    areaId: DeliveryAreaId;
   } | null
 ) {
   const userReference =
@@ -468,8 +449,11 @@ export async function updateCustomerAddress(
   };
 
   if (delivery !== undefined) {
-    updates.deliveryFee = delivery?.fee ?? null;
-    updates.deliveryZone = delivery?.zone ?? "";
+    if (delivery && !isDeliveryAreaId(delivery.areaId)) throw new Error("Velg et gyldig leveringsområde.");
+    updates.deliveryFee = null;
+    updates.deliveryZone = delivery ? areaName(delivery.areaId) : "";
+    updates.deliveryAreaId = delivery?.areaId ?? null;
+    updates.deliveryAreaAddress = cleanAddress;
   }
 
   try {
@@ -501,3 +485,4 @@ export async function updateCustomerAddress(
     };
   }
 }
+

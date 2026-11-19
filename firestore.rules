@@ -30,6 +30,51 @@ service cloud.firestore {
       return isRestaurant() && currentUser().restaurantId == restaurantId;
     }
 
+
+    function validDeliveryArea(value) {
+      return value in ['tangen', 'bjornemyr', 'alvaern', 'fjellstrand', 'fagerstrand'];
+    }
+
+    function validDeliveryAmount(value) {
+      return value is int && value >= 0 && value <= 10000;
+    }
+
+    function validDeliveryPricing(data) {
+      return data.keys().hasAll(['schemaVersion', 'sameAreaFee', 'areaFees', 'revision', 'updatedAt', 'updatedBy']) &&
+        data.keys().hasOnly(['schemaVersion', 'sameAreaFee', 'areaFees', 'revision', 'updatedAt', 'updatedBy']) &&
+        data.schemaVersion == 1 && validDeliveryAmount(data.sameAreaFee) &&
+        data.areaFees is map &&
+        data.areaFees.keys().hasAll(['tangen', 'bjornemyr', 'alvaern', 'fjellstrand', 'fagerstrand']) &&
+        data.areaFees.keys().hasOnly(['tangen', 'bjornemyr', 'alvaern', 'fjellstrand', 'fagerstrand']) &&
+        validDeliveryAmount(data.areaFees.tangen) && validDeliveryAmount(data.areaFees.bjornemyr) &&
+        validDeliveryAmount(data.areaFees.alvaern) && validDeliveryAmount(data.areaFees.fjellstrand) &&
+        validDeliveryAmount(data.areaFees.fagerstrand) &&
+        data.revision is int && data.revision >= 1 &&
+        data.updatedAt == request.time && data.updatedBy == request.auth.uid;
+    }
+
+    function validOrderDelivery(data) {
+      return !data.keys().hasAny(['delivery']) || (
+        data.delivery is map &&
+        data.delivery.keys().hasAll(['fee', 'routeFee', 'customerAreaId', 'restaurantAreaId', 'pricingRevision']) &&
+        data.delivery.keys().hasOnly(['fee', 'routeFee', 'customerAreaId', 'restaurantAreaId', 'pricingRevision']) &&
+        (data.delivery.fee == null || validDeliveryAmount(data.delivery.fee)) &&
+        (data.delivery.routeFee == null || validDeliveryAmount(data.delivery.routeFee)) &&
+        (data.delivery.customerAreaId == null || validDeliveryArea(data.delivery.customerAreaId)) &&
+        (data.delivery.restaurantAreaId == null || validDeliveryArea(data.delivery.restaurantAreaId)) &&
+        data.delivery.pricingRevision is int && data.delivery.pricingRevision >= 0
+      );
+    }
+
+    match /settings/deliveryPricing {
+      allow read: if true;
+      allow create: if isAdmin() && validDeliveryPricing(request.resource.data) &&
+        request.resource.data.revision == 1;
+      allow update: if isAdmin() && validDeliveryPricing(request.resource.data) &&
+        request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
@@ -67,7 +112,7 @@ service cloud.firestore {
     }
 
     match /restaurantRequests/{requestId} {
-      allow create: if isCustomer() &&
+      allow create: if isCustomer() && validOrderDelivery(request.resource.data) &&
         request.resource.data.customerId == request.auth.uid &&
         request.resource.data.status == 'pending';
 
@@ -95,3 +140,4 @@ service cloud.firestore {
     }
   }
 }
+

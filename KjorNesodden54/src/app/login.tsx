@@ -1,3 +1,5 @@
+import { areaName, type DeliveryAreaId } from "../services/deliveryPricing";
+import { useDelivery } from "../context/DeliveryContext";
 import KeyboardScrollView from "../components/KeyboardScrollView";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
@@ -63,6 +65,7 @@ import {
 
 export default function LoginScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
+  const delivery = useDelivery();
 
   const {
     user,
@@ -633,30 +636,27 @@ export default function LoginScreen() {
 
         let deliveryUpdate:
           | {
-              fee: number;
-              zone: string;
+              areaId: DeliveryAreaId;
             }
           | null
           | undefined;
 
         if (selectedAddress) {
           deliveryUpdate = {
-            fee: selectedAddress.zone.fee,
-            zone: selectedAddress.zone.name,
+            areaId: selectedAddress.zone.id,
           };
         } else if (
           address.trim() === profile?.address.trim() &&
-          profile.deliveryFee !== null
+          profile.deliveryAreaId !== null
         ) {
-          deliveryUpdate = undefined;
+          deliveryUpdate = { areaId: profile.deliveryAreaId! };
         } else {
           const resolvedAddress =
             await resolveNesoddenAddress(address);
 
           deliveryUpdate = resolvedAddress
             ? {
-                fee: resolvedAddress.zone.fee,
-                zone: resolvedAddress.zone.name,
+                areaId: resolvedAddress.zone.id,
               }
             : null;
         }
@@ -686,7 +686,7 @@ export default function LoginScreen() {
           "Adresse lagret",
           savedAddress.deliverySaved
             ? "Adressen din er oppdatert."
-            : "Adressen er lagret. Leveringsprisen avtales inntil de nye Firestore-reglene er publisert."
+            : "Adressen er lagret. Vi forsøker å finne området automatisk når du bestiller."
         );
 
       } catch (
@@ -1408,9 +1408,14 @@ export default function LoginScreen() {
                         </Text>
 
                         <Text style={styles.deliveryPriceText}>
-                          {profile.deliveryFee !== null
-                            ? `Levering: ${profile.deliveryFee} kr · ${profile.deliveryZone}`
-                            : "Leveringspris avtales"}
+                          {profile.deliveryAreaId !== null
+                            ? `Område: ${areaName(profile.deliveryAreaId)}`
+                            : "Området er ikke avklart. Velg et adresseforslag for automatisk pris."}
+                        </Text>
+                        <Text style={styles.deliveryPriceText}>
+                          {delivery.pricingError ? "Leveringsprisene er midlertidig utilgjengelige."
+                            : delivery.pricingLoading ? "Henter leveringspriser…"
+                            : `Lokal levering: ${delivery.pricing.sameAreaFee} kr. Prisen fra andre områder vises ved restauranten og i handlekurven.`}
                         </Text>
                       </View>
                     ) : (

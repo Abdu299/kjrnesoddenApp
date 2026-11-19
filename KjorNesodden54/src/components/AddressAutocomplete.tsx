@@ -92,7 +92,7 @@ export default function AddressAutocomplete({
         <View style={styles.suggestions}>
           {!loading && suggestions.length === 0 ? (
             <Text style={styles.emptyText}>
-              Ingen treff. Du kan skrive hele adressen og lagre. Leveringsprisen avtales.
+              Ingen treff. Du kan skrive hele adressen og lagre. Området må avklares før leveringsprisen kan beregnes.
             </Text>
           ) : (
             suggestions.map((suggestion) => (
@@ -112,7 +112,7 @@ export default function AddressAutocomplete({
                     {suggestion.postalCode} {suggestion.postalPlace}
                   </Text>
                 </View>
-                <Text style={styles.fee}>{suggestion.zone.fee} kr</Text>
+                <Text style={styles.fee}>{suggestion.zone.name}</Text>
               </TouchableOpacity>
             ))
           )}
@@ -120,7 +120,7 @@ export default function AddressAutocomplete({
       )}
 
       <Text style={styles.helper}>
-        Velg et forslag for fast leveringspris. Ved manuell adresse avtales prisen.
+        Velg et adresseforslag for riktig område. Leveringsprisen beregnes fra både hentestedet og adressen din.
       </Text>
     </View>
   );
@@ -159,7 +159,7 @@ const createStyles = (colors: AppThemeColors) => StyleSheet.create({
   suggestionText: { flex: 1 },
   street: { color: colors.text, fontSize: 15, fontWeight: "700" },
   place: { color: colors.textMuted, fontSize: 13, marginTop: 3 },
-  fee: { color: colors.primary, fontSize: 15, fontWeight: "800", marginLeft: 12 },
+  fee: { color: colors.primary, fontSize: 15, fontWeight: "800", marginLeft: 12, maxWidth: 115, textAlign: "right" },
   emptyText: { color: colors.textSecondary, fontSize: 14, lineHeight: 20, padding: 14 },
   helper: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 8 },
 });

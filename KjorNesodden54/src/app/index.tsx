@@ -1,3 +1,8 @@
+import DeliveryPricingEditor from "../components/DeliveryPricingEditor";
+import DeliveryAreaPicker from "../components/DeliveryAreaPicker";
+import DeliveryPrice from "../components/DeliveryPrice";
+import { areaName, type DeliveryAreaId } from "../services/deliveryPricing";
+import { useDeliveryEstimate } from "../hooks/use-delivery-estimate";
 import KeyboardScrollView from "../components/KeyboardScrollView";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
@@ -177,6 +182,7 @@ export default function HomeScreen() {
 
 function CustomerHomeScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
+  const delivery = useDeliveryEstimate();
 
   const {
     totalItems,
@@ -444,6 +450,7 @@ function CustomerHomeScreen() {
                   >
                     {restaurant.description}
                   </Text>
+                  <DeliveryPrice restaurant={restaurant} customerAreaId={delivery.error || delivery.loading ? null : delivery.profile?.deliveryAreaId ?? null} />
 
                   <Text
                     style={[
@@ -1442,6 +1449,8 @@ function RestaurantHomeScreen() {
 
 function AdminHomeScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
+  const [deliveryAreaId, setDeliveryAreaId] = useState<DeliveryAreaId | null>(null);
+  const [editDeliveryAreaId, setEditDeliveryAreaId] = useState<DeliveryAreaId | null>(null);
 
   const [
     restaurants,
@@ -1594,7 +1603,8 @@ function AdminHomeScreen() {
           name,
           description,
           code,
-          imageUrl
+          imageUrl,
+          deliveryAreaId
         );
 
 
@@ -1602,6 +1612,7 @@ function AdminHomeScreen() {
         setDescription("");
         setCode("");
         setImageUrl("");
+        setDeliveryAreaId(null);
 
 
         await loadRestaurants();
@@ -1645,6 +1656,7 @@ function AdminHomeScreen() {
       setEditName(
         restaurant.name
       );
+      setEditDeliveryAreaId(restaurant.deliveryAreaId);
 
       setEditDescription(
         restaurant.description
@@ -1691,7 +1703,8 @@ function AdminHomeScreen() {
           editName,
           editDescription,
           editImageUrl,
-          editOpeningHours
+          editOpeningHours,
+          editDeliveryAreaId
         );
 
 
@@ -1822,6 +1835,8 @@ function AdminHomeScreen() {
           Administrer restaurantene i KjørNesodden.
         </Text>
 
+        <DeliveryPricingEditor />
+
 
         <View
           style={
@@ -1835,6 +1850,8 @@ function AdminHomeScreen() {
           >
             Legg til restaurant
           </Text>
+
+          <DeliveryAreaPicker value={deliveryAreaId} onChange={setDeliveryAreaId} />
 
 
           <Text
@@ -2083,6 +2100,7 @@ function AdminHomeScreen() {
                       }
                     />
 
+                    <DeliveryAreaPicker value={editDeliveryAreaId} onChange={setEditDeliveryAreaId} />
                     <OpeningHoursEditor
                       value={editOpeningHours}
                       onChange={setEditOpeningHours}
@@ -2187,6 +2205,9 @@ function AdminHomeScreen() {
                       {restaurant.description}
                     </Text>
 
+                    <Text style={styles.adminHoursSummary}>
+                      Område: {restaurant.deliveryAreaId ? areaName(restaurant.deliveryAreaId) : "Velg område for automatisk leveringspris"}
+                    </Text>
                     <Text style={styles.adminHoursSummary}>
                       {openingStatus(restaurant.openingHours, restaurant.closedUntil).text}
                     </Text>

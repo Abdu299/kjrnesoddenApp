@@ -1,3 +1,4 @@
+import { DeliveryProvider } from "../context/DeliveryContext";
 import {
   useEffect,
   useState,
@@ -415,11 +416,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RestaurantLanguageProvider>
-          <CartProvider>
-            <ThemedApp />
-          </CartProvider>
-        </RestaurantLanguageProvider>
+        <DeliveryProvider>
+          <RestaurantLanguageProvider>
+            <CartProvider>
+              <ThemedApp />
+            </CartProvider>
+          </RestaurantLanguageProvider>
+        </DeliveryProvider>
       </AuthProvider>
     </ThemeProvider>
   );

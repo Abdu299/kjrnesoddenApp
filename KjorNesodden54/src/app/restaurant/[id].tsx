@@ -1,3 +1,5 @@
+import DeliveryPrice from "../../components/DeliveryPrice";
+import { useDeliveryEstimate } from "../../hooks/use-delivery-estimate";
 import { useThemedStyles } from "../../context/ThemeContext";
 import type { AppThemeColors } from "../../constants/app-theme";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -50,6 +52,7 @@ import {
 
 export default function RestaurantScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
+  const delivery = useDeliveryEstimate();
 
   const {
     id,
@@ -627,6 +630,7 @@ export default function RestaurantScreen() {
             >
               {restaurant.description}
             </Text>
+            <DeliveryPrice restaurant={restaurant} customerAreaId={delivery.error || delivery.loading ? null : delivery.profile?.deliveryAreaId ?? null} />
 
             <View
               style={[

@@ -1,3 +1,5 @@
+import { getDeliveryPricingFromServer } from "./deliveryPricingService";
+import { areaName, defaultDeliveryPricing, quoteDelivery, type DeliveryQuote } from "./deliveryPricing";
 import type {
   CartItem,
 } from "../context/CartContext";
@@ -205,7 +207,8 @@ function buildOrderDescription(
   items: CartItem[],
   totalPrice: number,
   deliveryFee: number | null,
-  deliveryZone: string
+  deliveryZone: string,
+  quote: DeliveryQuote
 ): string {
   const restaurantItems =
     getRestaurantItems(
@@ -331,9 +334,14 @@ function buildOrderDescription(
     0
   ) {
     summaryLines.push(
-      "ℹ️ Pris for fri bestilling kommer i tillegg."
+      "ℹ️ Pris og eventuell ekstra levering for fri bestilling avtales separat."
     );
   }
+
+  for (const route of quote.routes) {
+    summaryLines.push(`Levering ${route.restaurantName}: ${areaName(route.restaurantAreaId)} → ${areaName(quote.customerAreaId)}: ${route.fee === null ? "avtales" : `${route.fee} kr`}`);
+  }
+  if (quote.routes.length > 1) summaryLines.push("Én leveringspris: høyeste rutepris, ikke summen av rutene.");
 
   summaryLines.push(
     deliveryFee !== null
@@ -375,9 +383,40 @@ function buildOrderDescription(
 // NORMAL CART ORDER
 // ==================================================
 
+export type CheckoutDeliveryQuote = DeliveryQuote & { cartKey: string };
+
+function cartKey(items: CartItem[]) {
+  return JSON.stringify(items.map((item) => [item.type, item.restaurantId, item.productId,
+    item.quantity, item.price, item.customPlace ?? "", item.customRequest ?? ""]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+}
+
+async function prepareCheckout(items: CartItem[]) {
+  if (items.length === 0) throw new Error("Handlekurven er tom.");
+  const profile = await getValidCustomerProfile();
+  const restaurantIds = [...new Set(getRestaurantItems(items).map((item) => item.restaurantId))];
+  const orderedRestaurants = await Promise.all(restaurantIds.map((id) => getRestaurantById(id, true)));
+  if (orderedRestaurants.some((restaurant) => !restaurant || !restaurant.active)) {
+    throw new Error("En restaurant i handlekurven er ikke tilgjengelig. Kontroller bestillingen.");
+  }
+  for (const restaurant of orderedRestaurants) {
+    const status = openingStatus(restaurant!.openingHours, restaurant!.closedUntil);
+    if (!status.open) throw new Error(`${restaurant!.name} tar ikke imot bestillinger nå. ${status.text}.`);
+  }
+  // Pure custom orders have no known pickup area and retain an explicitly agreed price.
+  const pricing = restaurantIds.length ? await getDeliveryPricingFromServer() : defaultDeliveryPricing;
+  const quote: CheckoutDeliveryQuote = { ...quoteDelivery(orderedRestaurants.filter((restaurant) => restaurant !== null),
+    profile.deliveryAreaId, profile.address, pricing), cartKey: cartKey(items) };
+  return { profile, quote };
+}
+
+export async function prepareCartDelivery(items: CartItem[]): Promise<CheckoutDeliveryQuote> {
+  return (await prepareCheckout(items)).quote;
+}
+
 export async function submitCartOrder(
   items: CartItem[],
-  totalPrice: number
+  totalPrice: number,
+  expectedQuote?: CheckoutDeliveryQuote
 ) {
   if (
     items.length ===
@@ -393,44 +432,16 @@ export async function submitCartOrder(
   // CUSTOMER
   // ==================================================
 
-  const profile =
-    await getValidCustomerProfile();
-
-
-  const restaurantItems =
-    getRestaurantItems(
-      items
-    );
-
-
-  const restaurantIds =
-    [...new Set(restaurantItems.map((item) => item.restaurantId))];
-
-
-  const orderedRestaurants =
-    await Promise.all(
-      restaurantIds.map((restaurantId) => getRestaurantById(restaurantId))
-    );
-
-
-  const closedRestaurant =
-    orderedRestaurants.find(
-      (restaurant) =>
-        restaurant &&
-        !openingStatus(restaurant.openingHours, restaurant.closedUntil).open
-    );
-
-
-  if (closedRestaurant) {
-    const status = openingStatus(
-      closedRestaurant.openingHours,
-      closedRestaurant.closedUntil
-    );
-    throw new Error(
-      `${closedRestaurant.name} tar ikke imot bestillinger nå. ${status.text}.`
-    );
+  const { profile, quote } = await prepareCheckout(items);
+  const restaurantItems = getRestaurantItems(items);
+  if ((restaurantItems.length > 0 && !expectedQuote) || (expectedQuote &&
+      (expectedQuote.signature !== quote.signature || expectedQuote.cartKey !== quote.cartKey))) {
+    throw new Error("Bestillingen eller leveringsprisen er endret. Kontroller handlekurven og bekreft på nytt.");
   }
-
+  const calculatedTotal = restaurantItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  if (!Number.isFinite(totalPrice) || Math.abs(calculatedTotal - totalPrice) > 0.001) {
+    throw new Error("Varesummen er endret. Kontroller handlekurven og prøv igjen.");
+  }
 
   const customItems =
     getCustomItems(
@@ -479,8 +490,9 @@ export async function submitCartOrder(
     buildOrderDescription(
       items,
       totalPrice,
-      profile.deliveryFee,
-      profile.deliveryZone
+      quote.fee,
+      areaName(quote.customerAreaId),
+      quote
     );
 
 
@@ -538,7 +550,8 @@ export async function submitCartOrder(
         await createRestaurantRequests(
           restaurantItems,
           profile.name,
-          profile.phone
+          profile.phone,
+          quote
         );
 
 
@@ -592,7 +605,8 @@ export async function submitCartOrder(
     await createRestaurantRequests(
       restaurantItems,
       profile.name,
-      profile.phone
+      profile.phone,
+      quote
     );
 
 
@@ -703,3 +717,4 @@ export async function submitCustomOrder(
       profile.name,
   };
 }
+

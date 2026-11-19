@@ -1,8 +1,6 @@
-export type DeliveryZone = {
-  id: string;
-  name: string;
-  fee: number;
-};
+import { deliveryAreas, type DeliveryArea } from "./deliveryPricing";
+
+export type DeliveryZone = DeliveryArea;
 
 export type AddressSuggestion = {
   id: string;
@@ -16,13 +14,6 @@ export type AddressSuggestion = {
 const NESODDEN_MUNICIPALITY = "3212";
 const ADDRESS_API = "https://ws.geonorge.no/adresser/v1/sok";
 
-const zones: DeliveryZone[] = [
-  { id: "tangen", name: "Tangen / Hellvik", fee: 75 },
-  { id: "bjornemyr", name: "Bjørnemyr", fee: 100 },
-  { id: "alvaern", name: "Alværn / Fjordvangen / Fjellstrand", fee: 100 },
-  { id: "fagerstrand", name: "Fagerstrand", fee: 150 },
-];
-
 const anchors: [number, number, string][] = [
   [59.8588, 10.6634, "tangen"], [59.8604, 10.6542, "tangen"],
   [59.8614, 10.6718, "tangen"], [59.8507, 10.6777, "tangen"],
@@ -30,7 +21,7 @@ const anchors: [number, number, string][] = [
   [59.8274, 10.6355, "bjornemyr"], [59.8445, 10.6912, "tangen"],
   [59.8416, 10.6738, "tangen"], [59.8209, 10.6278, "alvaern"],
   [59.8292, 10.6952, "alvaern"], [59.8331, 10.6941, "alvaern"],
-  [59.7952, 10.6083, "alvaern"], [59.8064, 10.6256, "alvaern"],
+  [59.7952, 10.6083, "fjellstrand"], [59.8064, 10.6256, "fjellstrand"],
   [59.814, 10.6768, "alvaern"], [59.7912, 10.7054, "alvaern"],
   [59.7773, 10.6907, "alvaern"], [59.7779, 10.7059, "alvaern"],
   [59.7375, 10.594, "fagerstrand"], [59.743, 10.6127, "fagerstrand"],
@@ -44,11 +35,16 @@ function deliveryZone(
   postalCode: string,
   postalPlace: string
 ) {
+  const place = postalPlace.toLocaleUpperCase("nb-NO");
+  if (place === "FAGERSTRAND") return deliveryAreas.find((area) => area.id === "fagerstrand")!;
+  if (place === "FJELLSTRAND") return deliveryAreas.find((area) => area.id === "fjellstrand")!;
+  if (place === "ALVÆRN") return deliveryAreas.find((area) => area.id === "alvaern")!;
+
   if (
     postalCode === "1453" ||
     postalPlace.toLocaleUpperCase("nb-NO") === "BJØRNEMYR"
   ) {
-    return zones.find((zone) => zone.id === "bjornemyr")!;
+    return deliveryAreas.find((zone) => zone.id === "bjornemyr")!;
   }
 
   let closestId = "";
@@ -66,7 +62,7 @@ function deliveryZone(
     }
   }
 
-  return zones.find((zone) => zone.id === closestId)!;
+  return deliveryAreas.find((zone) => zone.id === closestId)!;
 }
 
 export async function searchNesoddenAddresses(
@@ -173,21 +169,20 @@ export async function resolveNesoddenAddress(
           .replace(/\s+/g, " ")
           .trim();
 
+      const postalCodeInInput = cleanAddress.match(/(?:,\s*|\s)(\d{4})(?:\s+[A-Za-zÆØÅæøå]|$)/)?.[1];
       const normalizedInput = normalize(cleanAddress);
       const normalizedStreet = normalize(streetPart);
       const exact = suggestions.find(
         (suggestion) =>
-          normalize(suggestion.label) === normalizedInput ||
-          normalize(suggestion.streetAddress) === normalizedStreet
+          (!postalCodeInInput || suggestion.postalCode === postalCodeInInput) &&
+          (normalize(suggestion.label) === normalizedInput ||
+          normalize(suggestion.streetAddress) === normalizedStreet)
       );
 
       if (exact) {
         return exact;
       }
 
-      if (suggestions.length === 1) {
-        return suggestions[0];
-      }
     } catch {
       // Keep manual address saving available if the lookup service is down.
     }
@@ -195,3 +190,4 @@ export async function resolveNesoddenAddress(
 
   return null;
 }
+

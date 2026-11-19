@@ -8,7 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -49,3 +50,4 @@
   },
   "private": true
 }
+
