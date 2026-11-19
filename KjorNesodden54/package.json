@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test:catalog": "node --test tests/restaurant-catalog.test.cjs",
+    "test:restaurant-login": "node --test tests/restaurant-login.test.cjs",
     "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs"
   },
   "dependencies": {

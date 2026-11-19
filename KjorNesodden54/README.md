@@ -35,6 +35,19 @@ Etter oppdateringen åpner du **admin** i appen én gang. Den eksisterende admin
 
 Importen er klargjort i koden, men blir først utført i databasen når admin åpnes med en gyldig innlogging. Den bruker de eksisterende reglene som tillater admin å opprette restauranter og produkter. Katalogtestene kan kjøres med `npm run test:catalog`.
 
+For å gi en importert restaurant innlogging: åpne **Admin → Registrerte restauranter → Fagerstrand Grill → Opprett innlogging**, velg en kode med minst seks tegn og gjenta den. Logg deretter inn fra profilsiden som restaurant med **Fagerstrand Grill** og koden du valgte. Koden vises ikke eller lagres i restaurantdokumentet. Innloggingen knyttes til den eksisterende restauranten og menyen. Hvis opprettingen avbrytes etter at Auth-kontoen er opprettet, prøv igjen med samme kode. Eksisterende innlogginger og andre kontoroller overskrives ikke. Test med `npm run test:restaurant-login`.
+
+## TestFlight
+
+Kjør fra `KjorNesodden54` etter å ha hentet siste `main` og installert avhengighetene:
+
+```sh
+npx eas-cli login
+npx eas-cli build --platform ios --profile production --auto-submit
+```
+
+Bruk Expo-kontoen som har tilgang til prosjektet til `abdu2003`, og følg Apple-innloggingen hvis EAS ber om den. Produksjonsprofilen bruker automatisk byggnummer og riktig ordre-API. Etter at Apple har behandlet opplastingen, velg bygget under **App Store Connect → KjørNesodden → TestFlight** og legg det til testgruppen. Denne kommandoen gjør bygget tilgjengelig for TestFlight; utgivelse i App Store krever et eget steg.
+
 ## Leveringspriser i appen
 
 Admin kan endre satsene under **Leveringspriser** på hovedsiden, og velge **Restaurantens område** ved oppretting eller redigering av en restaurant. Endringer lagres i ett felles dokument, `settings/deliveryPricing`, og oppdateres fortløpende i appen.

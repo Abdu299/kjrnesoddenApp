@@ -1,4 +1,5 @@
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
+import RestaurantLoginSetup from "../components/RestaurantLoginSetup";
 import DeliveryPricingEditor from "../components/DeliveryPricingEditor";
 import DeliveryAreaPicker from "../components/DeliveryAreaPicker";
 import DeliveryPrice from "../components/DeliveryPrice";
@@ -2227,6 +2228,8 @@ function AdminHomeScreen() {
                     <Text style={styles.adminHoursSummary}>
                       {openingStatus(restaurant.openingHours, restaurant.closedUntil).text}
                     </Text>
+
+                    <RestaurantLoginSetup restaurant={restaurant} onCreated={() => { void loadRestaurants(); }} />
 
 
                     <TouchableOpacity
