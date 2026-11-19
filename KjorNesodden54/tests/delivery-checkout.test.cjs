@@ -46,6 +46,19 @@ test('local delivery ignores obsolete profile money and sends exactly the confir
   assert.match(app.state.sent[0].description, /249 kr/);
   assert.equal(app.state.requests[0][3].fee, 100);
 });
+test('Fjellstrand to Fjellstrand uses its normal 150 kr rate in the quote and order', async () => {
+  const app = setup();
+  app.state.profile.deliveryAreaId = 'fjellstrand';
+  app.state.restaurants.mama.deliveryAreaId = 'fjellstrand';
+  app.state.pricing.sameAreaFee = 70;
+  const quote = await app.prepareCartDelivery([item()]);
+  assert.equal(quote.fee, 150);
+  assert.equal(quote.routes[0].local, false);
+  await app.submitCartOrder([item()], 149, quote);
+  assert.match(app.state.sent[0].description, /Levering: 150 kr/);
+  assert.match(app.state.sent[0].description, /299 kr/);
+  assert.equal(app.state.requests[0][3].fee, 150);
+});
 test('Fagerstrand to Tangen is quoted, sent and recorded as 250', async () => {
   const app = setup(), quote = await app.prepareCartDelivery([item()]);
   assert.equal(quote.fee, 250); await app.submitCartOrder([item()], 149, quote);

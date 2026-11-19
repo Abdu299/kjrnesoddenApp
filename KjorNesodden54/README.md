@@ -31,7 +31,7 @@ Admin kan endre satsene under **Leveringspriser** på hovedsiden, og velge **Res
 
 Standardprisene er:
 
-| Område | Sats mellom ulike områder |
+| Område | Vanlig områdesats |
 | --- | ---: |
 | Tangen / Hellvik | 100 kr |
 | Bjørnemyr | 100 kr |
@@ -39,7 +39,7 @@ Standardprisene er:
 | Fjellstrand | 150 kr |
 | Fagerstrand | 250 kr |
 
-Innen samme område brukes lokalprisen, som starter på **100 kr**. Mellom ulike områder brukes den høyeste av de to områdesatsene. Fagerstrand til Fagerstrand koster dermed 100 kr, mens Fagerstrand til Tangen, eller motsatt vei, koster 250 kr. Også lokalprisen kan endres av admin.
+**Bare Fagerstrand til Fagerstrand** får lokalprisen, som starter på **100 kr**. Alle andre leveringer bruker vanlige områdesatser, også innen samme område. Fjellstrand til Fjellstrand koster derfor 150 kr. Mellom ulike områder brukes den høyeste av de to områdesatsene, slik at Fagerstrand til Tangen, eller motsatt vei, koster 250 kr. Admin kan også endre lokalprisen for Fagerstrand.
 
 En handlekurv med flere restauranter får én leveringspris: den høyeste aktuelle ruteprisen. Fri bestilling og eventuell ekstra levering for et ukjent hentested avtales separat. Ukjent adresse eller restaurantområde gir **pris avtales**, aldri en antatt lav pris.
 

@@ -5,9 +5,9 @@ const { defaultDeliveryPricing: prices, deliveryAreas, routeDeliveryFee, quoteDe
   parseDeliveryPricing, restaurantDeliveryArea } = exportsObject;
 const restaurant = (id, area) => ({ id, name: id, deliveryAreaId: area });
 
-test("all 25 routes use the local price or the highest area rate, in either direction", () => {
+test("all 25 routes reserve the local price for Fagerstrand, otherwise use normal area rates", () => {
   for (const pickup of deliveryAreas) for (const destination of deliveryAreas) {
-    const expected = pickup.id === destination.id ? 100 : Math.max(prices.areaFees[pickup.id], prices.areaFees[destination.id]);
+    const expected = pickup.id === "fagerstrand" && destination.id === "fagerstrand" ? 100 : Math.max(prices.areaFees[pickup.id], prices.areaFees[destination.id]);
     assert.equal(routeDeliveryFee(pickup.id, destination.id, prices), expected);
     assert.equal(routeDeliveryFee(destination.id, pickup.id, prices), expected);
   }
@@ -18,7 +18,7 @@ test("the requested Fagerstrand examples and Fjellstrand rates", () => {
   assert.equal(routeDeliveryFee("fagerstrand", "tangen", prices), 250);
   assert.equal(routeDeliveryFee("tangen", "fagerstrand", prices), 250);
   assert.equal(routeDeliveryFee("fjellstrand", "tangen", prices), 150);
-  assert.equal(routeDeliveryFee("fjellstrand", "fjellstrand", prices), 100);
+  assert.equal(routeDeliveryFee("fjellstrand", "fjellstrand", prices), 150);
 });
 
 test("an admin price edit changes every affected route without modifying unrelated routes", () => {
@@ -28,7 +28,16 @@ test("an admin price edit changes every affected route without modifying unrelat
     assert.equal(routeDeliveryFee(destination.id, "fagerstrand", edited), destination.id === "fagerstrand" ? 110 : 300);
   }
   assert.equal(routeDeliveryFee("fjellstrand", "tangen", edited), 150);
-  assert.equal(routeDeliveryFee("tangen", "tangen", edited), 110);
+  assert.equal(routeDeliveryFee("tangen", "tangen", edited), 100);
+});
+
+test("editing the Fagerstrand local price cannot discount any other area's local deliveries", () => {
+  const edited = { ...prices, sameAreaFee: 70 };
+  for (const area of deliveryAreas) {
+    const quote = quoteDelivery([restaurant("A", area.id)], area.id, "Testveien 1", edited);
+    assert.equal(quote.fee, area.id === "fagerstrand" ? 70 : prices.areaFees[area.id]);
+    assert.equal(quote.routes[0].local, area.id === "fagerstrand");
+  }
 });
 
 test("multiple restaurants and duplicate items incur the highest route once", () => {

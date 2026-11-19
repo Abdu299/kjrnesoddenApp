@@ -1415,7 +1415,11 @@ export default function LoginScreen() {
                         <Text style={styles.deliveryPriceText}>
                           {delivery.pricingError ? "Leveringsprisene er midlertidig utilgjengelige."
                             : delivery.pricingLoading ? "Henter leveringspriser…"
-                            : `Lokal levering: ${delivery.pricing.sameAreaFee} kr. Prisen fra andre områder vises ved restauranten og i handlekurven.`}
+                            : profile.deliveryAreaId === "fagerstrand"
+                              ? `Fra restaurant i Fagerstrand: ${delivery.pricing.sameAreaFee} kr. Fra andre områder brukes vanlige satser.`
+                              : profile.deliveryAreaId
+                                ? `Områdesats: ${delivery.pricing.areaFees[profile.deliveryAreaId]} kr. Endelig pris vises ved restauranten og i handlekurven.`
+                                : "Leveringsprisen beregnes når området og restauranten er kjent."}
                         </Text>
                       </View>
                     ) : (

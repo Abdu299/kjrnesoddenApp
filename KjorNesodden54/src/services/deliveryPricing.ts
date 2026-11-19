@@ -10,6 +10,7 @@ export type DeliveryAreaId = typeof deliveryAreas[number]["id"];
 export type DeliveryArea = typeof deliveryAreas[number];
 export type DeliveryPricing = {
   schemaVersion: 1;
+  // Existing storage key, now used only for Fagerstrand-to-Fagerstrand delivery.
   sameAreaFee: number;
   areaFees: Record<DeliveryAreaId, number>;
   revision: number;
@@ -81,13 +82,19 @@ export type DeliveryQuote = {
   signature: string;
 };
 
+export function isFagerstrandLocalDelivery(
+  restaurantAreaId: DeliveryAreaId | null, customerAreaId: DeliveryAreaId | null
+): boolean {
+  return restaurantAreaId === "fagerstrand" && customerAreaId === "fagerstrand";
+}
+
 export function routeDeliveryFee(
   restaurantAreaId: DeliveryAreaId | null,
   customerAreaId: DeliveryAreaId | null,
   pricing: DeliveryPricing
 ): number | null {
   if (!restaurantAreaId || !customerAreaId) return null;
-  return restaurantAreaId === customerAreaId ? pricing.sameAreaFee
+  return isFagerstrandLocalDelivery(restaurantAreaId, customerAreaId) ? pricing.sameAreaFee
     : Math.max(pricing.areaFees[restaurantAreaId], pricing.areaFees[customerAreaId]);
 }
 
@@ -101,7 +108,7 @@ export function quoteDelivery(
     restaurantId: restaurant.id, restaurantName: restaurant.name,
     restaurantAreaId: restaurant.deliveryAreaId,
     fee: routeDeliveryFee(restaurant.deliveryAreaId, customerAreaId, pricing),
-    local: restaurant.deliveryAreaId !== null && restaurant.deliveryAreaId === customerAreaId,
+    local: isFagerstrandLocalDelivery(restaurant.deliveryAreaId, customerAreaId),
   }));
   const fee = routes.length > 0 && routes.every((route) => route.fee !== null)
     ? Math.max(...routes.map((route) => route.fee!)) : null;

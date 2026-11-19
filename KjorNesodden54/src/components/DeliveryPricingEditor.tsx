@@ -38,16 +38,16 @@ export default function DeliveryPricingEditor() {
   return <View style={styles.card}>
     <Text style={styles.title}>Leveringspriser</Text>
     <Text style={styles.description}>{delivery.pricingLoading ? "Henter leveringspriser…" : delivery.pricingError
-      ? "Administrer satsene for lokal levering og levering mellom områdene."
-      : `Samme område: ${delivery.pricing.sameAreaFee} kr. Mellom ulike områder brukes den høyeste områdesatsen.`}</Text>
+      ? "Administrer områdesatsene og lokalprisen for Fagerstrand."
+      : `Fagerstrand til Fagerstrand: ${delivery.pricing.sameAreaFee} kr. Ellers brukes vanlige områdesatser, også innen samme område.`}</Text>
     {delivery.pricingError ? <>
       <Text style={styles.message}>{delivery.pricingError}</Text>
       <TouchableOpacity style={styles.secondary} onPress={delivery.reload}><Text style={styles.secondaryText}>Prøv igjen</Text></TouchableOpacity>
     </> : draft ? <>
       {!delivery.saved && <Text style={styles.description}>Standardprisene brukes frem til du lagrer første gang.</Text>}
-      <Text style={styles.label}>Levering innen samme område (kr)</Text>
+      <Text style={styles.label}>Lokalpris i Fagerstrand (kr)</Text>
       <TextInput style={styles.input} value={draft.sameAreaFee} keyboardType="number-pad" editable={!saving}
-        accessibilityLabel="Pris innen samme område" placeholderTextColor={colors.placeholder}
+        accessibilityLabel="Lokalpris Fagerstrand" placeholderTextColor={colors.placeholder}
         onChangeText={(sameAreaFee) => setDraft({ ...draft, sameAreaFee })} />
       {deliveryAreas.map((area) => <View key={area.id} style={styles.row}>
         <Text style={styles.area}>{area.name}</Text>

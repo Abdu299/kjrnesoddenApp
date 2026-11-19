@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useDelivery } from "../context/DeliveryContext";
 import { useThemedStyles } from "../context/ThemeContext";
 import type { AppThemeColors } from "../constants/app-theme";
-import { areaName, routeDeliveryFee, type DeliveryAreaId, type DeliveryRestaurant } from "../services/deliveryPricing";
+import { areaName, isFagerstrandLocalDelivery, routeDeliveryFee, type DeliveryAreaId, type DeliveryRestaurant } from "../services/deliveryPricing";
 
 export default function DeliveryPrice({ restaurant, customerAreaId }: {
   restaurant: DeliveryRestaurant; customerAreaId: DeliveryAreaId | null;
@@ -12,7 +12,7 @@ export default function DeliveryPrice({ restaurant, customerAreaId }: {
   const latest = delivery.restaurants.find((item) => item.id === restaurant.id) ?? restaurant;
   const fee = routeDeliveryFee(latest.deliveryAreaId, customerAreaId, delivery.pricing);
   let text = fee === null ? "Levering beregnes når område og adresse er kjent."
-    : `Levering: ${fee.toLocaleString("nb-NO")} kr${latest.deliveryAreaId === customerAreaId ? " · lokalt" : ""}`;
+    : `Levering: ${fee.toLocaleString("nb-NO")} kr${isFagerstrandLocalDelivery(latest.deliveryAreaId, customerAreaId) ? " · lokalt i Fagerstrand" : ""}`;
   if (delivery.pricingLoading || delivery.restaurantsLoading) text = "Henter leveringspris…";
   if (delivery.pricingError || delivery.restaurantsError) text = "Leveringsprisen er midlertidig utilgjengelig.";
   return <View style={styles.container}>
