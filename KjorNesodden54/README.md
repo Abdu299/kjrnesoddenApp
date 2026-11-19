@@ -37,6 +37,23 @@ Importen er klargjort i koden, men blir først utført i databasen når admin å
 
 For å gi en importert restaurant innlogging: åpne **Admin → Registrerte restauranter → Fagerstrand Grill → Opprett innlogging**, velg en kode med minst seks tegn og gjenta den. Logg deretter inn fra profilsiden som restaurant med **Fagerstrand Grill** og koden du valgte. Koden vises ikke eller lagres i restaurantdokumentet. Innloggingen knyttes til den eksisterende restauranten og menyen. Hvis opprettingen avbrytes etter at Auth-kontoen er opprettet, prøv igjen med samme kode. Eksisterende innlogginger og andre kontoroller overskrives ikke. Test med `npm run test:restaurant-login`.
 
+## Beskjed om påkrevd appoppdatering
+
+**Admin → Appoppdateringer** ligger nederst på adminsiden. Her setter du minste tillatte versjon og en direkte butikklenke separat for iPhone og Android. Når kravet er aktivert, får eldre versjoner en egen skjerm med **Oppdater appen** og knappen til App Store eller Google Play. Det finnes ingen «Senere»-knapp. Kontrollen kjøres ved oppstart, når appen kommer tilbake fra bakgrunnen og når admin endrer kravet mens appen er åpen. Nettversjonen, Expo Go og utviklingsmodus blir ikke blokkert.
+
+Første gang må de nye reglene publiseres fra `KjorNesodden54` med en Firebase-konto som har tilgang til prosjektet:
+
+```sh
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:rules --project kjornesodden
+```
+
+Kontrollen må deretter distribueres i en ny appbygging. Versjoner som allerede er installert uten denne koden, kan ikke få varselet med tilbakevirkende kraft. Ingen krav er aktivert automatisk. App Store-lenken må legges inn av admin; ingen App Store-ID er gjettet. Lagrede krav finnes i `settings/appUpdates`, kan leses uten innlogging og kan bare endres av admin. Endringer bruker revisjonskontroll så samtidige redigeringer ikke overskriver hverandre.
+
+Ved senere utgivelser øker du `expo.version` i `app.json`, for eksempel fra `1.0.1` til `1.0.2`, bygger og publiserer appen, og venter til den er tilgjengelig i den aktuelle appbutikken. Deretter setter du minste versjon til `1.0.2` og slår på kravet for plattformen. Byggnummeret alene teller ikke som ny appversjon. Ikke aktiver et App Store-krav for en versjon som bare finnes i TestFlight. Kontroller butikklenken med knappen i admin før du aktiverer. Slå kravet av igjen via admin i nettversjonen ved behov.
+
+Versjonen leses fra den installerte native appen med `expo-application`, slik at en annen versjon i et eventuelt OTA-manifest ikke gir feil sammenligning. Ved manglende nett eller feil i konfigurasjonen ved oppstart åpnes appen senest etter fem sekunder; den sperres ikke permanent av en driftsfeil. Et allerede bekreftet krav blir stående til serveren bekrefter at det er endret. Kontrollen er en klientfunksjon og erstatter ikke eventuell serverkontroll av gamle klienter. Test kjernelogikken og lagring med `npm run test:updates`.
+
 ## TestFlight
 
 Kjør fra `KjorNesodden54` etter å ha hentet siste `main` og installert avhengighetene:

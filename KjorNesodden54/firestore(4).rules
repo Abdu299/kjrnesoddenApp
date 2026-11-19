@@ -67,6 +67,36 @@ service cloud.firestore {
       );
     }
 
+
+    function validAppPlatformUpdate(data, platform) {
+      return data is map &&
+        data.keys().hasAll(['enabled', 'minimumVersion', 'storeUrl']) &&
+        data.keys().hasOnly(['enabled', 'minimumVersion', 'storeUrl']) &&
+        data.enabled is bool && data.minimumVersion is string && data.storeUrl is string &&
+        (data.minimumVersion == '' || data.minimumVersion.matches('(0|[1-9][0-9]{0,4})[.](0|[1-9][0-9]{0,4})[.](0|[1-9][0-9]{0,4})')) &&
+        (data.storeUrl == '' ||
+          (platform == 'ios' && data.storeUrl.matches('https://apps[.]apple[.]com/([a-z]{2}/)?app/([a-zA-Z0-9_%.-]+/)?id[0-9]+')) ||
+          (platform == 'android' && data.storeUrl == 'https://play.google.com/store/apps/details?id=com.kjornesodden.app')) &&
+        (!data.enabled || (data.minimumVersion != '' && data.storeUrl != ''));
+    }
+
+    function validAppUpdatePolicy(data) {
+      return data.keys().hasAll(['schemaVersion', 'revision', 'ios', 'android', 'updatedAt', 'updatedBy']) &&
+        data.keys().hasOnly(['schemaVersion', 'revision', 'ios', 'android', 'updatedAt', 'updatedBy']) &&
+        data.schemaVersion == 1 && data.revision is int && data.revision >= 1 &&
+        validAppPlatformUpdate(data.ios, 'ios') && validAppPlatformUpdate(data.android, 'android') &&
+        data.updatedAt == request.time && data.updatedBy == request.auth.uid;
+    }
+
+    match /settings/appUpdates {
+      allow read: if true;
+      allow create: if isAdmin() && validAppUpdatePolicy(request.resource.data) &&
+        request.resource.data.revision == 1;
+      allow update: if isAdmin() && validAppUpdatePolicy(request.resource.data) &&
+        request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+
     match /settings/deliveryPricing {
       allow read: if true;
       allow create: if isAdmin() && validDeliveryPricing(request.resource.data) &&

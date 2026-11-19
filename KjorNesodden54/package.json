@@ -11,6 +11,7 @@
     "lint": "expo lint",
     "test:catalog": "node --test tests/restaurant-catalog.test.cjs",
     "test:restaurant-login": "node --test tests/restaurant-login.test.cjs",
+    "test:updates": "node --test tests/app-update.test.cjs",
     "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "expo": "^58.0.0",
+    "expo-application": "~58.1.2",
     "expo-constants": "~58.0.16",
     "expo-font": "~58.0.12",
     "expo-haptics": "~58.0.8",
@@ -52,4 +54,3 @@
   },
   "private": true
 }
-

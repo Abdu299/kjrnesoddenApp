@@ -1,4 +1,5 @@
 import { DeliveryProvider } from "../context/DeliveryContext";
+import AppUpdateGate from "../components/AppUpdateGate";
 import {
   useEffect,
   useState,
@@ -395,6 +396,7 @@ function ThemedApp() {
     <NavigationThemeProvider value={navigationTheme}>
       <View testID="app-surface" style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <AppUpdateGate>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" enabled={Platform.OS !== "web"}>
           {ready ? <AppTabs /> : (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -402,6 +404,7 @@ function ThemedApp() {
             </View>
           )}
         </KeyboardAvoidingView>
+        </AppUpdateGate>
       </View>
     </NavigationThemeProvider>
   );

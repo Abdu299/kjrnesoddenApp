@@ -1,5 +1,6 @@
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
 import RestaurantLoginSetup from "../components/RestaurantLoginSetup";
+import AppUpdatePolicyEditor from "../components/AppUpdatePolicyEditor";
 import DeliveryPricingEditor from "../components/DeliveryPricingEditor";
 import DeliveryAreaPicker from "../components/DeliveryAreaPicker";
 import DeliveryPrice from "../components/DeliveryPrice";
@@ -2278,6 +2279,7 @@ function AdminHomeScreen() {
             )
           )
         )}
+        <AppUpdatePolicyEditor />
       </KeyboardScrollView>
     </SafeAreaView>
   );
