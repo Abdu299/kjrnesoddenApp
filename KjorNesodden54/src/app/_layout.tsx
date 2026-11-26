@@ -1,3 +1,5 @@
+import { registerOrderPush, listenForOrderPush } from "../services/pushNotifications";
+import { router } from "expo-router";
 import { DeliveryProvider } from "../context/DeliveryContext";
 import AppUpdateGate from "../components/AppUpdateGate";
 import {
@@ -73,6 +75,12 @@ function AppTabs() {
       0
     );
 
+
+  useEffect(() => {
+    if (!user || role !== "customer") return;
+    registerOrderPush(user.uid).catch(error => console.warn("Kunne ikke aktivere pushvarsler:", error));
+    return listenForOrderPush(id => router.push({ pathname: "/my-orders", params: { orderId: id } }));
+  }, [user?.uid, role]);
 
   // ==================================================
   // LIVE PENDING REQUEST COUNT
@@ -280,6 +288,8 @@ function AppTabs() {
         }}
       />
 
+
+      <Tabs.Screen name="notifications" options={{ title: "Varsler", href: role === "customer" ? undefined : null, tabBarIcon: () => <Text style={{fontSize:22}}>🔔</Text> }} />
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 

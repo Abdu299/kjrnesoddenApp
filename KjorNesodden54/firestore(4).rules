@@ -241,6 +241,29 @@ service cloud.firestore {
         );
     }
 
+    function feeAllowsDispatch(data) {
+      return data.get('deliveryFee', null) != null &&
+        !(data.get('feeProposal', {}).get('status', '') in ['pending', 'declined']);
+    }
+
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
+      allow create, delete: if false;
+    }
+    match /users/{userId}/pushTokens/{tokenId} {
+      allow read, delete: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn() && request.auth.uid == userId &&
+        request.resource.data.keys().hasOnly(['token', 'updatedAt']) && request.resource.data.token is string &&
+        request.resource.data.token.size() <= 256 && request.resource.data.updatedAt == request.time;
+    }
+    match /orderGroups/{orderId}/feeHistory/{proposalId} {
+      allow read: if isAdmin() || (isCustomer() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.customerId == request.auth.uid) ||
+        (isActiveWorker() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.assignedWorkerId == request.auth.uid);
+      allow write: if false;
+    }
+
     match /orderGroups/{orderId} {
       allow create: if isCustomer() &&
         request.resource.data.keys().hasAll(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
@@ -267,15 +290,16 @@ service cloud.firestore {
         !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null &&
         request.resource.data.madeAvailableAt == request.time && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'madeAvailableAt'])) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt']) &&
-        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] && request.resource.data.statusUpdatedAt == request.time) ||
+        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] &&
+        (!(request.resource.data.status in ['picked_up', 'on_the_way', 'delivered']) || feeAllowsDispatch(resource.data)) && request.resource.data.statusUpdatedAt == request.time) ||
         (isActiveWorker() && resource.data.get('assignmentStatus', '') == 'available' && resource.data.get('assignedWorkerId', null) == null &&
           !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignedWorkerId == request.auth.uid && request.resource.data.assignmentStatus == 'assigned' &&
           request.resource.data.assignedAt == request.time && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'assignedAt'])) ||
-        (isActiveWorker() && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
+        (isActiveWorker() && feeAllowsDispatch(resource.data) && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
           request.resource.data.statusUpdatedAt == request.time &&
           ((resource.data.status == 'ready' && request.resource.data.status == 'picked_up') || (resource.data.status == 'picked_up' && request.resource.data.status == 'on_the_way')) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt'])) ||
-        (isActiveWorker() && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
+        (isActiveWorker() && feeAllowsDispatch(resource.data) && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
           resource.data.status == 'on_the_way' && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
           request.resource.data.statusUpdatedAt == request.time && request.resource.data.completedAt == request.time &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'assignmentStatus', 'completedAt']));
