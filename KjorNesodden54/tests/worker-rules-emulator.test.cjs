@@ -88,3 +88,17 @@ test('customers can only access their own notification inbox and push tokens', a
   await assertSucceeds(setDoc(doc(mine,'users/customer/pushTokens/t1'),{token:'ExpoPushToken[test]',updatedAt:serverTimestamp()}));
   await assertFails(getDoc(doc(other,'users/customer/pushTokens/t1')));
 });
+
+test('fee proposal and response require matching order and history writes', async () => {
+  const { setDoc }=require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore(); await setDoc(doc(db,'users/wfee'),{role:'worker',active:true}); await setDoc(doc(db,'orderGroups/freefee'),{customerId:'customer',status:'ready',deliveryFee:null,assignedWorkerId:'wfee',assignmentStatus:'assigned'});});
+  const worker=env.authenticatedContext('wfee').firestore(), other=env.authenticatedContext('b').firestore(), customer=env.authenticatedContext('customer').firestore();
+  const proposal={id:'offer1',previousFee:null,proposedFee:150,reason:'Lang rute',proposedBy:'wfee',status:'pending',proposedAt:serverTimestamp()};
+  const create = db => runTransaction(db,async tx=>{tx.update(doc(db,'orderGroups/freefee'),{feeProposal:proposal});tx.set(doc(db,'orderGroups/freefee/feeHistory/offer1'),proposal);});
+  await assertFails(create(other));
+  await assertFails(updateDoc(doc(worker,'orderGroups/freefee'),{feeProposal:proposal}));
+  await assertSucceeds(create(worker));
+  await assertFails(updateDoc(doc(customer,'orderGroups/freefee'),{deliveryFee:0}));
+  await assertSucceeds(runTransaction(customer,async tx=>{const order=doc(customer,'orderGroups/freefee'), history=doc(customer,'orderGroups/freefee/feeHistory/offer1');const snap=await tx.get(order); const p=snap.data().feeProposal;const answer={...p,status:'approved',respondedAt:serverTimestamp(),respondedBy:'customer'};tx.update(order,{feeProposal:answer,deliveryFee:150});tx.update(history,{status:'approved',respondedAt:serverTimestamp(),respondedBy:'customer'});}));
+  const updated=await getDoc(doc(customer,'orderGroups/freefee')); if(updated.data().deliveryFee!==150) throw Error('fee not applied');
+});

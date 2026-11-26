@@ -258,10 +258,42 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['token', 'updatedAt']) && request.resource.data.token is string &&
         request.resource.data.token.size() <= 256 && request.resource.data.updatedAt == request.time;
     }
+    function feeProposer(order) {
+      return isAdmin() || (isActiveWorker() && order.get('assignedWorkerId', null) == request.auth.uid && order.get('assignmentStatus', '') == 'assigned');
+    }
+    function validFeeProposal(before, after, orderId) {
+      let p = after.feeProposal;
+      return feeProposer(before) && before.status in ['placed','confirmed','preparing','ready'] &&
+        before.get('feeProposal', {}).get('status', '') != 'pending' &&
+        after.diff(before).affectedKeys().hasOnly(['feeProposal']) && p is map &&
+        p.keys().hasAll(['id','previousFee','proposedFee','reason','proposedBy','status','proposedAt']) &&
+        p.keys().hasOnly(['id','previousFee','proposedFee','reason','proposedBy','status','proposedAt']) &&
+        p.id is string && p.id.size() > 0 && p.previousFee == before.get('deliveryFee', null) &&
+        validDeliveryAmount(p.proposedFee) && p.reason is string && p.reason.size() >= 3 && p.reason.size() <= 300 &&
+        p.proposedBy == request.auth.uid && p.status == 'pending' && p.proposedAt == request.time &&
+        getAfter(/databases/$(database)/documents/orderGroups/$(orderId)/feeHistory/$(p.id)).data == p;
+    }
+    function validFeeResponse(before, after, orderId) {
+      let old = before.feeProposal;
+      let p = after.feeProposal;
+      return isCustomer() && before.customerId == request.auth.uid && !(before.status in ['delivered','cancelled']) &&
+        old.status == 'pending' && p.diff(old).affectedKeys().hasOnly(['status','respondedAt','respondedBy']) &&
+        p.status in ['approved','declined'] && p.respondedAt == request.time && p.respondedBy == request.auth.uid &&
+        after.diff(before).affectedKeys().hasOnly(['feeProposal','deliveryFee']) &&
+        after.deliveryFee == (p.status == 'approved' ? p.proposedFee : before.deliveryFee) &&
+        getAfter(/databases/$(database)/documents/orderGroups/$(orderId)/feeHistory/$(p.id)).data == p;
+    }
+
     match /orderGroups/{orderId}/feeHistory/{proposalId} {
       allow read: if isAdmin() || (isCustomer() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.customerId == request.auth.uid) ||
         (isActiveWorker() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.assignedWorkerId == request.auth.uid);
-      allow write: if false;
+      allow create: if signedIn() && !exists(/databases/$(database)/documents/orderGroups/$(orderId)/feeHistory/$(proposalId)) &&
+        getAfter(/databases/$(database)/documents/orderGroups/$(orderId)).data.feeProposal == request.resource.data &&
+        request.resource.data.id == proposalId && request.resource.data.proposedBy == request.auth.uid && request.resource.data.status == 'pending';
+      allow update: if isCustomer() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.customerId == request.auth.uid &&
+        getAfter(/databases/$(database)/documents/orderGroups/$(orderId)).data.feeProposal == request.resource.data &&
+        resource.data.status == 'pending' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt','respondedBy']);
+      allow delete: if false;
     }
 
     match /orderGroups/{orderId} {
@@ -283,7 +315,8 @@ service cloud.firestore {
         request.resource.data.status == 'placed' && request.resource.data.createdAt == request.time && request.resource.data.statusUpdatedAt == request.time;
       allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid) ||
         (isActiveWorker() && (resource.data.get('assignmentStatus', '') == 'available' || resource.data.get('assignedWorkerId', '') == request.auth.uid));
-      allow update: if (isAdmin() && resource.data.get('assignmentStatus', '') == 'assigned' && resource.data.status in ['placed', 'confirmed', 'preparing', 'ready'] &&
+      allow update: if validFeeProposal(resource.data, request.resource.data, orderId) || validFeeResponse(resource.data, request.resource.data, orderId) ||
+        (isAdmin() && resource.data.get('assignmentStatus', '') == 'assigned' && resource.data.status in ['placed', 'confirmed', 'preparing', 'ready'] &&
         request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null && request.resource.data.releasedAt == request.time &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'releasedAt'])) ||
         (isAdmin() && resource.data.get('assignmentStatus', null) == null && resource.data.get('assignedWorkerId', null) == null &&
