@@ -8,6 +8,7 @@ export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
   picked_up: "Hentet", on_the_way: "På vei", delivered: "Levert", cancelled: "Kansellert",
 };
 export type CustomerOrder = {
+  feeProposal?: import("./feeService").FeeProposal | null;
   assignmentStatus?: "available" | "assigned" | "completed"; assignedWorkerId?: string | null;
   id: string; customerId: string; customerName: string; customerPhone?: string; address: string;
   completedAt?: Timestamp | null;

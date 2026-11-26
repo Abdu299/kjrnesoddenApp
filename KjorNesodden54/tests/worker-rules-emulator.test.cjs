@@ -13,7 +13,7 @@ before(async () => {
       setDoc(doc(db, 'orderGroups/legacy'), {customerId:'customer', status:'placed'}),
       setDoc(doc(db, 'orderGroups/release'), {customerId:'customer', status:'ready', assignmentStatus:'assigned', assignedWorkerId:'b'}),
       setDoc(doc(db, 'orderGroups/picked'), {customerId:'customer', status:'picked_up', assignmentStatus:'assigned', assignedWorkerId:'b'}),
-      setDoc(doc(db, 'orderGroups/order'), {customerId:'customer', assignmentStatus:'available', assignedWorkerId:null, status:'ready'}),
+      setDoc(doc(db, 'orderGroups/order'), {customerId:'customer', assignmentStatus:'available', assignedWorkerId:null, status:'ready', deliveryFee:100}),
     ]);
   });
 });
@@ -59,4 +59,32 @@ test('only an admin can release an assignment before pickup', async () => {
   await assertFails(updateDoc(doc(worker,'orderGroups/release'), changes));
   await assertFails(updateDoc(doc(admin,'orderGroups/picked'), changes));
   await assertSucceeds(updateDoc(doc(admin,'orderGroups/release'), changes));
+});
+
+test('unknown or unapproved delivery fee blocks pickup even for admins', async () => {
+  const { setDoc } = require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await setDoc(doc(db,'users/driver'),{role:'worker',active:true});
+    await setDoc(doc(db,'orderGroups/unpriced'),{customerId:'customer',status:'ready',assignmentStatus:'assigned',assignedWorkerId:'driver',deliveryFee:null});
+    await setDoc(doc(db,'orderGroups/pendingfee'),{customerId:'customer',status:'ready',assignmentStatus:'assigned',assignedWorkerId:'driver',deliveryFee:100,feeProposal:{status:'pending'}});
+  });
+  const driver = env.authenticatedContext('driver').firestore(), admin = env.authenticatedContext('admin').firestore(), customer = env.authenticatedContext('customer').firestore();
+  await assertFails(updateDoc(doc(driver,'orderGroups/unpriced'), {status:'picked_up',statusUpdatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(admin,'orderGroups/unpriced'), {status:'picked_up',statusUpdatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(driver,'orderGroups/pendingfee'), {status:'picked_up',statusUpdatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(customer,'orderGroups/pendingfee'), {deliveryFee:0,feeProposal:{status:'approved'}}));
+});
+
+test('customers can only access their own notification inbox and push tokens', async () => {
+  const { setDoc }=require('firebase/firestore');
+  const mine=env.authenticatedContext('customer').firestore(), other=env.authenticatedContext('b').firestore();
+  await env.withSecurityRulesDisabled(async ctx=>setDoc(doc(ctx.firestore(),'users/customer/notifications/n1'),{title:'Bekreftet',orderId:'order',read:false}));
+  await assertSucceeds(getDoc(doc(mine,'users/customer/notifications/n1')));
+  await assertFails(getDoc(doc(other,'users/customer/notifications/n1')));
+  await assertFails(setDoc(doc(mine,'users/customer/notifications/fake'),{title:'fake',read:false}));
+  await assertSucceeds(updateDoc(doc(mine,'users/customer/notifications/n1'),{read:true}));
+  await assertFails(updateDoc(doc(mine,'users/customer/notifications/n1'),{title:'changed'}));
+  await assertSucceeds(setDoc(doc(mine,'users/customer/pushTokens/t1'),{token:'ExpoPushToken[test]',updatedAt:serverTimestamp()}));
+  await assertFails(getDoc(doc(other,'users/customer/pushTokens/t1')));
 });

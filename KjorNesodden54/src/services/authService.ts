@@ -1,3 +1,4 @@
+import { unregisterOrderPush } from "./pushNotifications";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
@@ -1060,6 +1061,8 @@ export async function deleteCustomerAccount(
 // ==================================================
 
 export async function logout() {
+  await unregisterOrderPush().catch(() => {});
+
   await signOut(
     auth
   );
