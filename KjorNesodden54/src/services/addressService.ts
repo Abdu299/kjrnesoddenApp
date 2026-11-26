@@ -7,6 +7,8 @@ export type AddressSuggestion = {
   streetAddress: string;
   postalCode: string;
   postalPlace: string;
+  latitude: number;
+  longitude: number;
   label: string;
   zone: DeliveryZone;
 };
@@ -127,6 +129,8 @@ export async function searchNesoddenAddresses(
       return {
         id: `${raw.kommunenummer}:${raw.adressekode}:${raw.nummer}:${raw.bokstav || ""}`,
         streetAddress,
+        latitude,
+        longitude,
         postalCode: String(raw.postnummer),
         postalPlace: String(raw.poststed),
         label: `${streetAddress}, ${raw.postnummer} ${raw.poststed}`,

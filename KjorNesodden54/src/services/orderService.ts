@@ -383,7 +383,7 @@ function buildOrderDescription(
 // NORMAL CART ORDER
 // ==================================================
 
-export type CheckoutDeliveryQuote = DeliveryQuote & { cartKey: string };
+export type CheckoutDeliveryQuote = DeliveryQuote & { cartKey: string; coordinatesKey: string };
 
 function cartKey(items: CartItem[]) {
   return JSON.stringify(items.map((item) => [item.type, item.restaurantId, item.productId,
@@ -405,7 +405,7 @@ async function prepareCheckout(items: CartItem[]) {
   // Pure custom orders have no known pickup area and retain an explicitly agreed price.
   const pricing = restaurantIds.length ? await getDeliveryPricingFromServer() : defaultDeliveryPricing;
   const quote: CheckoutDeliveryQuote = { ...quoteDelivery(orderedRestaurants.filter((restaurant) => restaurant !== null),
-    profile.deliveryAreaId, profile.address, pricing), cartKey: cartKey(items) };
+    profile.deliveryAreaId, profile.address, pricing), cartKey: cartKey(items), coordinatesKey: JSON.stringify(profile.deliveryCoordinates ?? null) };
   return { profile, quote };
 }
 
@@ -435,7 +435,7 @@ export async function submitCartOrder(
   const { profile, quote } = await prepareCheckout(items);
   const restaurantItems = getRestaurantItems(items);
   if ((restaurantItems.length > 0 && !expectedQuote) || (expectedQuote &&
-      (expectedQuote.signature !== quote.signature || expectedQuote.cartKey !== quote.cartKey))) {
+      (expectedQuote.signature !== quote.signature || expectedQuote.cartKey !== quote.cartKey || expectedQuote.coordinatesKey !== quote.coordinatesKey))) {
     throw new Error("Bestillingen eller leveringsprisen er endret. Kontroller handlekurven og bekreft på nytt.");
   }
   const calculatedTotal = restaurantItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -493,7 +493,7 @@ export async function submitCartOrder(
       quote.fee,
       areaName(quote.customerAreaId),
       quote
-    );
+    ) + (profile.deliveryCoordinates ? `\n\n📍 Leveringspunkt: https://www.google.com/maps?q=${profile.deliveryCoordinates.latitude},${profile.deliveryCoordinates.longitude}` : "");
 
 
   const deliveryType =
@@ -502,127 +502,24 @@ export async function submitCartOrder(
       : "Annet";
 
 
-  // ==================================================
-  // ORDERS WITH CUSTOM ITEMS
-  // ==================================================
-
-  /*
-    A free/custom item only exists in the Telegram order.
-    Therefore Telegram must succeed before we consider a
-    cart containing custom items submitted.
-  */
-
-  if (
-    customItems.length >
-    0
-  ) {
-    await sendOrderToVercel({
-      fullName:
-        profile.name,
-
-      phone:
-        profile.phone,
-
-      deliveryAddress:
-        profile.address,
-
-      deliveryType,
-
-      deliveryPlace:
-        allPlaces.join(
-          ", "
-        ),
-
-      description,
-    });
-
-
-    let orderGroupId:
-      string | null =
-        null;
-
-
-    if (
-      restaurantItems.length >
-      0
-    ) {
-      const requestResult =
-        await createRestaurantRequests(
-          restaurantItems,
-          profile.name,
-          profile.phone,
-          quote
-        );
-
-
-      orderGroupId =
-        requestResult.orderGroupId;
-    }
-
-
-    return {
-      success:
-        true,
-
-      customerName:
-        profile.name,
-
-      orderGroupId,
-
-      telegramSent:
-        true,
-    };
-  }
-
-
-  // ==================================================
-  // RESTAURANT-ONLY ORDER
-  // ==================================================
-
-  // Telegram must confirm the message before the app reports success.
+  // Keep the existing Telegram workflow, then atomically save the customer order
+  // and all restaurant requests together.
   await sendOrderToVercel({
-    fullName:
-      profile.name,
-
-    phone:
-      profile.phone,
-
-    deliveryAddress:
-      profile.address,
-
-    deliveryType,
-
-    deliveryPlace:
-      allPlaces.join(
-        ", "
-      ),
-
-    description,
+    fullName: profile.name, phone: profile.phone, deliveryAddress: profile.address,
+    deliveryType, deliveryPlace: allPlaces.join(", "), description,
   });
 
-
-  const requestResult =
-    await createRestaurantRequests(
-      restaurantItems,
-      profile.name,
-      profile.phone,
-      quote
+  try {
+    const requestResult = await createRestaurantRequests(
+      restaurantItems, profile.name, profile.phone, quote,
+      { address: profile.address, coordinates: profile.deliveryCoordinates ?? null, items, totalPrice }
     );
+    return { success: true, customerName: profile.name, orderGroupId: requestResult.orderGroupId, telegramSent: true };
+  } catch (error) {
+    console.error("Telegram order sent but order history could not be saved:", error);
+    throw new Error("Bestillingen er sendt, men kunne ikke lagres i appen. Kontakt KjørNesodden før du bestiller på nytt.");
+  }
 
-
-  return {
-    success:
-      true,
-
-    customerName:
-      profile.name,
-
-    orderGroupId:
-      requestResult.orderGroupId,
-
-    telegramSent:
-      true,
-  };
 }
 
 

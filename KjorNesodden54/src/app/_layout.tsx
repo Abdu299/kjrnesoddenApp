@@ -281,6 +281,12 @@ function AppTabs() {
       />
 
 
+      <Tabs.Screen name="my-orders" options={{
+        title: role === "admin" ? "Bestillinger" : "Mine bestillinger",
+        href: role === "customer" || role === "admin" ? undefined : null,
+        tabBarIcon: ({ focused }) => <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.6 }}>📦</Text>,
+      }} />
+
       {/* ==================================================
           LOGIN / PROFILE
       ================================================== */}

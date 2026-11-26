@@ -39,6 +39,8 @@ export type ProfileData = {
 
   address: string;
 
+  deliveryCoordinates?: { latitude: number; longitude: number } | null;
+
   deliveryAreaId: DeliveryAreaId | null;
 
   deliveryZone: string;
@@ -135,6 +137,8 @@ Promise<ProfileData> {
         address,
 
       deliveryAreaId,
+
+      deliveryCoordinates: savedAreaMatchesAddress && typeof userData.deliveryCoordinates?.latitude === "number" && typeof userData.deliveryCoordinates?.longitude === "number" ? userData.deliveryCoordinates : null,
 
       deliveryZone:
         deliveryZone,
@@ -419,7 +423,9 @@ export async function updateCustomerAddress(
   address: string,
   delivery?: {
     areaId: DeliveryAreaId;
-  } | null
+    coordinates?: { latitude: number; longitude: number } | null;
+  } | null,
+  coordinates?: { latitude: number; longitude: number } | null
 ) {
   const userReference =
     await getCustomerReference();
@@ -454,6 +460,7 @@ export async function updateCustomerAddress(
     updates.deliveryZone = delivery ? areaName(delivery.areaId) : "";
     updates.deliveryAreaId = delivery?.areaId ?? null;
     updates.deliveryAreaAddress = cleanAddress;
+    updates.deliveryCoordinates = coordinates ?? delivery?.coordinates ?? null;
   }
 
   try {
