@@ -94,11 +94,20 @@ test('fee proposal and response require matching order and history writes', asyn
   await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore(); await setDoc(doc(db,'users/wfee'),{role:'worker',active:true}); await setDoc(doc(db,'orderGroups/freefee'),{customerId:'customer',status:'ready',deliveryFee:null,assignedWorkerId:'wfee',assignmentStatus:'assigned'});});
   const worker=env.authenticatedContext('wfee').firestore(), other=env.authenticatedContext('b').firestore(), customer=env.authenticatedContext('customer').firestore();
   const proposal={id:'offer1',previousFee:null,proposedFee:150,reason:'Lang rute',proposedBy:'wfee',status:'pending',proposedAt:serverTimestamp()};
-  const create = db => runTransaction(db,async tx=>{tx.update(doc(db,'orderGroups/freefee'),{feeProposal:proposal});tx.set(doc(db,'orderGroups/freefee/feeHistory/offer1'),proposal);});
+  const create = db => runTransaction(db,async tx=>{tx.update(doc(db,'orderGroups/freefee'),{feeProposal:proposal});tx.set(doc(db,'orderGroups/freefee/feeHistory/offer1'),proposal);tx.set(doc(db,'users/customer/notifications/fee1'),{title:'Du har fått et nytt leveringsprisforslag',orderId:'freefee',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'fee'});});
   await assertFails(create(other));
   await assertFails(updateDoc(doc(worker,'orderGroups/freefee'),{feeProposal:proposal}));
   await assertSucceeds(create(worker));
   await assertFails(updateDoc(doc(customer,'orderGroups/freefee'),{deliveryFee:0}));
   await assertSucceeds(runTransaction(customer,async tx=>{const order=doc(customer,'orderGroups/freefee'), history=doc(customer,'orderGroups/freefee/feeHistory/offer1');const snap=await tx.get(order); const p=snap.data().feeProposal;const answer={...p,status:'approved',respondedAt:serverTimestamp(),respondedBy:'customer'};tx.update(order,{feeProposal:answer,deliveryFee:150});tx.update(history,{status:'approved',respondedAt:serverTimestamp(),respondedBy:'customer'});}));
   const updated=await getDoc(doc(customer,'orderGroups/freefee')); if(updated.data().deliveryFee!==150) throw Error('fee not applied');
+});
+
+test('an assigned worker can atomically save an order update and customer inbox item, but cannot forge one', async () => {
+  const {setDoc}=require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore();await setDoc(doc(db,'users/wpush'),{role:'worker',active:true});await setDoc(doc(db,'orderGroups/push-order'),{customerId:'customer',status:'ready',deliveryFee:100,assignmentStatus:'assigned',assignedWorkerId:'wpush'});});
+  const worker=env.authenticatedContext('wpush').firestore();
+  const notice={title:'Bestillingen er hentet',orderId:'push-order',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'picked_up'};
+  await assertFails(setDoc(doc(worker,'users/customer/notifications/forged'),notice));
+  await assertSucceeds(runTransaction(worker,async tx=>{tx.update(doc(worker,'orderGroups/push-order'),{status:'picked_up',statusUpdatedAt:serverTimestamp()});tx.set(doc(worker,'users/customer/notifications/genuine'),notice);}));
 });

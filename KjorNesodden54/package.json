@@ -14,7 +14,8 @@
     "test:updates": "node --test tests/app-update.test.cjs",
     "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs",
     "test:worker": "node --test tests/worker-operations.test.cjs",
-    "test:worker:rules": "npx --yes firebase-tools emulators:exec --only firestore --project demo-kjor \"node --test tests/worker-rules-emulator.test.cjs\""
+    "test:worker:rules": "npx --yes firebase-tools emulators:exec --only firestore --project demo-kjor \"node --test tests/worker-rules-emulator.test.cjs\"",
+    "test:push-worker": "node --test tests/push-worker.test.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

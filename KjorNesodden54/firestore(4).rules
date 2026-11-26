@@ -250,7 +250,33 @@ service cloud.firestore {
       allow read: if signedIn() && request.auth.uid == userId;
       allow update: if signedIn() && request.auth.uid == userId &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
-      allow create, delete: if false;
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly(['title','orderId','createdAt','read','event','pushState']) &&
+        request.resource.data.orderId is string && request.resource.data.createdAt == request.time && request.resource.data.read == false && request.resource.data.pushState == 'pending' &&
+        get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.customerId == userId &&
+        (
+          (isAdmin() && request.resource.data.event in ['confirmed','cancelled','picked_up','on_the_way','delivered'] &&
+            get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status != request.resource.data.event &&
+            getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status == request.resource.data.event) ||
+          (isActiveWorker() && request.resource.data.event == 'assigned' &&
+            get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.get('assignedWorkerId', null) == null &&
+            getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.assignedWorkerId == request.auth.uid) ||
+          (isActiveWorker() && request.resource.data.event in ['picked_up','on_the_way','delivered'] &&
+            get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.assignedWorkerId == request.auth.uid &&
+            get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status != request.resource.data.event &&
+            getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status == request.resource.data.event) ||
+          (request.resource.data.event == 'fee' && feeProposer(get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data) &&
+            getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.feeProposal.proposedBy == request.auth.uid &&
+            getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.feeProposal.proposedAt == request.time)
+        ) &&
+        ((request.resource.data.event == 'confirmed' && request.resource.data.title == 'Bestillingen er bekreftet') ||
+         (request.resource.data.event == 'cancelled' && request.resource.data.title == 'Bestillingen er kansellert') ||
+         (request.resource.data.event == 'picked_up' && request.resource.data.title == 'Bestillingen er hentet') ||
+         (request.resource.data.event == 'on_the_way' && request.resource.data.title == 'Bestillingen er på vei') ||
+         (request.resource.data.event == 'delivered' && request.resource.data.title == 'Bestillingen er levert') ||
+         (request.resource.data.event == 'assigned' && request.resource.data.title == 'En sjåfør har tatt oppdraget') ||
+         (request.resource.data.event == 'fee' && request.resource.data.title == 'Du har fått et nytt leveringsprisforslag'));
+      allow delete: if false;
     }
     match /users/{userId}/pushTokens/{tokenId} {
       allow read, delete: if signedIn() && request.auth.uid == userId;

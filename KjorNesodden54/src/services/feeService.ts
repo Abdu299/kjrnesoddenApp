@@ -15,6 +15,7 @@ export async function proposeFee(orderId: string, amount: number, reason: string
     const proposal = { id: historyRef.id, previousFee: order.deliveryFee ?? null, proposedFee: amount, reason: clean, proposedBy: user.uid, status: "pending", proposedAt: serverTimestamp() };
     transaction.update(orderRef, { feeProposal: proposal });
     transaction.set(historyRef, proposal);
+    transaction.set(doc(collection(db, "users", order.customerId, "notifications")), { title: "Du har fått et nytt leveringsprisforslag", orderId, createdAt: serverTimestamp(), read: false, pushState: "pending", event: "fee" });
   });
 }
 export async function respondFee(orderId: string, proposalId: string, accept: boolean) {

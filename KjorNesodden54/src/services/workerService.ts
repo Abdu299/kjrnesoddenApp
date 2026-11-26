@@ -53,6 +53,7 @@ export async function takeOrder(id: string) {
     if (data.assignedWorkerId === uid && data.assignmentStatus === "assigned") return;
     if (data.assignmentStatus !== "available" || data.assignedWorkerId != null || ["delivered", "cancelled"].includes(data.status)) throw new Error("Oppdraget er ikke lenger ledig.");
     transaction.update(ref, { assignmentStatus: "assigned", assignedWorkerId: uid, assignedAt: serverTimestamp() });
+    transaction.set(doc(collection(db, "users", data.customerId, "notifications")), { title: "En sjåfør har tatt oppdraget", orderId: id, createdAt: serverTimestamp(), read: false, pushState: "pending", event: "assigned" });
   });
 }
 export async function advanceDelivery(id: string, next: OrderStage) {
@@ -67,6 +68,8 @@ export async function advanceDelivery(id: string, next: OrderStage) {
     if (data.status === next) return;
     if (data.assignmentStatus !== "assigned" || data.status !== previous[next]) throw new Error("Statusen er endret. Oppdater oppdraget.");
     transaction.update(ref, { status: next, statusUpdatedAt: serverTimestamp(), ...(next === "delivered" ? { assignmentStatus: "completed", completedAt: serverTimestamp() } : {}) });
+    const titles = { picked_up: "Bestillingen er hentet", on_the_way: "Bestillingen er på vei", delivered: "Bestillingen er levert" };
+    transaction.set(doc(collection(db, "users", data.customerId, "notifications")), { title: titles[next as keyof typeof titles], orderId: id, createdAt: serverTimestamp(), read: false, pushState: "pending", event: next });
   });
 }
 
