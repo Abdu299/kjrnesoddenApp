@@ -8,7 +8,9 @@ export const ORDER_STAGE_LABELS: Record<OrderStage, string> = {
   picked_up: "Hentet", on_the_way: "På vei", delivered: "Levert", cancelled: "Kansellert",
 };
 export type CustomerOrder = {
-  id: string; customerId: string; customerName: string; address: string;
+  assignmentStatus?: "available" | "assigned" | "completed"; assignedWorkerId?: string | null;
+  id: string; customerId: string; customerName: string; customerPhone?: string; address: string;
+  completedAt?: Timestamp | null;
   coordinates: { latitude: number; longitude: number } | null;
   items: { productName: string; restaurantName: string; quantity: number; price: number; customRequest: string }[];
   totalPrice: number; deliveryFee: number | null; status: OrderStage; createdAt: Timestamp | null;

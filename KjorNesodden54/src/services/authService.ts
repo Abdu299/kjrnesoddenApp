@@ -41,6 +41,7 @@ const CART_STORAGE_PREFIX =
 export type UserRole =
   | "customer"
   | "restaurant"
+  | "worker"
   | "admin";
 
 
@@ -507,7 +508,8 @@ async function loginWithEmail(
 
   if (
     userData.role !== "customer" &&
-    userData.role !== "admin"
+    userData.role !== "admin" &&
+    !(userData.role === "worker" && userData.active === true)
   ) {
     await signOut(
       auth
@@ -526,6 +528,7 @@ async function loginWithEmail(
     role:
       userData.role as
         | "customer"
+        | "worker"
         | "admin",
   };
 }

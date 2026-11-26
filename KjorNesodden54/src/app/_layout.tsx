@@ -281,6 +281,8 @@ function AppTabs() {
       />
 
 
+      <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
+
       <Tabs.Screen name="my-orders" options={{
         title: role === "admin" ? "Bestillinger" : "Mine bestillinger",
         href: role === "customer" || role === "admin" ? undefined : null,

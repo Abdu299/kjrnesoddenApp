@@ -12,7 +12,9 @@
     "test:catalog": "node --test tests/restaurant-catalog.test.cjs",
     "test:restaurant-login": "node --test tests/restaurant-login.test.cjs",
     "test:updates": "node --test tests/app-update.test.cjs",
-    "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs"
+    "test:delivery": "node --test tests/delivery-pricing.test.cjs tests/delivery-checkout.test.cjs",
+    "test:worker": "node --test tests/worker-operations.test.cjs",
+    "test:worker:rules": "npx --yes firebase-tools emulators:exec --only firestore --project demo-kjor \"node --test tests/worker-rules-emulator.test.cjs\""
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -49,6 +51,7 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/react": "~19.3.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~58.0.4",

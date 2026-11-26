@@ -27,6 +27,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "restaurant";
     }
 
+    function isActiveWorker() {
+      return hasUserDocument() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'worker' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    }
+
     function currentRestaurantId() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantId;
     }
@@ -123,6 +128,12 @@ service cloud.firestore {
             ]) &&
             request.resource.data.email == request.auth.token.email
           )
+          ||
+          (isAdmin() && request.resource.data.role == 'worker' &&
+            request.resource.data.keys().hasAll(['role', 'name', 'email', 'active', 'createdAt']) &&
+            request.resource.data.keys().hasOnly(['role', 'name', 'email', 'active', 'createdAt']) &&
+            request.resource.data.name is string && request.resource.data.email is string &&
+            request.resource.data.active == true && request.resource.data.createdAt == request.time)
           ||
           (
             isAdmin() &&
@@ -233,7 +244,8 @@ service cloud.firestore {
     match /orderGroups/{orderId} {
       allow create: if isCustomer() &&
         request.resource.data.keys().hasAll(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
-        request.resource.data.keys().hasOnly(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
+        request.resource.data.keys().hasOnly(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt', 'assignmentStatus', 'assignedWorkerId']) &&
+        (!request.resource.data.keys().hasAny(['assignmentStatus', 'assignedWorkerId']) || (request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null)) &&
         request.resource.data.customerId == request.auth.uid &&
         request.resource.data.customerName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
         request.resource.data.customerPhone == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone &&
@@ -246,9 +258,27 @@ service cloud.firestore {
         request.resource.data.totalPrice is number && request.resource.data.totalPrice >= 0 &&
         (request.resource.data.deliveryFee == null || validDeliveryAmount(request.resource.data.deliveryFee)) &&
         request.resource.data.status == 'placed' && request.resource.data.createdAt == request.time && request.resource.data.statusUpdatedAt == request.time;
-      allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid);
-      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt']) &&
-        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] && request.resource.data.statusUpdatedAt == request.time;
+      allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid) ||
+        (isActiveWorker() && (resource.data.get('assignmentStatus', '') == 'available' || resource.data.get('assignedWorkerId', '') == request.auth.uid));
+      allow update: if (isAdmin() && resource.data.get('assignmentStatus', '') == 'assigned' && resource.data.status in ['placed', 'confirmed', 'preparing', 'ready'] &&
+        request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null && request.resource.data.releasedAt == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'releasedAt'])) ||
+        (isAdmin() && resource.data.get('assignmentStatus', null) == null && resource.data.get('assignedWorkerId', null) == null &&
+        !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null &&
+        request.resource.data.madeAvailableAt == request.time && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'madeAvailableAt'])) ||
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt']) &&
+        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] && request.resource.data.statusUpdatedAt == request.time) ||
+        (isActiveWorker() && resource.data.get('assignmentStatus', '') == 'available' && resource.data.get('assignedWorkerId', null) == null &&
+          !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignedWorkerId == request.auth.uid && request.resource.data.assignmentStatus == 'assigned' &&
+          request.resource.data.assignedAt == request.time && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'assignedAt'])) ||
+        (isActiveWorker() && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
+          request.resource.data.statusUpdatedAt == request.time &&
+          ((resource.data.status == 'ready' && request.resource.data.status == 'picked_up') || (resource.data.status == 'picked_up' && request.resource.data.status == 'on_the_way')) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt'])) ||
+        (isActiveWorker() && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
+          resource.data.status == 'on_the_way' && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
+          request.resource.data.statusUpdatedAt == request.time && request.resource.data.completedAt == request.time &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'assignmentStatus', 'completedAt']));
       allow delete: if false;
     }
 

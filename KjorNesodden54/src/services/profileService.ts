@@ -29,6 +29,7 @@ export type ProfileData = {
   role:
     | "customer"
     | "restaurant"
+    | "worker"
     | "admin";
 
   name: string;
@@ -157,6 +158,12 @@ Promise<ProfileData> {
     };
   }
 
+
+  if (userData.role === "worker" && userData.active === true) {
+    return { role: "worker", name: userData.name ?? "", email: currentUser.email ?? "",
+      phone: "", address: "", deliveryAreaId: null, deliveryZone: "", restaurantName: "",
+      loginName: "", description: "", active: true };
+  }
 
   // ==================================================
   // ADMIN
