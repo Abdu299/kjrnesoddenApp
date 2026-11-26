@@ -143,7 +143,7 @@ service cloud.firestore {
             resource.data.role == "customer" &&
             request.resource.data.role == "customer" &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-              "name", "phone", "address", "deliveryFee", "deliveryZone", "deliveryAreaId", "deliveryAreaAddress", "updatedAt"
+              "name", "phone", "address", "deliveryFee", "deliveryZone", "deliveryAreaId", "deliveryAreaAddress", "deliveryCoordinates", "updatedAt"
             ])
           )
           ||
@@ -228,6 +228,28 @@ service cloud.firestore {
           isRestaurant() &&
           resource.data.restaurantId == currentRestaurantId()
         );
+    }
+
+    match /orderGroups/{orderId} {
+      allow create: if isCustomer() &&
+        request.resource.data.keys().hasAll(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
+        request.resource.data.keys().hasOnly(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
+        request.resource.data.customerId == request.auth.uid &&
+        request.resource.data.customerName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+        request.resource.data.customerPhone == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone &&
+        request.resource.data.address is string && request.resource.data.address.size() >= 5 &&
+        (request.resource.data.coordinates == null || (request.resource.data.coordinates is map &&
+          request.resource.data.coordinates.keys().hasOnly(['latitude', 'longitude']) &&
+          request.resource.data.coordinates.latitude is number && request.resource.data.coordinates.latitude >= -90 && request.resource.data.coordinates.latitude <= 90 &&
+          request.resource.data.coordinates.longitude is number && request.resource.data.coordinates.longitude >= -180 && request.resource.data.coordinates.longitude <= 180)) &&
+        request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 100 &&
+        request.resource.data.totalPrice is number && request.resource.data.totalPrice >= 0 &&
+        (request.resource.data.deliveryFee == null || validDeliveryAmount(request.resource.data.deliveryFee)) &&
+        request.resource.data.status == 'placed' && request.resource.data.createdAt == request.time && request.resource.data.statusUpdatedAt == request.time;
+      allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid);
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt']) &&
+        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] && request.resource.data.statusUpdatedAt == request.time;
+      allow delete: if false;
     }
 
     match /restaurantRequests/{requestId} {

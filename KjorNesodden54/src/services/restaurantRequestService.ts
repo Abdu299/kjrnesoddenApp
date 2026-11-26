@@ -142,7 +142,8 @@ export async function createRestaurantRequests(
   items: CartItem[],
   customerName: string,
   customerPhone: string,
-  deliveryQuote?: DeliveryQuote
+  deliveryQuote?: DeliveryQuote,
+  order?: { address: string; coordinates: { latitude: number; longitude: number } | null; items: CartItem[]; totalPrice: number }
 ) {
   const currentUser =
     auth.currentUser;
@@ -157,7 +158,7 @@ export async function createRestaurantRequests(
 
   if (
     items.length ===
-    0
+    0 && !order
   ) {
     throw new Error(
       "Handlekurven er tom."
@@ -247,6 +248,17 @@ export async function createRestaurantRequests(
       db
     );
 
+
+  if (order) {
+    batch.set(doc(db, "orderGroups", orderGroupId), {
+      customerId: currentUser.uid, customerName: customerName.trim(), customerPhone: customerPhone.trim(),
+      address: order.address, coordinates: order.coordinates,
+      items: order.items.map(item => ({ productName: item.productName, restaurantName: item.restaurantName,
+        quantity: item.quantity, price: item.price, customRequest: item.customRequest ?? "" })),
+      totalPrice: order.totalPrice, deliveryFee: deliveryQuote?.fee ?? null,
+      status: "placed", createdAt: serverTimestamp(), statusUpdatedAt: serverTimestamp(),
+    });
+  }
 
   Object.entries(
     restaurantGroups

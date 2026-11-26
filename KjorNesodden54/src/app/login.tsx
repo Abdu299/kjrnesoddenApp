@@ -48,6 +48,7 @@ import {
 } from "../services/profileService";
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
+import DeliveryMap from "../components/DeliveryMap";
 import AppearanceSettings from "../components/AppearanceSettings";
 
 import type {
@@ -216,6 +217,8 @@ export default function LoginScreen() {
     setAddressSaveError,
   ] = useState("");
 
+
+  const [deliveryPoint, setDeliveryPoint] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // DELETE ACCOUNT
 
@@ -637,6 +640,7 @@ export default function LoginScreen() {
         let deliveryUpdate:
           | {
               areaId: DeliveryAreaId;
+              coordinates?: { latitude: number; longitude: number } | null;
             }
           | null
           | undefined;
@@ -644,12 +648,13 @@ export default function LoginScreen() {
         if (selectedAddress) {
           deliveryUpdate = {
             areaId: selectedAddress.zone.id,
+            coordinates: { latitude: selectedAddress.latitude, longitude: selectedAddress.longitude },
           };
         } else if (
           address.trim() === profile?.address.trim() &&
           profile.deliveryAreaId !== null
         ) {
-          deliveryUpdate = { areaId: profile.deliveryAreaId! };
+          deliveryUpdate = { areaId: profile.deliveryAreaId!, coordinates: profile.deliveryCoordinates };
         } else {
           const resolvedAddress =
             await resolveNesoddenAddress(address);
@@ -657,6 +662,7 @@ export default function LoginScreen() {
           deliveryUpdate = resolvedAddress
             ? {
                 areaId: resolvedAddress.zone.id,
+                coordinates: { latitude: resolvedAddress.latitude, longitude: resolvedAddress.longitude },
               }
             : null;
         }
@@ -665,7 +671,8 @@ export default function LoginScreen() {
         const savedAddress =
           await updateCustomerAddress(
             address,
-            deliveryUpdate
+            deliveryUpdate,
+            deliveryPoint ?? deliveryUpdate?.coordinates ?? null
           );
 
 
@@ -686,7 +693,7 @@ export default function LoginScreen() {
           "Adresse lagret",
           savedAddress.deliverySaved
             ? "Adressen din er oppdatert."
-            : "Adressen er lagret. Vi forsøker å finne området automatisk når du bestiller."
+            : "Adressen er lagret, men leveringspunktet og området kunne ikke lagres. Kontakt KjørNesodden hvis du trenger hjelp."
         );
 
       } catch (
@@ -1439,9 +1446,7 @@ export default function LoginScreen() {
                           styles.blueOutlineButton
                         }
                         onPress={() =>
-                          setEditingAddress(
-                            true
-                          )
+                          (setDeliveryPoint(profile.deliveryCoordinates ?? null), setEditingAddress(true))
                         }
                       >
                         <Text
@@ -1465,14 +1470,17 @@ export default function LoginScreen() {
                             setAddressSaveError("");
                             setAddress(text);
                             setSelectedAddress(null);
+                            setDeliveryPoint(null);
                           }}
                           onSelect={(suggestion) => {
                             setAddressSaveError("");
                             setAddress(suggestion.label);
                             setSelectedAddress(suggestion);
+                            setDeliveryPoint({ latitude: suggestion.latitude, longitude: suggestion.longitude });
                           }}
                         />
 
+                        <DeliveryMap value={deliveryPoint} onChange={setDeliveryPoint} />
                         {addressSaveError ? (
                           <Text style={styles.addressSaveError}>
                             {addressSaveError}

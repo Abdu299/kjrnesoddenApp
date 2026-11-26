@@ -110,7 +110,9 @@ test('custom-only orders do not borrow a restaurant delivery rate', async () => 
   const app = setup(), items = [{ ...item(), type: 'custom', price: 0, customPlace: 'Kiwi', customRequest: 'Brød' }];
   const quote = await app.prepareCartDelivery(items); assert.equal(quote.fee, null);
   await app.submitCartOrder(items, 0, quote);
-  assert.equal(app.state.priceReads, 0); assert.equal(app.state.requests.length, 0);
+  assert.equal(app.state.priceReads, 0); assert.equal(app.state.requests.length, 1);
+  assert.equal(app.state.requests[0][0].length, 0);
+  assert.equal(app.state.requests[0][4].items[0].customRequest, "Brød");
   assert.match(app.state.sent[0].description, /Pris avtales/);
 });
 test('an incorrect subtotal or missing confirmation cannot be submitted', async () => {
@@ -123,4 +125,22 @@ test('an API failure does not create restaurant requests', async () => {
   const app = setup(), quote = await app.prepareCartDelivery([item()]); app.state.apiFailure = true;
   await assert.rejects(app.submitCartOrder([item()], 149, quote), /Rejected/);
   assert.equal(app.state.requests.length, 0);
+});
+
+test('a changed map pin requires checkout confirmation again', async () => {
+  const app = setup();
+  app.state.profile.deliveryCoordinates = { latitude: 59.83, longitude: 10.66 };
+  const quote = await app.prepareCartDelivery([item()]);
+  app.state.profile.deliveryCoordinates = { latitude: 59.84, longitude: 10.66 };
+  await assert.rejects(app.submitCartOrder([item()], 149, quote), /bekreft på nytt/);
+  assert.equal(app.state.sent.length, 0);
+});
+
+test('customer order preserves the selected delivery coordinates', async () => {
+  const app = setup();
+  app.state.profile.deliveryCoordinates = { latitude: 59.83, longitude: 10.66 };
+  const quote = await app.prepareCartDelivery([item()]);
+  await app.submitCartOrder([item()], 149, quote);
+  assert.equal(app.state.requests[0][4].coordinates.latitude, 59.83);
+  assert.match(app.state.sent[0].description, /59.83,10.66/);
 });
