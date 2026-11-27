@@ -1,0 +1,7 @@
+name = "kjornesodden-order-push"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+[triggers]
+crons = ["* * * * *"]
+[vars]
+GOOGLE_PROJECT_ID = "kjornesodden"

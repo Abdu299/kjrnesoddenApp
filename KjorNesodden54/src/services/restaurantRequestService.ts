@@ -256,6 +256,7 @@ export async function createRestaurantRequests(
       items: order.items.map(item => ({ productName: item.productName, restaurantName: item.restaurantName,
         quantity: item.quantity, price: item.price, customRequest: item.customRequest ?? "" })),
       totalPrice: order.totalPrice, deliveryFee: deliveryQuote?.fee ?? null,
+      assignmentStatus: "available", assignedWorkerId: null,
       status: "placed", createdAt: serverTimestamp(), statusUpdatedAt: serverTimestamp(),
     });
   }

@@ -25,6 +25,7 @@ import {
 type UserRole =
   | "customer"
   | "restaurant"
+  | "worker"
   | "admin"
   | null;
 
@@ -188,6 +189,7 @@ export function AuthProvider({
                     "customer" ||
                   data.role ===
                     "restaurant" ||
+                  (data.role === "worker" && data.active === true) ||
                   data.role ===
                     "admin"
                 ) {
