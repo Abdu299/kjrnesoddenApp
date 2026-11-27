@@ -1,3 +1,4 @@
+import { deleteHistoryOrder } from "../services/adminOrderDeletion";
 import { getHistoryDriver, groupOrdersByDriver, matchesAdminOrder } from "../services/adminOrderHistory";
 import { CancelOrderForm, OrderCancellation } from "./OrderCancellation";
 import { useEffect, useState } from "react";
@@ -141,6 +142,17 @@ export default function AdminOrders({ view = "active" }: { view?: keyof typeof v
           </Pressable>}
           {!history && !order.assignmentStatus && <Pressable accessibilityRole="button" disabled={!!busy} onPress={() => void change(order.id, () => makeLegacyOrderAvailable(order.id))}>
             <Text style={[styles.buttonText, { color: colors.primary }]}>Gjør tilgjengelig for sjåfører</Text>
+          </Pressable>}
+          {history && <Pressable accessibilityRole="button" disabled={!!busy}
+            style={{ paddingVertical: 10, opacity: busy ? 0.5 : 1 }}
+            onPress={() => ask(
+              "Slett bestillingen permanent?",
+              `Bestilling #${order.id.slice(-6)}, tilknyttede varsler og prisdata slettes fra appen. Beløpet tas ut av appens oversikt. Dette kan ikke angres.`,
+              "Slett bestilling",
+              () => void change(order.id, () => deleteHistoryOrder(order.id)),
+              true,
+            )}>
+            <Text style={[styles.buttonText, { color: colors.danger }]}>{busy === order.id ? "Sletter …" : "Slett bestilling"}</Text>
           </Pressable>}
           {!history && <CancelOrderForm busy={!!busy} onCancel={reason =>
             change(order.id, () => cancelCustomerRequest(order.id, reason))} /> }

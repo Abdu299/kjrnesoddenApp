@@ -179,3 +179,51 @@ test('assigned driver can finish a received order without intermediate statuses'
     });
   }));
 });
+
+test('admin deletes a closed order and matching app records without deleting unrelated data', async () => {
+  const fs = require('firebase/firestore');
+  const load = require('./load-typescript.cjs');
+  const order = 'history-delete';
+  const customerId = 'history-delete-customer';
+  const fee = `orderGroups/${order}/feeHistory/fee1`;
+  const notice = `users/${customerId}/notifications/matching`;
+  const unrelated = `users/${customerId}/notifications/unrelated`;
+  const request = 'restaurantRequests/history-delete-request';
+  const restaurantAccount = 'history-delete-restaurant';
+  await env.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await Promise.all([
+      fs.setDoc(fs.doc(db, `orderGroups/${order}`), { status: 'delivered', customerId, deliveryFee: 150 }),
+      fs.setDoc(fs.doc(db, 'orderGroups/history-delete-active'), { status: 'placed', customerId }),
+      fs.setDoc(fs.doc(db, fee), { proposedFee: 150 }),
+      fs.setDoc(fs.doc(db, notice), { orderId: order }),
+      fs.setDoc(fs.doc(db, unrelated), { orderId: 'another-order' }),
+      fs.setDoc(fs.doc(db, request), { orderGroupId: order, status: 'completed', restaurantId: 'history-r1' }),
+      fs.setDoc(fs.doc(db, `users/${restaurantAccount}`), { role: 'restaurant', restaurantId: 'history-r1' }),
+    ]);
+  });
+  const db = env.authenticatedContext('admin').firestore();
+  const worker = env.authenticatedContext('b').firestore();
+  const service = load('../src/services/adminOrderDeletion.ts', {
+    'firebase/firestore': fs,
+    './firebase': { auth: { currentUser: { uid: 'admin' } }, db },
+  });
+
+  await assertFails(fs.deleteDoc(fs.doc(worker, `orderGroups/${order}`)));
+  await assertFails(fs.deleteDoc(fs.doc(db, 'orderGroups/history-delete-active')));
+  await assertFails(fs.deleteDoc(fs.doc(db, fee)));
+  await assertFails(fs.deleteDoc(fs.doc(db, notice)));
+  await assert.rejects(service.deleteHistoryOrder('history-delete-active'), /Bare leverte og kansellerte/);
+  await assertSucceeds(service.deleteHistoryOrder(order));
+  await assertSucceeds(service.deleteHistoryOrder(order));
+
+  await env.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    for (const path of [`orderGroups/${order}`, fee, notice, request]) {
+      assert.equal((await fs.getDoc(fs.doc(db, path))).exists(), false, path);
+    }
+    for (const path of [unrelated, 'orderGroups/history-delete-active', `users/${restaurantAccount}`]) {
+      assert.equal((await fs.getDoc(fs.doc(db, path))).exists(), true, path);
+    }
+  });
+});

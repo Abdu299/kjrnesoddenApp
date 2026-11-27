@@ -246,8 +246,20 @@ service cloud.firestore {
         !(data.get('feeProposal', {}).get('status', '') in ['pending', 'declined']);
     }
 
+    function closedHistoryOrder(order) {
+      return order.status in ['delivered', 'cancelled'];
+    }
+
+    function historyOrderBeingDeleted(orderId) {
+      let path = /databases/$(database)/documents/orderGroups/$(orderId);
+      return isAdmin() && closedHistoryOrder(get(path).data) && !existsAfter(path);
+    }
+
     match /users/{userId}/notifications/{notificationId} {
-      allow read: if signedIn() && request.auth.uid == userId;
+      allow read: if signedIn() && (request.auth.uid == userId ||
+        (isAdmin() && resource.data.get('orderId', null) is string &&
+          get(/databases/$(database)/documents/orderGroups/$(resource.data.orderId)).data.customerId == userId &&
+          closedHistoryOrder(get(/databases/$(database)/documents/orderGroups/$(resource.data.orderId)).data)));
       allow update: if signedIn() && request.auth.uid == userId &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) && request.resource.data.read == true;
       allow create: if signedIn() &&
@@ -276,7 +288,9 @@ service cloud.firestore {
          (request.resource.data.event == 'delivered' && request.resource.data.title == 'Bestillingen er levert') ||
          (request.resource.data.event == 'assigned' && request.resource.data.title == 'En sjåfør har tatt oppdraget') ||
          (request.resource.data.event == 'fee' && request.resource.data.title == 'Du har fått et nytt leveringsprisforslag'));
-      allow delete: if false;
+      allow delete: if resource.data.get('orderId', null) is string &&
+        historyOrderBeingDeleted(resource.data.orderId) &&
+        get(/databases/$(database)/documents/orderGroups/$(resource.data.orderId)).data.customerId == userId;
     }
     match /users/{userId}/pushTokens/{tokenId} {
       allow read, delete: if signedIn() && request.auth.uid == userId;
@@ -319,7 +333,7 @@ service cloud.firestore {
       allow update: if isCustomer() && get(/databases/$(database)/documents/orderGroups/$(orderId)).data.customerId == request.auth.uid &&
         getAfter(/databases/$(database)/documents/orderGroups/$(orderId)).data.feeProposal == request.resource.data &&
         resource.data.status == 'pending' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','respondedAt','respondedBy']);
-      allow delete: if false;
+      allow delete: if historyOrderBeingDeleted(orderId);
     }
 
     function workerOwnsOrder(order) {
@@ -389,7 +403,7 @@ service cloud.firestore {
           resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way'] && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
           request.resource.data.statusUpdatedAt == request.time && request.resource.data.completedAt == request.time &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'assignmentStatus', 'completedAt']));
-      allow delete: if false;
+      allow delete: if isAdmin() && closedHistoryOrder(resource.data);
     }
 
     match /restaurantRequests/{requestId} {
