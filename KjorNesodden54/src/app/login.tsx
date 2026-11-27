@@ -48,7 +48,6 @@ import {
 } from "../services/profileService";
 
 import AddressAutocomplete from "../components/AddressAutocomplete";
-import DeliveryMap from "../components/DeliveryMap";
 import AppearanceSettings from "../components/AppearanceSettings";
 
 import type {
@@ -218,7 +217,6 @@ export default function LoginScreen() {
   ] = useState("");
 
 
-  const [deliveryPoint, setDeliveryPoint] = useState<{ latitude: number; longitude: number } | null>(null);
 
   // DELETE ACCOUNT
 
@@ -672,7 +670,7 @@ export default function LoginScreen() {
           await updateCustomerAddress(
             address,
             deliveryUpdate,
-            deliveryPoint ?? deliveryUpdate?.coordinates ?? null
+            deliveryUpdate?.coordinates ?? null
           );
 
 
@@ -1446,7 +1444,7 @@ export default function LoginScreen() {
                           styles.blueOutlineButton
                         }
                         onPress={() =>
-                          (setDeliveryPoint(profile.deliveryCoordinates ?? null), setEditingAddress(true))
+                          setEditingAddress(true)
                         }
                       >
                         <Text
@@ -1470,17 +1468,14 @@ export default function LoginScreen() {
                             setAddressSaveError("");
                             setAddress(text);
                             setSelectedAddress(null);
-                            setDeliveryPoint(null);
                           }}
                           onSelect={(suggestion) => {
                             setAddressSaveError("");
                             setAddress(suggestion.label);
                             setSelectedAddress(suggestion);
-                            setDeliveryPoint({ latitude: suggestion.latitude, longitude: suggestion.longitude });
                           }}
                         />
 
-                        <DeliveryMap value={deliveryPoint} onChange={setDeliveryPoint} />
                         {addressSaveError ? (
                           <Text style={styles.addressSaveError}>
                             {addressSaveError}

@@ -289,7 +289,7 @@ function AppTabs() {
       />
 
 
-      <Tabs.Screen name="notifications" options={{ title: "Varsler", href: role === "customer" ? undefined : null, tabBarIcon: () => <Text style={{fontSize:22}}>🔔</Text> }} />
+      <Tabs.Screen name="notifications" options={{ title: "Varsler", href: null, tabBarIcon: () => <Text style={{fontSize:22}}>🔔</Text> }} />
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 
