@@ -44,6 +44,7 @@ export default function WorkerOrderPage() {
   const available = order?.assignmentStatus === "available" && !["cancelled", "delivered"].includes(order.status);
   const next = active && order ? (transitions as Partial<Record<OrderStage, { stage: OrderStage; label: string }>>)[order.status] : undefined;
   const blocked = order?.deliveryFee == null || ["pending", "declined"].includes(order.feeProposal?.status ?? "");
+  const pickedUp = order?.status === "picked_up" || order?.status === "on_the_way";
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
     try { await action(); }
@@ -51,7 +52,7 @@ export default function WorkerOrderPage() {
     finally { setBusy(false); }
   };
   const button = (label: string, onPress: () => void, disabled = false) =>
-    <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
       style={{ backgroundColor: colors.primaryFill, borderRadius: 12, padding: 15, opacity: disabled ? 0.5 : 1 }}>
       <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "800" }}>{busy ? "Oppdaterer …" : label}</Text>
     </Pressable>;
@@ -71,15 +72,19 @@ export default function WorkerOrderPage() {
           {order.completedAt && <Text style={{ color: colors.textMuted }}>Levert {order.completedAt.toDate().toLocaleString("nb-NO")}</Text>}
         </View>
         {available && button("Ta oppdrag", () => void run(() => takeOrder(order.id)), busy)}
-        {active && (order.status === "picked_up" || order.status === "on_the_way") && button("Ferdig – merk som levert", () =>
+        {next && !pickedUp && button(next.label, () => void run(() => advanceDelivery(order.id, next.stage)), busy || blocked)}
+        {active && button("Ferdig · merk som levert", () =>
           Alert.alert("Bekreft levering", "Er bestillingen levert?", [
             { text: "Avbryt", style: "cancel" },
             { text: "Ferdig", onPress: () => void run(async () => {
               await advanceDelivery(order.id, "delivered");
               router.navigate("/");
             }) },
-          ]), busy || blocked)}
-        {next && button(next.label, () => void run(() => advanceDelivery(order.id, next.stage)), busy || blocked)}
+          ]), busy || blocked || !pickedUp)}
+        {active && !pickedUp && <Text style={{ color: colors.textSecondary }}>
+          {order.status === "ready" ? "Merk oppdraget som hentet for å aktivere Ferdig." : "Ferdig aktiveres etter at bestillingen er klar og du har merket den som hentet."}
+        </Text>}
+        {next && pickedUp && button(next.label, () => void run(() => advanceDelivery(order.id, next.stage)), busy || blocked)}
         <OrderCancellation order={order} />
         {active && blocked && <Text style={{ color: colors.danger }}>Leveringsprisen må godkjennes før henting.</Text>}
         <WorkerOrderDetails key={order.id} order={order} canCall={active} showEstimate={active || available} />
