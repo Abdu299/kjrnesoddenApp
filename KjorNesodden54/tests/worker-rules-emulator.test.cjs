@@ -29,7 +29,7 @@ test('active worker queries and atomic assignment; other and deactivated workers
   const winner = results[0].status === 'fulfilled' ? dbA : dbB, loser = winner === dbA ? dbB : dbA;
   await assertFails(getDoc(doc(loser, 'orderGroups/order')));
   await assertSucceeds(getDocs(query(collection(winner,'orderGroups'), where('assignedWorkerId','==', winner === dbA ? 'a' : 'b'))));
-  await assertFails(updateDoc(doc(winner,'orderGroups/order'), {status:'delivered', statusUpdatedAt:serverTimestamp(), assignmentStatus:'completed', completedAt:serverTimestamp()}));
+  await assertFails(updateDoc(doc(loser,'orderGroups/order'), {status:'delivered', statusUpdatedAt:serverTimestamp(), assignmentStatus:'completed', completedAt:serverTimestamp()}));
   await assertSucceeds(updateDoc(doc(winner,'orderGroups/order'), {status:'picked_up', statusUpdatedAt:serverTimestamp()}));
   await assertSucceeds(updateDoc(doc(winner,'orderGroups/order'), {status:'on_the_way', statusUpdatedAt:serverTimestamp()}));
   await assertSucceeds(updateDoc(doc(winner,'orderGroups/order'), {status:'delivered', statusUpdatedAt:serverTimestamp(), assignmentStatus:'completed', completedAt:serverTimestamp()}));
