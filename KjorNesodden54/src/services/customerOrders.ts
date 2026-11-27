@@ -12,6 +12,7 @@ export type CustomerOrder = {
   assignmentStatus?: "available" | "assigned" | "completed"; assignedWorkerId?: string | null;
   id: string; customerId: string; customerName: string; customerPhone?: string; address: string;
   completedAt?: Timestamp | null;
+  statusUpdatedAt?: Timestamp | null;
   cancellation?: { reason: string; by: string; role: "worker" | "admin"; name: string; at: Timestamp | null };
   coordinates: { latitude: number; longitude: number } | null;
   items: { restaurantId?: string; type?: "restaurant" | "custom"; productName: string; restaurantName: string; quantity: number; price: number; customRequest: string }[];

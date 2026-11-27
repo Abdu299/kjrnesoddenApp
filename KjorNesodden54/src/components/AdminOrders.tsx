@@ -1,6 +1,7 @@
+import { getHistoryDriver, groupOrdersByDriver, matchesAdminOrder } from "../services/adminOrderHistory";
 import { CancelOrderForm, OrderCancellation } from "./OrderCancellation";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import AdminPage from "./AdminPage";
 import FeePanel from "./FeePanel";
@@ -15,7 +16,7 @@ import {
   type CustomerOrder,
   type OrderStage,
 } from "../services/customerOrders";
-import { makeLegacyOrderAvailable, releaseAssignedOrder } from "../services/workerService";
+import { makeLegacyOrderAvailable, releaseAssignedOrder, subscribeWorkers } from "../services/workerService";
 
 const nextAction: Partial<Record<OrderStage, string>> = {
   confirmed: "Bekreft bestilling",
@@ -26,9 +27,17 @@ const nextAction: Partial<Record<OrderStage, string>> = {
   delivered: "Merk som levert",
 };
 const money = new Intl.NumberFormat("nb-NO", { style: "currency", currency: "NOK", maximumFractionDigits: 2 });
-const isClosed = (order: CustomerOrder) => order.status === "delivered" || order.status === "cancelled";
+const dateOptions = { timeZone: "Europe/Oslo", dateStyle: "short", timeStyle: "short" } as const;
 
-export default function AdminOrders({ history = false }: { history?: boolean }) {
+const viewLabels = {
+  active: { title: "Bestillinger", section: "Aktive bestillinger", empty: "Ingen aktive bestillinger." },
+  delivered: { title: "Bestillingshistorikk", section: "Leverte bestillinger", empty: "Ingen leverte bestillinger." },
+  cancelled: { title: "Kanselleringshistorikk", section: "Kansellerte bestillinger", empty: "Ingen kansellerte bestillinger." },
+} as const;
+
+export default function AdminOrders({ view = "active" }: { view?: keyof typeof viewLabels }) {
+  const history = view !== "active";
+  const labels = viewLabels[view];
   const { user, role } = useAuth();
   const { colors } = useAppTheme();
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
@@ -36,6 +45,9 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
+  const [search, setSearch] = useState("");
+  const [workerNames, setWorkerNames] = useState<ReadonlyMap<string, string>>(new Map());
+  const [workerError, setWorkerError] = useState(false);
 
   useEffect(() => {
     if (!user || role !== "admin") return;
@@ -51,6 +63,16 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
       setLoading(false);
     });
   }, [user?.uid, role]);
+
+  useEffect(() => {
+    if (!user || role !== "admin" || !history) return;
+    setWorkerNames(new Map());
+    setWorkerError(false);
+    return subscribeWorkers(workers => {
+      setWorkerNames(new Map(workers.map(worker => [worker.id, worker.name?.trim()])));
+      setWorkerError(false);
+    }, () => setWorkerError(true));
+  }, [user?.uid, role, history]);
 
   const change = async (id: string, action: () => Promise<void>) => {
     setBusy(id);
@@ -69,20 +91,12 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
       { text: label, style: destructive ? "destructive" : "default", onPress: action },
     ]);
 
-  const visible = orders.filter(order => isClosed(order) === history);
-  return <AdminPage title={history ? "Bestillingshistorikk" : "Bestillinger"} backTo={history ? "/my-orders" : undefined}>
-    {!history && <Pressable accessibilityRole="button" onPress={() => router.push("/admin-order-history")} style={[styles.button, { backgroundColor: colors.surfaceMuted }]}>
-      <Text style={[styles.buttonText, { color: colors.primary }]}>Vis historikk ›</Text>
-    </Pressable>}
-    <Text style={[styles.section, { color: colors.text }]}>
-      {history ? "Leverte og kansellerte" : "Aktive bestillinger"}{!loading && !error ? ` · ${visible.length}` : ""}
-    </Text>
-    {loading && <ActivityIndicator color={colors.primary} />}
-    {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente bestillinger: {error}</Text>}
-    {!loading && !error && visible.length === 0 && <Text style={{ color: colors.textMuted }}>
-      {history ? "Ingen tidligere bestillinger." : "Ingen aktive bestillinger."}
-    </Text>}
-    {!loading && !error && visible.map(order => {
+  const visible = orders.filter(order => view === "active"
+    ? order.status !== "delivered" && order.status !== "cancelled"
+    : order.status === view)
+    .filter(order => !history || matchesAdminOrder(order, getHistoryDriver(order, workerNames), search));
+  const groups = history ? groupOrdersByDriver(visible, workerNames) : [];
+  const renderOrder = (order: CustomerOrder) => {
       const stageIndex = ORDER_STAGES.indexOf(order.status);
       const next = stageIndex >= 0 && nextAction[ORDER_STAGES[stageIndex + 1]] ? ORDER_STAGES[stageIndex + 1] : undefined;
       const open = expanded === order.id;
@@ -96,15 +110,22 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
             <Text style={[styles.customer, { color: colors.text }]}>{order.customerName || "Kunde"}</Text>
             <Text style={[styles.badge, { color: statusColor, backgroundColor: statusBackground }]}>{ORDER_STAGE_LABELS[order.status] ?? "Ukjent status"}</Text>
           </View>
+          {history && <Text style={{ color: colors.textSecondary, fontWeight: "700" }}>Sjåfør: {getHistoryDriver(order, workerNames)}</Text>}
           {!!restaurants.length && <Text style={{ color: colors.textSecondary }}>{restaurants.join(", ")}</Text>}
           {!!order.address && <Text style={{ color: colors.textSecondary }}>{order.address}</Text>}
           <Text style={{ color: colors.textMuted }}>
-            #{order.id.slice(-6)} · {order.createdAt?.toDate?.().toLocaleString("nb-NO", { timeZone: "Europe/Oslo", dateStyle: "short", timeStyle: "short" }) ?? "Registreres…"}
+            #{order.id.slice(-6)} · {order.createdAt?.toDate?.().toLocaleString("nb-NO", dateOptions) ?? "Registreres…"}
           </Text>
           <Text style={[styles.buttonText, { color: colors.primary }]}>{open ? "Skjul detaljer" : "Vis detaljer ›"}</Text>
         </Pressable>
 
+        {view === "cancelled" && <OrderCancellation order={order} />}
+
         {open && <View style={[styles.details, { borderColor: colors.divider }]}>
+          {history && <Text selectable style={{ color: colors.textSecondary }}>Bestillings-ID: {order.id}</Text>}
+          {view === "delivered" && (order.completedAt ?? order.statusUpdatedAt) && <Text style={{ color: colors.textSecondary }}>
+            Levert: {(order.completedAt ?? order.statusUpdatedAt)?.toDate().toLocaleString("nb-NO", dateOptions)}
+          </Text>}
           {order.customerPhone && <Text style={{ color: colors.textSecondary }}>Telefon: {order.customerPhone}</Text>}
           {order.coordinates && <Pressable accessibilityRole="link" onPress={() => {
             const { latitude, longitude } = order.coordinates!;
@@ -121,7 +142,6 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
           {!history && !order.assignmentStatus && <Pressable accessibilityRole="button" disabled={!!busy} onPress={() => void change(order.id, () => makeLegacyOrderAvailable(order.id))}>
             <Text style={[styles.buttonText, { color: colors.primary }]}>Gjør tilgjengelig for sjåfører</Text>
           </Pressable>}
-          <OrderCancellation order={order} />
           {!history && <CancelOrderForm busy={!!busy} onCancel={reason =>
             change(order.id, () => cancelCustomerRequest(order.id, reason))} /> }
         </View>}
@@ -134,11 +154,40 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
           <Text style={[styles.buttonText, { color: colors.onPrimary }]}>{busy === order.id ? "Oppdaterer …" : nextAction[next]}</Text>
         </Pressable>}
       </View>;
-    })}
+  };
+
+  return <AdminPage title={labels.title} backTo={history ? "/my-orders" : undefined}>
+    {!history && <View style={{ gap: 10 }}>
+      <Pressable accessibilityRole="button" onPress={() => router.push("/admin-order-history")} style={[styles.button, { backgroundColor: colors.surfaceMuted }]}>
+        <Text style={[styles.buttonText, { color: colors.primary }]}>Vis historikk ›</Text>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.push("/admin-cancelled-orders")} style={[styles.button, { backgroundColor: colors.surfaceMuted }]}>
+        <Text style={[styles.buttonText, { color: colors.primary }]}>Kanselleringshistorikk ›</Text>
+      </Pressable>
+    </View>}
+    {history && <TextInput accessibilityLabel="Søk i bestillinger" placeholder="Søk på ordrenummer, kunde, sjåfør …"
+      placeholderTextColor={colors.textMuted} autoCapitalize="none" autoCorrect={false} value={search} onChangeText={setSearch}
+      clearButtonMode="while-editing" style={[styles.search, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]} />}
+    <Text style={[styles.section, { color: colors.text }]}>
+      {labels.section}{!loading && !error ? ` · ${visible.length}` : ""}
+    </Text>
+    {loading && <ActivityIndicator color={colors.primary} />}
+    {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente bestillinger: {error}</Text>}
+    {workerError && <Text style={{ color: colors.textMuted }}>Kunne ikke hente sjåførnavn.</Text>}
+    {!loading && !error && visible.length === 0 && <Text style={{ color: colors.textMuted }}>
+      {search.trim() ? "Ingen bestillinger matcher søket." : labels.empty}
+    </Text>}
+    {!loading && !error && (history ? groups.map(group => <View key={group.id ?? "unassigned"} style={{ marginBottom: 12 }}>
+      <Text style={{ color: colors.text, fontSize: 16, fontWeight: "800", marginBottom: 8 }}>
+        {group.name}{group.name === "Ukjent sjåfør" && group.id ? ` · …${group.id.slice(-6)}` : ""} · {group.orders.length}
+      </Text>
+      {group.orders.map(renderOrder)}
+    </View>) : visible.map(renderOrder))}
   </AdminPage>;
 }
 
 const styles = StyleSheet.create({
+  search: { borderWidth: 1, borderRadius: 10, minHeight: 46, paddingHorizontal: 12 },
   section: { fontSize: 19, fontWeight: "700", marginTop: 20, marginBottom: 12 },
   card: { borderWidth: 1, borderRadius: 16, padding: 15, marginBottom: 12, gap: 12 },
   summary: { gap: 6 },
