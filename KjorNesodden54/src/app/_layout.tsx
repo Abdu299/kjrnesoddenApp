@@ -310,6 +310,7 @@ function AppTabs() {
       {/* These pages are opened from buttons within a tab. */}
       <Tabs.Screen name="admin-pricing" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
       <Tabs.Screen name="admin-requests" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
+      <Tabs.Screen name="admin-cancelled-orders" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
       <Tabs.Screen name="admin-order-history" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
 
       <Tabs.Screen name="my-orders" options={{
