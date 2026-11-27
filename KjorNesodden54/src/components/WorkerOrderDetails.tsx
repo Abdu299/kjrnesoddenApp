@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Alert, Linking, Pressable, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useAppTheme } from "../context/ThemeContext";
 import { useWorkerLocation } from "../context/WorkerLocationContext";
@@ -31,10 +31,10 @@ export function WorkerOrderDetails({ order, canCall, showEstimate }: { order: Wo
   const [retry, setRetry] = useState(0);
   const hasPosition = !!position;
 
-  useEffect(() => onSnapshot(collection(db, "restaurants"), snapshot => {
+  useEffect(() => onSnapshot(query(collection(db, "restaurants"), where("active", "==", true)), snapshot => {
     setPickupError(false);
     setRestaurants(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as RestaurantPickup)));
-  }, () => setPickupError(true)), []);
+  }, () => { setRestaurants(null); setPickupError(true); }), []);
 
   const customerPoint = isDrivingPoint(order.coordinates) ? order.coordinates
     : resolved?.address === order.address ? resolved.point : null;

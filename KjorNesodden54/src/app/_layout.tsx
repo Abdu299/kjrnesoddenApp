@@ -81,7 +81,7 @@ function AppTabs() {
   useEffect(() => {
     if (!user || role !== "customer") return;
     registerOrderPush(user.uid).catch(error => console.warn("Kunne ikke aktivere pushvarsler:", error));
-    return listenForOrderPush(id => router.push({ pathname: "/my-orders", params: { orderId: id } }));
+    return listenForOrderPush(id => router.push({ pathname: "/customer-order/[id]", params: { id } }));
   }, [user?.uid, role]);
 
   // ==================================================
@@ -293,6 +293,8 @@ function AppTabs() {
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 
+      <Tabs.Screen name="worker-history" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
+      <Tabs.Screen name="customer-order/[id]" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
       <Tabs.Screen name="worker-order/[id]" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
 
       <Tabs.Screen name="admin-dashboard" options={{

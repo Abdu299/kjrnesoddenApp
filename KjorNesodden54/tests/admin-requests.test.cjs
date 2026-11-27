@@ -14,11 +14,12 @@ function setup({role='admin',status='confirmed'}={}) {
   return {state,...service};
 }
 test('cancellation updates parent and pending restaurant request and creates customer notice',async()=>{
- const app=setup(); await app.cancelCustomerRequest('order1');
+ const app=setup(); await app.cancelCustomerRequest('order1', 'Restauranten stenger');
  assert.equal(app.state.writes.length,3);
  assert.equal(app.state.writes.find(w=>w.path==='orderGroups/order1').data.status,'cancelled');
+ assert.equal(app.state.writes[0].data.cancellation.reason, 'Restauranten stenger');
  assert.equal(app.state.writes.find(w=>w.path==='restaurantRequests/r1').data.status,'cancelled');
  assert.equal(app.state.writes.find(w=>w.data.event==='cancelled').data.orderId,'order1');
 });
-test('completed restaurant requests are retained',async()=>{const app=setup();app.state.requestStatus='completed';await app.cancelCustomerRequest('order1');assert.equal(app.state.writes.some(w=>w.path==='restaurantRequests/r1'),false);});
-test('a delivered order or a non-admin cannot be cancelled',async()=>{const a=setup({status:'delivered'});await assert.rejects(a.cancelCustomerRequest('order1'),/allerede levert/);const b=setup({role:'customer'});await assert.rejects(b.cancelCustomerRequest('order1'),/administratortilgang/);assert.equal(b.state.writes.length,0);});
+test('completed restaurant requests are retained',async()=>{const app=setup();app.state.requestStatus='completed';await app.cancelCustomerRequest('order1', 'Restauranten stenger');assert.equal(app.state.writes.some(w=>w.path==='restaurantRequests/r1'),false);});
+test('a delivered order or a non-admin cannot be cancelled',async()=>{const a=setup({status:'delivered'});await assert.rejects(a.cancelCustomerRequest('order1', 'Restauranten stenger'),/allerede levert/);const b=setup({role:'customer'});await assert.rejects(b.cancelCustomerRequest('order1', 'Restauranten stenger'),/ikke tilgang/);assert.equal(b.state.writes.length,0);});

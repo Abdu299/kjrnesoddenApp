@@ -1,3 +1,4 @@
+import * as Location from "expo-location";
 import { areaName, type DeliveryAreaId } from "../services/deliveryPricing";
 import { useDelivery } from "../context/DeliveryContext";
 import KeyboardScrollView from "../components/KeyboardScrollView";
@@ -625,6 +626,40 @@ export default function LoginScreen() {
   // ==================================================
   // SAVE ADDRESS
   // ==================================================
+
+  const handleUseCurrentPosition = async () => {
+    setAddressSaveError("");
+    setSavingAddress(true);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) throw new Error("Gi appen tilgang til posisjonen din i innstillingene.");
+      const { coords: { latitude, longitude, accuracy } } = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      if (accuracy != null && accuracy > 200) throw new Error("Posisjonen er for unøyaktig. Prøv igjen eller velg adressen manuelt.");
+      const coordinates = { latitude, longitude };
+      const [current] = await Location.reverseGeocodeAsync(coordinates);
+      if (!current?.street || !current.streetNumber) throw new Error("Fant ingen gateadresse her. Velg adressen manuelt.");
+      const street = `${current.street} ${current.streetNumber}`;
+      const place = [current.postalCode, current.city ?? current.subregion].filter(Boolean).join(" ");
+      const match = await resolveNesoddenAddress([street, place].filter(Boolean).join(", "));
+      if (!match || Math.hypot((match.latitude - latitude) * 111000, (match.longitude - longitude) * 56000) > 200) {
+        throw new Error("Fant ingen bekreftet adresse på Nesodden nær posisjonen din. Velg adressen manuelt.");
+      }
+      const saved = await updateCustomerAddress(match.label, { areaId: match.zone.id, coordinates }, coordinates);
+      setAddress(saved.address);
+      setSelectedAddress(null);
+      setEditingAddress(false);
+      await loadProfile();
+      Alert.alert("Adresse lagret", saved.deliverySaved ? saved.address : "Adressen er lagret, men kartpunktet kunne ikke lagres.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Kunne ikke hente adressen fra posisjonen din.";
+      setAddressSaveError(message);
+      Alert.alert("Kunne ikke bruke posisjonen", message);
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   const handleSaveAddress =
     async () => {
@@ -1438,6 +1473,10 @@ export default function LoginScreen() {
                     )}
 
 
+                    <TouchableOpacity accessibilityRole="button" style={styles.blueOutlineButton} disabled={savingAddress} onPress={() => void handleUseCurrentPosition()}>
+                      <Text style={styles.blueOutlineButtonText}>{savingAddress ? "Oppdaterer adresse …" : "Sett til min posisjon"}</Text>
+                    </TouchableOpacity>
+
                     {!editingAddress ? (
                       <TouchableOpacity
                         style={
@@ -1446,6 +1485,7 @@ export default function LoginScreen() {
                         onPress={() =>
                           setEditingAddress(true)
                         }
+                        disabled={savingAddress}
                       >
                         <Text
                           style={

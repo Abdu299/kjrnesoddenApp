@@ -59,6 +59,9 @@ export default function WorkerHome() {
           {index < activeOrders.length - 1 && <Pressable accessibilityRole="button" onPress={() => move(index, 1)}><Text style={{ color: colors.primary }}>Flytt ned</Text></Pressable>}
         </View>}
       </View>)}
+      <Pressable accessibilityRole="button" onPress={() => router.push("/worker-history")} style={{ paddingVertical: 15 }}>
+        <Text style={{ color: colors.primary, fontWeight: "700" }}>Vis leverte og kansellerte oppdrag ›</Text>
+      </Pressable>
       <Pressable accessibilityRole="button" onPress={() => router.navigate("/worker-orders")} style={{ paddingVertical: 15 }}>
         <Text style={{ color: colors.primary, fontWeight: "700" }}>Se ledige oppdrag ›</Text>
       </Pressable>
