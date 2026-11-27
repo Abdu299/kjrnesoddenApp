@@ -150,7 +150,7 @@ export function WorkerOrderDetails({ order, canCall, showEstimate }: { order: Wo
       {description(order.address || "Adresse mangler")}
       <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
         {!!order.address && action("Kopier adresse", () => copy(order.address))}
-        {!showEstimate && !!destination && action("Åpne i kart", () => maps(destination))}
+        {!!destination && action("Åpne i kartet", () => maps(destination))}
         {canCall && !!order.customerPhone && action("Ring kunden", () => open(`tel:${order.customerPhone}`))}
       </View>
     </>)}
