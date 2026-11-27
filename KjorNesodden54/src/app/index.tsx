@@ -1889,6 +1889,9 @@ function AdminHomeScreen() {
         </View>}
 
         <View style={{ gap: 10, marginBottom: 20 }}>
+          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-dashboard" as any)} accessibilityRole="button">
+            <Text style={styles.sectionTitle}>📊 Oversikt</Text><Text style={styles.manageProductDescription}>Bestillinger, leveringsinntekter og sjåfører</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-workers" as any)} accessibilityRole="button">
             <Text style={styles.sectionTitle}>🚗 Sjåfører</Text><Text style={styles.manageProductDescription}>Kontoer, oppdrag og leveringsinntekter</Text>
           </TouchableOpacity>
