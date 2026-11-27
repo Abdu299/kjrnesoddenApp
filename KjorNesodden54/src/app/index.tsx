@@ -2356,10 +2356,10 @@ const createStyles = (colors: AppThemeColors) =>
     },
 
 
-    locationSummary: { paddingHorizontal: 22, paddingVertical: 10, backgroundColor: colors.surfaceMuted, borderBottomWidth: 1, borderBottomColor: colors.border },
-    locationCaption: { fontSize: 12, color: colors.textMuted, fontWeight: "700" },
-    locationValue: { fontSize: 15, color: colors.text, fontWeight: "700", marginTop: 2 },
-    locationAddress: { fontSize: 12, color: colors.primary, marginTop: 5 },
+    locationSummary: { paddingHorizontal: 22, paddingVertical: 5, backgroundColor: colors.surfaceMuted, borderBottomWidth: 1, borderBottomColor: colors.border },
+    locationCaption: { fontSize: 11, color: colors.textMuted, fontWeight: "700" },
+    locationValue: { fontSize: 13, color: colors.text, fontWeight: "700", marginTop: 1 },
+    locationAddress: { fontSize: 11, color: colors.primary, marginTop: 2 },
 
     // CART HEADER
 
