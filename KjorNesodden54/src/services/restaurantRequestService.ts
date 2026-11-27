@@ -253,7 +253,7 @@ export async function createRestaurantRequests(
     batch.set(doc(db, "orderGroups", orderGroupId), {
       customerId: currentUser.uid, customerName: customerName.trim(), customerPhone: customerPhone.trim(),
       address: order.address, coordinates: order.coordinates,
-      items: order.items.map(item => ({ productName: item.productName, restaurantName: item.restaurantName,
+      items: order.items.map(item => ({ restaurantId: item.restaurantId ?? "", type: item.type ?? "custom", productName: item.productName, restaurantName: item.restaurantName,
         quantity: item.quantity, price: item.price, customRequest: item.customRequest ?? "" })),
       totalPrice: order.totalPrice, deliveryFee: deliveryQuote?.fee ?? null,
       assignmentStatus: "available", assignedWorkerId: null,

@@ -13,7 +13,7 @@ export type CustomerOrder = {
   id: string; customerId: string; customerName: string; customerPhone?: string; address: string;
   completedAt?: Timestamp | null;
   coordinates: { latitude: number; longitude: number } | null;
-  items: { productName: string; restaurantName: string; quantity: number; price: number; customRequest: string }[];
+  items: { restaurantId?: string; type?: "restaurant" | "custom"; productName: string; restaurantName: string; quantity: number; price: number; customRequest: string }[];
   totalPrice: number; deliveryFee: number | null; status: OrderStage; createdAt: Timestamp | null;
 };
 export function subscribeOrders(admin: boolean, onChange: (orders: CustomerOrder[]) => void, onError: (error: Error) => void) {

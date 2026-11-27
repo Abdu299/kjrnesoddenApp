@@ -1,5 +1,6 @@
 import { registerOrderPush, listenForOrderPush } from "../services/pushNotifications";
 import { router } from "expo-router";
+import { WorkerLocationProvider } from "../context/WorkerLocationContext";
 import { DeliveryProvider } from "../context/DeliveryContext";
 import AppUpdateGate from "../components/AppUpdateGate";
 import {
@@ -442,13 +443,13 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <DeliveryProvider>
+        <WorkerLocationProvider><DeliveryProvider>
           <RestaurantLanguageProvider>
             <CartProvider>
               <ThemedApp />
             </CartProvider>
           </RestaurantLanguageProvider>
-        </DeliveryProvider>
+        </DeliveryProvider></WorkerLocationProvider>
       </AuthProvider>
     </ThemeProvider>
   );
