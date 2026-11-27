@@ -1847,6 +1847,13 @@ export default function LoginScreen() {
               {profile.role ===
                 "admin" && (
                 <>
+                  <View style={styles.profileCard}>
+                    <Text style={styles.sectionTitle}>Leveringspriser</Text>
+                    <TouchableOpacity accessibilityRole="button" style={styles.blueOutlineButton} onPress={() => router.push("/admin-pricing")}>
+                      <Text style={styles.blueOutlineButtonText}>Åpne leveringspriser</Text>
+                    </TouchableOpacity>
+                  </View>
+
                   <View
                     style={
                       styles.profileCard

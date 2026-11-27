@@ -1889,22 +1889,6 @@ function AdminHomeScreen() {
           </TouchableOpacity>
         </View>}
 
-        <View style={{ gap: 10, marginBottom: 20 }}>
-          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-dashboard" as any)} accessibilityRole="button">
-            <Text style={styles.sectionTitle}>📊 Oversikt</Text><Text style={styles.manageProductDescription}>Bestillinger, leveringsinntekter og sjåfører</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-workers" as any)} accessibilityRole="button">
-            <Text style={styles.sectionTitle}>🚗 Sjåfører</Text><Text style={styles.manageProductDescription}>Kontoer, oppdrag og leveringsinntekter</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-pricing" as any)} accessibilityRole="button">
-            <Text style={styles.sectionTitle}>💰 Leveringspriser</Text><Text style={styles.manageProductDescription}>Se og endre områdesatser</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-requests" as any)} accessibilityRole="button">
-            <Text style={styles.sectionTitle}>📋 Åpne forespørsler</Text><Text style={styles.manageProductDescription}>Se og kanseller aktive kundeforespørsler</Text>
-          </TouchableOpacity>
-        </View>
-
-
         <View
           style={
             styles.formCard

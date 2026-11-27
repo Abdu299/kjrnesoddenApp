@@ -36,3 +36,18 @@ test('custom-only checkout creates an order without a restaurant request', async
   assert.equal(app.committed(), 1); assert.equal(app.writes.length, 1);
   assert.equal(app.writes[0].ref.collection, 'orderGroups');
 });
+
+test('an admin status button cannot overwrite a newer status from another device', async () => {
+  const writes = [];
+  const tx = {
+    get: async () => ({ exists: () => true, data: () => ({ status: 'on_the_way', customerId: 'customer' }) }),
+    update: (...args) => writes.push(args),
+    set: (...args) => writes.push(args),
+  };
+  const { updateOrderStage } = load('../src/services/customerOrders.ts', {
+    'firebase/firestore': { doc: () => ({}), runTransaction: (_db, callback) => callback(tx) },
+    './firebase': { db: {} },
+  });
+  await assert.rejects(updateOrderStage('order', 'picked_up', 'ready'), /Statusen er endret/);
+  assert.equal(writes.length, 0);
+});
