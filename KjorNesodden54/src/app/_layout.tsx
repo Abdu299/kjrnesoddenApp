@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { registerOrderPush, listenForOrderPush } from "../services/pushNotifications";
 import { router } from "expo-router";
 import { WorkerLocationProvider } from "../context/WorkerLocationContext";
@@ -201,9 +202,7 @@ function AppTabs() {
         name="index"
         options={{
           title:
-            restaurantEnglish
-              ? "Home"
-              : "Hoved",
+            role === "admin" ? "Restauranter" : restaurantEnglish ? "Home" : "Hoved",
 
           tabBarIcon: ({
             focused,
@@ -294,10 +293,20 @@ function AppTabs() {
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 
-      <Tabs.Screen name="admin-dashboard" options={{ href: null }} />
-      <Tabs.Screen name="admin-workers" options={{ href: null }} />
-      <Tabs.Screen name="admin-pricing" options={{ href: null }} />
-      <Tabs.Screen name="admin-requests" options={{ href: null }} />
+      <Tabs.Screen name="admin-dashboard" options={{
+        title: "Oversikt",
+        href: role === "admin" ? undefined : null,
+        tabBarIcon: ({ focused }) => <Ionicons name="stats-chart-outline" size={22} color={focused ? colors.primary : colors.textMuted} />,
+      }} />
+      <Tabs.Screen name="admin-workers" options={{
+        title: "Sjåfører",
+        href: role === "admin" ? undefined : null,
+        tabBarIcon: ({ focused }) => <Ionicons name="car-outline" size={22} color={focused ? colors.primary : colors.textMuted} />,
+      }} />
+      {/* These pages are opened from buttons within a tab. */}
+      <Tabs.Screen name="admin-pricing" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
+      <Tabs.Screen name="admin-requests" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
+      <Tabs.Screen name="admin-order-history" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
 
       <Tabs.Screen name="my-orders" options={{
         title: role === "admin" ? "Bestillinger" : "Mine bestillinger",

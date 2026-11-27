@@ -27,10 +27,11 @@ export function subscribeOrders(admin: boolean, onChange: (orders: CustomerOrder
     onChange(orders);
   }, onError);
 }
-export async function updateOrderStage(id: string, status: OrderStage) {
+export async function updateOrderStage(id: string, status: OrderStage, expectedStatus?: OrderStage) {
   if (!ORDER_STAGES.includes(status)) throw new Error("Ugyldig status.");
   const messages: Partial<Record<OrderStage,string>> = { confirmed: "Bestillingen er bekreftet", cancelled: "Bestillingen er kansellert", picked_up: "Bestillingen er hentet", on_the_way: "Bestillingen er på vei", delivered: "Bestillingen er levert" };
   await runTransaction(db, async tx => { const ref = doc(db, "orderGroups", id), snap = await tx.get(ref); if (!snap.exists()) throw new Error("Bestillingen finnes ikke."); const old = snap.data(); if (old.status === status) return;
+    if (expectedStatus !== undefined && old.status !== expectedStatus) throw new Error("Statusen er endret. Se gjeldende status før du prøver igjen.");
     tx.update(ref, { status, statusUpdatedAt: serverTimestamp() });
     if (messages[status]) tx.set(doc(collection(db, "users", old.customerId, "notifications")), { title: messages[status], orderId: id, createdAt: serverTimestamp(), read: false, pushState: "pending", event: status });
   });
