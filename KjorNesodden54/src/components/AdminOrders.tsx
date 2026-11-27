@@ -1,3 +1,4 @@
+import { CancelOrderForm, OrderCancellation } from "./OrderCancellation";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
@@ -120,9 +121,9 @@ export default function AdminOrders({ history = false }: { history?: boolean }) 
           {!history && !order.assignmentStatus && <Pressable accessibilityRole="button" disabled={!!busy} onPress={() => void change(order.id, () => makeLegacyOrderAvailable(order.id))}>
             <Text style={[styles.buttonText, { color: colors.primary }]}>Gjør tilgjengelig for sjåfører</Text>
           </Pressable>}
-          {!history && <Pressable accessibilityRole="button" disabled={!!busy} onPress={() => ask("Kanseller bestilling?", "Kunden varsles, og bestillingen flyttes til historikken.", "Kanseller bestilling", () => void change(order.id, () => cancelCustomerRequest(order.id)), true)}>
-            <Text style={[styles.buttonText, { color: colors.danger }]}>Kanseller bestilling</Text>
-          </Pressable>}
+          <OrderCancellation order={order} />
+          {!history && <CancelOrderForm busy={!!busy} onCancel={reason =>
+            change(order.id, () => cancelCustomerRequest(order.id, reason))} /> }
         </View>}
 
         {!history && next && <Pressable accessibilityRole="button" disabled={!!busy} onPress={() => {

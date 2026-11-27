@@ -69,7 +69,7 @@ export async function advanceDelivery(id: string, next: OrderStage) {
     const data = snap.data();
     if (data.assignedWorkerId !== uid) throw new Error("Oppdraget er ikke tildelt deg.");
     if (data.status === next) return;
-    if (data.assignmentStatus !== "assigned" || data.status !== previous[next]) throw new Error("Statusen er endret. Oppdater oppdraget.");
+    if (data.assignmentStatus !== "assigned" || (data.status !== previous[next] && !(next === "delivered" && data.status === "picked_up"))) throw new Error("Statusen er endret. Oppdater oppdraget.");
     transaction.update(ref, { status: next, statusUpdatedAt: serverTimestamp(), ...(next === "delivered" ? { assignmentStatus: "completed", completedAt: serverTimestamp() } : {}) });
     const titles = { picked_up: "Bestillingen er hentet", on_the_way: "Bestillingen er på vei", delivered: "Bestillingen er levert" };
     transaction.set(doc(collection(db, "users", data.customerId, "notifications")), { title: titles[next as keyof typeof titles], orderId: id, createdAt: serverTimestamp(), read: false, pushState: "pending", event: next });

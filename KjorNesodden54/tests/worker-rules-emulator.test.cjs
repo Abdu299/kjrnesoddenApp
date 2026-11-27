@@ -117,7 +117,65 @@ test('admin cancellation atomically updates the order, restaurant request and cu
   const { setDoc }=require('firebase/firestore');
   await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore();await setDoc(doc(db,'orderGroups/admin-cancel'),{customerId:'customer',customerName:'Kunde',status:'confirmed',deliveryFee:100});await setDoc(doc(db,'users/restaurant-cancel-test'),{role:'restaurant',restaurantId:'r1'});await setDoc(doc(db,'restaurantRequests/admin-cancel-r'),{orderGroupId:'admin-cancel',restaurantId:'r1',customerId:'customer',status:'pending'});});
   const admin=env.authenticatedContext('admin').firestore();
-  await assertSucceeds(runTransaction(admin,async tx=>{const order=doc(admin,'orderGroups/admin-cancel'), request=doc(admin,'restaurantRequests/admin-cancel-r');await Promise.all([tx.get(order),tx.get(request)]);tx.update(order,{status:'cancelled',statusUpdatedAt:serverTimestamp()});tx.update(request,{status:'cancelled',cancelledAt:serverTimestamp()});tx.set(doc(admin,'users/customer/notifications/admin-cancel'),{title:'Bestillingen er kansellert',orderId:'admin-cancel',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'cancelled'});}));
+  await assertSucceeds(runTransaction(admin,async tx=>{const order=doc(admin,'orderGroups/admin-cancel'), request=doc(admin,'restaurantRequests/admin-cancel-r');await Promise.all([tx.get(order),tx.get(request)]);tx.update(order,{status:'cancelled',statusUpdatedAt:serverTimestamp(),cancellation:{name:'admin',by:'admin',role:'admin',reason:'Restauranten stenger',at:serverTimestamp()}});tx.update(request,{status:'cancelled',cancelledAt:serverTimestamp()});tx.set(doc(admin,'users/customer/notifications/admin-cancel'),{title:'Bestillingen er kansellert',orderId:'admin-cancel',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'cancelled'});}));
   const customer=env.authenticatedContext('customer').firestore();assert.equal((await getDoc(doc(customer,'orderGroups/admin-cancel'))).data().status,'cancelled');
   const restaurant=env.authenticatedContext('restaurant-cancel-test').firestore();await assertFails(updateDoc(doc(restaurant,'restaurantRequests/admin-cancel-r'),{status:'completed',completedAt:serverTimestamp()}));
+});
+
+test('only the assigned driver can cancel with a reason and keep the order in history', async () => {
+  const { setDoc } = require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx => {
+    const db = ctx.firestore();
+    await Promise.all([
+      setDoc(doc(db, 'users/driving'), { role: 'worker', active: true, name: 'Test Driver' }),
+      setDoc(doc(db, 'orderGroups/worker-cancellation'), { customerId: 'customer', assignmentStatus: 'assigned', assignedWorkerId: 'driving', status: 'ready', deliveryFee: 100 }),
+      setDoc(doc(db, 'restaurantRequests/worker-cancellation'), { orderGroupId: 'worker-cancellation', status: 'pending', restaurantId: 'r1', customerId: 'customer' }),
+    ]);
+  });
+  const driver = env.authenticatedContext('driving').firestore();
+  const other = env.authenticatedContext('b').firestore();
+  const orderRef = db => doc(db, 'orderGroups/worker-cancellation');
+  const requests = db => query(collection(db, 'restaurantRequests'), where('orderGroupId', '==', 'worker-cancellation'));
+  await assertFails(getDocs(requests(other)));
+  const matching = await assertSucceeds(getDocs(requests(driver)));
+  assert.equal(matching.size, 1);
+
+  const cancellation = reason => ({
+    status: 'cancelled', statusUpdatedAt: serverTimestamp(),
+    cancellation: { reason, by: 'driving', name: 'Test Driver', role: 'worker', at: serverTimestamp() },
+  });
+  await assertFails(updateDoc(orderRef(driver), cancellation('  ')));
+  await assertFails(updateDoc(orderRef(driver), { ...cancellation('Bilen stoppet'), cancellation: { ...cancellation('Bilen stoppet').cancellation, name: 'Et annet navn' } }));
+  await assertFails(updateDoc(matching.docs[0].ref, { status: 'cancelled', cancelledAt: serverTimestamp() }));
+  await assertSucceeds(runTransaction(driver, async tx => {
+    await Promise.all([tx.get(orderRef(driver)), tx.get(matching.docs[0].ref)]);
+    tx.update(orderRef(driver), cancellation('Bilen stoppet'));
+    tx.update(matching.docs[0].ref, { status: 'cancelled', cancelledAt: serverTimestamp() });
+    tx.set(doc(driver, 'users/customer/notifications/worker-cancellation'), {
+      orderId: 'worker-cancellation', title: 'Bestillingen er kansellert', event: 'cancelled',
+      createdAt: serverTimestamp(), read: false, pushState: 'pending',
+    });
+  }));
+  const closed = (await getDoc(orderRef(driver))).data();
+  assert.equal(closed.assignedWorkerId, 'driving');
+  assert.equal(closed.cancellation.reason, 'Bilen stoppet');
+});
+
+test('assigned driver can finish after pickup without an intermediate on-the-way status', async () => {
+  const { setDoc } = require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx => setDoc(doc(ctx.firestore(), 'orderGroups/direct-finish'), {
+    customerId: 'customer', assignedWorkerId: 'b', assignmentStatus: 'assigned', status: 'picked_up', deliveryFee: 100,
+  }));
+  const driver = env.authenticatedContext('b').firestore();
+  await assertSucceeds(runTransaction(driver, async tx => {
+    const ref = doc(driver, 'orderGroups/direct-finish');
+    await tx.get(ref);
+    tx.update(ref, {
+      status: 'delivered', assignmentStatus: 'completed', statusUpdatedAt: serverTimestamp(), completedAt: serverTimestamp(),
+    });
+    tx.set(doc(driver, 'users/customer/notifications/direct-finish'), {
+      orderId: 'direct-finish', title: 'Bestillingen er levert', event: 'delivered',
+      createdAt: serverTimestamp(), read: false, pushState: 'pending',
+    });
+  }));
 });

@@ -1,3 +1,5 @@
+import { CancelOrderForm, OrderCancellation } from "../../components/OrderCancellation";
+import { cancelCustomerRequest } from "../../services/adminRequestService";
 import { useEffect, useState } from "react";
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Alert, Pressable, SafeAreaView, Text, View } from "react-native";
@@ -14,7 +16,6 @@ import { advanceDelivery, isActiveWorkerOrder, takeOrder, type WorkerOrder } fro
 const transitions = {
   ready: { stage: "picked_up", label: "Merk som hentet" },
   picked_up: { stage: "on_the_way", label: "Merk som på vei" },
-  on_the_way: { stage: "delivered", label: "Merk som levert" },
 } satisfies Partial<Record<OrderStage, { stage: OrderStage; label: string }>>;
 
 export default function WorkerOrderPage() {
@@ -57,7 +58,7 @@ export default function WorkerOrderPage() {
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <KeyboardScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 14 }}>
-      <Pressable accessibilityRole="button" onPress={() => router.navigate(from === "home" ? "/" : "/worker-orders")} style={{ paddingVertical: 8 }}>
+      <Pressable accessibilityRole="button" onPress={() => router.navigate(from === "home" ? "/" : from === "history" ? "/worker-history" : "/worker-orders")} style={{ paddingVertical: 8 }}>
         <Text style={{ color: colors.primary, fontWeight: "700" }}>‹ Tilbake</Text>
       </Pressable>
       {!current && <ActivityIndicator color={colors.primary} />}
@@ -67,19 +68,27 @@ export default function WorkerOrderPage() {
           <Text style={{ color: colors.textMuted }}>Oppdrag #{order.id.slice(-6)}</Text>
           <Text style={{ color: colors.text, fontSize: 28, fontWeight: "800" }}>{order.customerName || "Levering"}</Text>
           <Text style={{ color: colors.primary, fontWeight: "700" }}>{ORDER_STAGE_LABELS[order.status]}</Text>
+          {order.completedAt && <Text style={{ color: colors.textMuted }}>Levert {order.completedAt.toDate().toLocaleString("nb-NO")}</Text>}
         </View>
         {available && button("Ta oppdrag", () => void run(() => takeOrder(order.id)), busy)}
-        {next && button(next.label, () => {
-          const apply = () => void run(() => advanceDelivery(order.id, next.stage));
-          if (next.stage === "delivered") Alert.alert("Bekreft levering", "Er bestillingen levert?", [
-            { text: "Avbryt", style: "cancel" }, { text: "Levert", onPress: apply },
-          ]);
-          else apply();
-        }, busy || blocked)}
+        {active && (order.status === "picked_up" || order.status === "on_the_way") && button("Ferdig – merk som levert", () =>
+          Alert.alert("Bekreft levering", "Er bestillingen levert?", [
+            { text: "Avbryt", style: "cancel" },
+            { text: "Ferdig", onPress: () => void run(async () => {
+              await advanceDelivery(order.id, "delivered");
+              router.navigate("/");
+            }) },
+          ]), busy || blocked)}
+        {next && button(next.label, () => void run(() => advanceDelivery(order.id, next.stage)), busy || blocked)}
+        <OrderCancellation order={order} />
         {active && blocked && <Text style={{ color: colors.danger }}>Leveringsprisen må godkjennes før henting.</Text>}
         <WorkerOrderDetails key={order.id} order={order} canCall={active} showEstimate={active || available} />
         {active && <FeePanel orderId={order.id} fee={order.deliveryFee} proposal={order.feeProposal}
           canPropose={!["picked_up", "on_the_way"].includes(order.status)} isCustomer={false} />}
+        {active && <CancelOrderForm busy={busy} onCancel={reason => run(async () => {
+          await cancelCustomerRequest(order.id, reason, "worker");
+          router.navigate("/");
+        })} />}
       </>}
     </KeyboardScrollView>
   </SafeAreaView>;

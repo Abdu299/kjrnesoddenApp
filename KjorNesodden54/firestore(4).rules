@@ -261,7 +261,7 @@ service cloud.firestore {
           (isActiveWorker() && request.resource.data.event == 'assigned' &&
             get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.get('assignedWorkerId', null) == null &&
             getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.assignedWorkerId == request.auth.uid) ||
-          (isActiveWorker() && request.resource.data.event in ['picked_up','on_the_way','delivered'] &&
+          (isActiveWorker() && request.resource.data.event in ['picked_up','on_the_way','delivered','cancelled'] &&
             get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.assignedWorkerId == request.auth.uid &&
             get(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status != request.resource.data.event &&
             getAfter(/databases/$(database)/documents/orderGroups/$(request.resource.data.orderId)).data.status == request.resource.data.event) ||
@@ -322,6 +322,31 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function workerOwnsOrder(order) {
+      return isActiveWorker() && order.get('assignedWorkerId', '') == request.auth.uid &&
+        order.get('assignmentStatus', '') == 'assigned';
+    }
+
+    function validCancellation(before, after) {
+      let actor = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let cancel = after.cancellation;
+      return !(before.status in ['cancelled', 'delivered']) && after.status == 'cancelled' &&
+        after.statusUpdatedAt == request.time &&
+        after.diff(before).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'cancellation']) &&
+        cancel.keys().hasOnly(['reason', 'by', 'role', 'name', 'at']) &&
+        cancel.by == request.auth.uid && cancel.role == actor.role &&
+        cancel.name == actor.get('name', request.auth.uid) &&
+        cancel.at == request.time && cancel.reason is string &&
+        cancel.reason.size() <= 500 && cancel.reason.matches('(?s).*[^\\s].*');
+    }
+
+    function workerBeganCancellation(orderId) {
+      let path = /databases/$(database)/documents/orderGroups/$(orderId);
+      return workerOwnsOrder(get(path).data) &&
+        get(path).data.status != 'cancelled' && getAfter(path).data.status == 'cancelled' &&
+        getAfter(path).data.cancellation.by == request.auth.uid;
+    }
+
     match /orderGroups/{orderId} {
       allow create: if isCustomer() &&
         request.resource.data.keys().hasAll(['customerId', 'customerName', 'customerPhone', 'address', 'coordinates', 'items', 'totalPrice', 'deliveryFee', 'status', 'createdAt', 'statusUpdatedAt']) &&
@@ -341,6 +366,7 @@ service cloud.firestore {
         request.resource.data.status == 'placed' && request.resource.data.createdAt == request.time && request.resource.data.statusUpdatedAt == request.time;
       allow read: if isAdmin() || (isCustomer() && resource.data.customerId == request.auth.uid) ||
         (isActiveWorker() && (resource.data.get('assignmentStatus', '') == 'available' || resource.data.get('assignedWorkerId', '') == request.auth.uid));
+      allow update: if (isAdmin() || workerOwnsOrder(resource.data)) && validCancellation(resource.data, request.resource.data);
       allow update: if validFeeProposal(resource.data, request.resource.data, orderId) || validFeeResponse(resource.data, request.resource.data, orderId) ||
         (isAdmin() && resource.data.get('assignmentStatus', '') == 'assigned' && resource.data.status in ['placed', 'confirmed', 'preparing', 'ready'] &&
         request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null && request.resource.data.releasedAt == request.time &&
@@ -349,7 +375,8 @@ service cloud.firestore {
         !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignmentStatus == 'available' && request.resource.data.assignedWorkerId == null &&
         request.resource.data.madeAvailableAt == request.time && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assignmentStatus', 'assignedWorkerId', 'madeAvailableAt'])) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt']) &&
-        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered', 'cancelled'] &&
+        resource.data.status != 'cancelled' &&
+        request.resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way', 'delivered'] &&
         (!(request.resource.data.status in ['picked_up', 'on_the_way', 'delivered']) || feeAllowsDispatch(resource.data)) && request.resource.data.statusUpdatedAt == request.time) ||
         (isActiveWorker() && resource.data.get('assignmentStatus', '') == 'available' && resource.data.get('assignedWorkerId', null) == null &&
           !(resource.data.status in ['delivered', 'cancelled']) && request.resource.data.assignedWorkerId == request.auth.uid && request.resource.data.assignmentStatus == 'assigned' &&
@@ -359,7 +386,7 @@ service cloud.firestore {
           ((resource.data.status == 'ready' && request.resource.data.status == 'picked_up') || (resource.data.status == 'picked_up' && request.resource.data.status == 'on_the_way')) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt'])) ||
         (isActiveWorker() && feeAllowsDispatch(resource.data) && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
-          resource.data.status == 'on_the_way' && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
+          resource.data.status in ['picked_up', 'on_the_way'] && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
           request.resource.data.statusUpdatedAt == request.time && request.resource.data.completedAt == request.time &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'assignmentStatus', 'completedAt']));
       allow delete: if false;
@@ -399,6 +426,7 @@ service cloud.firestore {
 
       allow read: if
         isAdmin()
+        || (signedIn() && workerOwnsOrder(get(/databases/$(database)/documents/orderGroups/$(resource.data.orderGroupId)).data))
         ||
         (
           isRestaurant() &&
@@ -409,6 +437,11 @@ service cloud.firestore {
           isCustomer() &&
           resource.data.customerId == request.auth.uid
         );
+
+      allow update: if resource.data.status == 'pending' &&
+        request.resource.data.status == 'cancelled' && request.resource.data.cancelledAt == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAt']) &&
+        workerBeganCancellation(resource.data.orderGroupId);
 
       allow update: if
         isAdmin()
