@@ -1881,7 +1881,20 @@ export default function LoginScreen() {
               )}
 
 
-              {profile.role === "worker" && <View style={styles.profileCard}><Text style={styles.sectionTitle}>Sjåførkonto</Text><Text style={styles.infoValue}>{profile.name}</Text><Text style={styles.infoValue}>{profile.email}</Text></View>}
+              {profile.role === "worker" && (
+                <View style={styles.profileCard}>
+                  <Text style={styles.sectionTitle}>Sjåførkonto</Text>
+                  <Text style={styles.infoValue}>{profile.name}</Text>
+                  <Text style={styles.infoValue}>{profile.email}</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    style={styles.blueOutlineButton}
+                    onPress={() => router.push("/worker-history")}
+                  >
+                    <Text style={styles.blueOutlineButtonText}>Åpne historikk</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               {/* ADMIN */}
 
               {profile.role ===

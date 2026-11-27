@@ -1,6 +1,5 @@
-import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, SafeAreaView, Pressable, ScrollView, Text } from "react-native";
+import { ActivityIndicator, SafeAreaView, ScrollView, Text } from "react-native";
 import { WorkerOrderCard } from "../components/WorkerOrderCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../context/ThemeContext";
@@ -27,9 +26,6 @@ export default function WorkerOrders() {
       <Text style={{ color: colors.text, fontSize: 26, fontWeight: "800" }}>Oppdrag</Text>
       {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente oppdrag: {error}</Text>}
       <Section title="Ledige oppdrag" orders={available} error={error} />
-      <Pressable accessibilityRole="button" onPress={() => router.push("/worker-history")} style={{ paddingVertical: 14 }}>
-        <Text style={{ color: colors.primary, fontWeight: "700" }}>Vis historikk ›</Text>
-      </Pressable>
     </ScrollView>
   </SafeAreaView>;
 }

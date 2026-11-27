@@ -49,11 +49,6 @@ export default function WorkerHome() {
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text style={{ color: colors.text, fontSize: 27, fontWeight: "800" }}>Mine oppdrag</Text>
       <Text style={{ color: colors.textMuted, marginTop: 6, marginBottom: 20 }}>{message}</Text>
-      <Pressable accessibilityRole="button" onPress={() => router.push("/worker-history")}
-        style={{ padding: 14, borderRadius: 12, backgroundColor: colors.primarySoft, marginBottom: 18 }}>
-        <Text style={{ color: colors.primary, fontWeight: "800", fontSize: 16 }}>Åpne historikk ›</Text>
-        <Text style={{ color: colors.textSecondary, marginTop: 4 }}>Alle dine leverte og kansellerte oppdrag</Text>
-      </Pressable>
       {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente oppdrag: {error}</Text>}
       {!mine && !error && <ActivityIndicator color={colors.primary} />}
       {mine && !activeOrders.length && <Text style={{ color: colors.textSecondary }}>Du har ingen aktive oppdrag.</Text>}

@@ -21,16 +21,25 @@ export default function WorkerHistory() {
       e => setError(e.message));
   }, [focused, role, user?.uid]);
   if (!user || role !== "worker") return null;
+  const delivered = orders?.filter(order => order.status === "delivered");
+  const cancelled = orders?.filter(order => order.status === "cancelled");
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-      <Pressable accessibilityRole="button" onPress={() => router.navigate("/")} style={{ paddingVertical: 10 }}>
-        <Text style={{ color: colors.primary, fontWeight: "700" }}>‹ Mine oppdrag</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.navigate("/login")} style={{ paddingVertical: 10 }}>
+        <Text style={{ color: colors.primary, fontWeight: "700" }}>‹ Profil</Text>
       </Pressable>
       <Text style={{ color: colors.text, fontSize: 26, fontWeight: "800", marginBottom: 16 }}>Oppdragshistorikk</Text>
       {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente historikken: {error}</Text>}
       {!orders && !error && <ActivityIndicator color={colors.primary} />}
-      {orders?.length === 0 && <Text style={{ color: colors.textMuted }}>Ingen leverte eller kansellerte oppdrag.</Text>}
-      {orders?.map(order => <WorkerOrderCard key={order.id} order={order} fromHistory />)}
+      {delivered && <>
+        <Text style={{ color: colors.text, fontSize: 19, fontWeight: "700", marginBottom: 10 }}>Leverte oppdrag</Text>
+        {delivered.length === 0 && <Text style={{ color: colors.textMuted }}>Du har ingen leverte oppdrag ennå.</Text>}
+        {delivered.map(order => <WorkerOrderCard key={order.id} order={order} fromHistory />)}
+      </>}
+      {!!cancelled?.length && <>
+        <Text style={{ color: colors.text, fontSize: 19, fontWeight: "700", marginTop: 18, marginBottom: 10 }}>Kansellerte oppdrag</Text>
+        {cancelled.map(order => <WorkerOrderCard key={order.id} order={order} fromHistory />)}
+      </>}
     </ScrollView>
   </SafeAreaView>;
 }
