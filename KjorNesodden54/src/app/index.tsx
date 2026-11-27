@@ -1,5 +1,6 @@
+import { RestaurantPickupEditor } from "../components/RestaurantPickupEditor";
 import * as Location from "expo-location";
-import WorkerOrders from "./worker-orders";
+import WorkerHome from "../components/WorkerHome";
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
 import RestaurantLoginSetup from "../components/RestaurantLoginSetup";
 import AppUpdatePolicyEditor from "../components/AppUpdatePolicyEditor";
@@ -136,7 +137,7 @@ export default function HomeScreen() {
   }
 
 
-  if (role === "worker") return <WorkerOrders />;
+  if (role === "worker") return <WorkerHome />;
 
   if (
     role ===
@@ -2094,6 +2095,8 @@ function AdminHomeScreen() {
                   </View>
                 )}
 
+
+                <RestaurantPickupEditor id={restaurant.id} initialAddress={restaurant.pickupAddress} />
 
                 {editingId ===
                 restaurant.id ? (

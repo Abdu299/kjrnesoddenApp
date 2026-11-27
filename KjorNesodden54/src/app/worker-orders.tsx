@@ -1,3 +1,4 @@
+import { WorkerOrderDetails } from "../components/WorkerOrderDetails";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -9,7 +10,7 @@ import { advanceDelivery, subscribeWorkerOrders, takeOrder, type WorkerOrder } f
 
 export default function WorkerOrders() {
   const { user, role } = useAuth(); const { colors } = useAppTheme();
-  const [available, setAvailable] = useState<WorkerOrder[]>([]); const [mine, setMine] = useState<WorkerOrder[]>([]); const [error, setError] = useState(""); const [busy, setBusy] = useState(""); const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState(""); const [available, setAvailable] = useState<WorkerOrder[]>([]); const [mine, setMine] = useState<WorkerOrder[]>([]); const [error, setError] = useState(""); const [busy, setBusy] = useState(""); const [orderIds, setOrderIds] = useState<string[]>([]);
   useEffect(() => {
     if (!user || role !== "worker") return;
     setError("");
@@ -30,16 +31,15 @@ export default function WorkerOrders() {
     const pickups = [...new Set((o.items ?? []).map(i => i.restaurantName).filter(Boolean))];
     const next: Partial<Record<OrderStage, OrderStage>> = { ready: "picked_up", picked_up: "on_the_way", on_the_way: "delivered" }; const stage = next[o.status]; const blocked = o.deliveryFee == null || ["pending", "declined"].includes(o.feeProposal?.status ?? "");
     return <View key={o.id} style={{ borderWidth: 1, borderColor: colors.border, padding: 14, borderRadius: 12, marginBottom: 12 }}>
-      <Text style={{ color: colors.text, fontWeight: "700" }}>#{o.id.slice(-6)} · {ORDER_STAGE_LABELS[o.status]}</Text>
+      <TouchableOpacity onPress={() => setExpanded(expanded === o.id ? "" : o.id)} accessibilityRole="button"><Text style={{ color: colors.text, fontWeight: "700" }}>#{o.id.slice(-6)} · {ORDER_STAGE_LABELS[o.status]} {expanded === o.id ? "⌃" : "⌄"}</Text><Text style={{color:colors.primary,marginTop:5}}>Trykk for detaljer</Text></TouchableOpacity>
+      {expanded === o.id && <WorkerOrderDetails order={o} />}
       <Text style={{ color: colors.text, marginTop: 6 }}>{o.customerName} · {o.address}</Text>
       {o.customerPhone && kind === "active" && button(`Ring kunden: ${o.customerPhone}`, () => Linking.openURL(`tel:${o.customerPhone}`))}
       {kind === "history" && o.completedAt && <Text style={{ color: colors.textMuted }}>Levert: {o.completedAt.toDate().toLocaleString("nb-NO")}</Text>}
       <Text style={{ color: colors.textSecondary, marginTop: 6 }}>Henting: {pickups.join(", ") || "Ikke oppgitt"}</Text>
-      {(o.items ?? []).map((item, i) => <Text key={i} style={{ color: colors.textSecondary }}>{item.quantity} × {item.productName}{item.customRequest ? ` — ${item.customRequest}` : ""}</Text>)}
-      <Text style={{ color: colors.textSecondary }}>Varer: {o.totalPrice} kr · Levering: {o.deliveryFee == null ? "avtales" : `${o.deliveryFee} kr`}</Text>
-      {kind === "active" && <FeePanel orderId={o.id} fee={o.deliveryFee} proposal={o.feeProposal} canPropose={! ["picked_up", "on_the_way", "delivered", "cancelled"].includes(o.status)} isCustomer={false} />}
-      {kind === "available" && button("Ta oppdrag", () => perform(o.id, () => takeOrder(o.id)), !!busy)}
-      {kind === "active" && <>{button("Naviger til kunden", () => go(o.coordinates ? `${o.coordinates.latitude},${o.coordinates.longitude}` : o.address))}{pickups.map(p => <View key={p}>{button(`Finn ${p} i kart`, () => go(`${p}, Nesodden`))}</View>)}
+      {expanded === o.id && kind === "active" && <FeePanel orderId={o.id} fee={o.deliveryFee} proposal={o.feeProposal} canPropose={! ["picked_up", "on_the_way", "delivered", "cancelled"].includes(o.status)} isCustomer={false} />}
+      {expanded === o.id && kind === "available" && button("Ta oppdrag", () => perform(o.id, () => takeOrder(o.id)), !!busy)}
+      {expanded === o.id && kind === "active" && <>{button("Naviger til kunden", () => go(o.coordinates ? `${o.coordinates.latitude},${o.coordinates.longitude}` : o.address))}{pickups.map(p => <View key={p}>{button(`Finn ${p} i kart`, () => go(`${p}, Nesodden`))}</View>)}
         {button("Flytt opp", () => shift(index, -1), index === 0)}{button("Flytt ned", () => shift(index, 1), index === active.length - 1)}
         {blocked && <Text style={{color:colors.danger,marginTop:8}}>Leveringsprisen må godkjennes før henting.</Text>}
         {stage ? button(ORDER_STAGE_LABELS[stage], () => stage === "delivered" ? Alert.alert("Bekreft levering", "Er bestillingen levert?", [{ text: "Avbryt", style: "cancel" }, { text: "Levert", onPress: () => perform(o.id, () => advanceDelivery(o.id, stage)) }]) : perform(o.id, () => advanceDelivery(o.id, stage)), !!busy || blocked) : <Text style={{ color: colors.textMuted, marginTop: 8 }}>Venter på at bestillingen er klar for henting.</Text>}

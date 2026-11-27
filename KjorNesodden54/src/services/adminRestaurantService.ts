@@ -44,6 +44,7 @@ import {
 // ==================================================
 
 export type Restaurant = {
+  pickupAddress?: string;
   deliveryAreaId: DeliveryAreaId | null;
   id: string;
   name: string;
@@ -386,6 +387,7 @@ Promise<Restaurant[]> {
         id:
           restaurantDocument.id,
 
+        pickupAddress: data.pickupAddress ?? "",
         deliveryAreaId: restaurantDeliveryArea(data.name ?? "", data.deliveryAreaId),
 
         name:
