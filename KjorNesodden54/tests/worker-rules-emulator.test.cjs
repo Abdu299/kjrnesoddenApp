@@ -121,3 +121,44 @@ test('admin cancellation atomically updates the order, restaurant request and cu
   const customer=env.authenticatedContext('customer').firestore();assert.equal((await getDoc(doc(customer,'orderGroups/admin-cancel'))).data().status,'cancelled');
   const restaurant=env.authenticatedContext('restaurant-cancel-test').firestore();await assertFails(updateDoc(doc(restaurant,'restaurantRequests/admin-cancel-r'),{status:'completed',completedAt:serverTimestamp()}));
 });
+
+
+test('worker claims a placed order and creates its customer notification atomically', async () => {
+  const worker = env.authenticatedContext('b').firestore();
+  const customer = env.authenticatedContext('customer').firestore();
+  await env.withSecurityRulesDisabled(async ctx => {
+    const { setDoc } = require('firebase/firestore');
+    await setDoc(doc(ctx.firestore(), 'orderGroups/claim-notice'), {
+      customerId: 'customer', status: 'placed', assignmentStatus: 'available',
+      assignedWorkerId: null, deliveryFee: null,
+    });
+  });
+  const order = doc(worker, 'orderGroups/claim-notice');
+  const noticePath = 'users/customer/notifications/claim-notice';
+  const claim = (title) => runTransaction(worker, async tx => {
+    await tx.get(order);
+    tx.update(order, { assignmentStatus: 'assigned', assignedWorkerId: 'b', assignedAt: serverTimestamp() });
+    tx.set(doc(worker, noticePath), {
+      title, orderId: 'claim-notice', createdAt: serverTimestamp(), read: false,
+      pushState: 'pending', event: 'assigned',
+    });
+  });
+  await assertFails(claim('Feil varsel'));
+  assert.equal((await getDoc(order)).data().assignmentStatus, 'available');
+  await assertSucceeds(claim('En sjåfør har tatt oppdraget'));
+  assert.equal((await getDoc(order)).data().assignedWorkerId, 'b');
+  assert.equal((await getDoc(doc(customer, noticePath))).data().event, 'assigned');
+});
+
+test('worker lookup includes active restaurants without exposing inactive records', async () => {
+  const worker = env.authenticatedContext('b').firestore();
+  await env.withSecurityRulesDisabled(async ctx => {
+    const { setDoc } = require('firebase/firestore');
+    await setDoc(doc(ctx.firestore(), 'restaurants/open'), { active: true, pickupAddress: 'Gate 1' });
+    await setDoc(doc(ctx.firestore(), 'restaurants/closed'), { active: false, pickupAddress: 'Gate 2' });
+  });
+  const ref = collection(worker, 'restaurants');
+  await assertFails(getDocs(ref));
+  const result = await assertSucceeds(getDocs(query(ref, where('active', '==', true))));
+  assert.deepEqual(result.docs.map(entry => entry.id), ['open']);
+});
