@@ -1,23 +1,67 @@
 import { useEffect, useState } from "react";
 import { router } from "expo-router";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { WorkerOrderCard } from "./WorkerOrderCard";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../context/ThemeContext";
 import { useWorkerLocation } from "../context/WorkerLocationContext";
-import { subscribeWorkerOrders, type WorkerOrder } from "../services/workerService";
+import { isActiveWorkerOrder, subscribeWorkerOrders, type WorkerOrder } from "../services/workerService";
 
 export default function WorkerHome() {
-  const { user, role } = useAuth(); const { colors } = useAppTheme(); const location = useWorkerLocation();
-  const [available, setAvailable] = useState<WorkerOrder[]>([]); const [mine, setMine] = useState<WorkerOrder[]>([]); const [error, setError] = useState("");
-  useEffect(() => { if (!user || role !== "worker") return; const a = subscribeWorkerOrders(user.uid, "available", setAvailable, e => setError(e.message)); const b = subscribeWorkerOrders(user.uid, "mine", setMine, e => setError(e.message)); return () => { a(); b(); }; }, [user?.uid, role]);
-  const open = available.filter(o => !["cancelled", "delivered"].includes(o.status)).length;
-  const active = mine.filter(o => o.assignmentStatus === "assigned" && !["cancelled", "delivered"].includes(o.status)).length;
-  return <SafeAreaView style={{flex:1,backgroundColor:colors.background}}><ScrollView contentContainerStyle={{padding:20}}>
-    <Text style={{fontSize:27,fontWeight:"800",color:colors.text}}>Sjåfør • Oversikt</Text>
-    <Text style={{color:colors.textSecondary,marginTop:8}}>Her ser du status for arbeidsdagen din.</Text>
-    <View style={{flexDirection:"row",gap:12,marginTop:24}}>{[["Ledige oppdrag",open],["Dine aktive",active]].map(([label,count]) => <View key={label} style={{flex:1,padding:18,borderWidth:1,borderColor:colors.border,borderRadius:14}}><Text style={{color:colors.primary,fontSize:27,fontWeight:"800"}}>{count}</Text><Text style={{color:colors.text}}>{label}</Text></View>)}</View>
-    <Text style={{color:colors.text,marginTop:24,fontWeight:"700"}}>Din posisjon</Text><Text style={{color:colors.textSecondary,marginTop:6}}>{location.message}. Oppdateres mens appen er åpen.</Text>
-    {!!error && <Text style={{color:colors.danger,marginTop:12}}>Kunne ikke hente oppdrag: {error}</Text>}
-    <TouchableOpacity onPress={() => router.push("/worker-orders")} style={{backgroundColor:colors.primary,padding:15,borderRadius:12,marginTop:24}}><Text style={{color:colors.onPrimary,fontWeight:"700",textAlign:"center"}}>Se alle oppdrag</Text></TouchableOpacity>
-  </ScrollView></SafeAreaView>;
+  const { user, role } = useAuth();
+  const { colors } = useAppTheme();
+  const { message } = useWorkerLocation();
+  const [mine, setMine] = useState<WorkerOrder[] | null>(null);
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setMine(null);
+    setOrderIds([]);
+    setError("");
+    if (!user || role !== "worker") return;
+    let active = true;
+    const key = `worker-order-${user.uid}`;
+    void AsyncStorage.getItem(key).then(value => {
+      if (!value || !active) return;
+      const ids: unknown = JSON.parse(value);
+      if (Array.isArray(ids)) setOrderIds(ids.filter(id => typeof id === "string"));
+    }).catch(() => {});
+    const stop = subscribeWorkerOrders(user.uid, "mine", setMine, e => setError(e.message));
+    return () => { active = false; stop(); };
+  }, [user?.uid, role]);
+
+  const rank = new Map(orderIds.map((id, index) => [id, index]));
+  const activeOrders = (mine ?? []).filter(isActiveWorkerOrder).sort((a, b) =>
+    (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity));
+  const move = (index: number, step: number) => {
+    if (!user) return;
+    const ids = activeOrders.map(order => order.id);
+    const destination = index + step;
+    if (destination < 0 || destination >= ids.length) return;
+    [ids[index], ids[destination]] = [ids[destination], ids[index]];
+    setOrderIds(ids);
+    void AsyncStorage.setItem(`worker-order-${user.uid}`, JSON.stringify(ids)).catch(() => {});
+  };
+
+  return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <Text style={{ color: colors.text, fontSize: 27, fontWeight: "800" }}>Mine oppdrag</Text>
+      <Text style={{ color: colors.textMuted, marginTop: 6, marginBottom: 20 }}>{message}</Text>
+      {!!error && <Text style={{ color: colors.danger }}>Kunne ikke hente oppdrag: {error}</Text>}
+      {!mine && !error && <ActivityIndicator color={colors.primary} />}
+      {mine && !activeOrders.length && <Text style={{ color: colors.textSecondary }}>Du har ingen aktive oppdrag.</Text>}
+      {activeOrders.map((order, index) => <View key={order.id}>
+        <WorkerOrderCard order={order} fromHome />
+        {activeOrders.length > 1 && <View style={{ flexDirection: "row", gap: 16, marginBottom: 14 }}>
+          {index > 0 && <Pressable accessibilityRole="button" onPress={() => move(index, -1)}><Text style={{ color: colors.primary }}>Flytt opp</Text></Pressable>}
+          {index < activeOrders.length - 1 && <Pressable accessibilityRole="button" onPress={() => move(index, 1)}><Text style={{ color: colors.primary }}>Flytt ned</Text></Pressable>}
+        </View>}
+      </View>)}
+      <Pressable accessibilityRole="button" onPress={() => router.navigate("/worker-orders")} style={{ paddingVertical: 15 }}>
+        <Text style={{ color: colors.primary, fontWeight: "700" }}>Se ledige oppdrag ›</Text>
+      </Pressable>
+    </ScrollView>
+  </SafeAreaView>;
 }

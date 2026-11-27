@@ -293,6 +293,8 @@ function AppTabs() {
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 
+      <Tabs.Screen name="worker-order/[id]" options={{ tabBarButton: () => null, tabBarItemStyle: { display: "none" } }} />
+
       <Tabs.Screen name="admin-dashboard" options={{
         title: "Oversikt",
         href: role === "admin" ? undefined : null,
