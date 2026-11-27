@@ -1,69 +1,185 @@
-import { useEffect, useState } from "react";
-import { Alert, Linking, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Alert, Linking, Pressable, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../services/firebase";
 import { useAppTheme } from "../context/ThemeContext";
 import { useWorkerLocation } from "../context/WorkerLocationContext";
+import { resolveNesoddenAddress } from "../services/addressService";
+import { drivingLegs, geoapifyKey, hasDrivingProvider, isDrivingPoint, type DrivingLeg, type DrivingPoint } from "../services/workerDriving";
 import type { WorkerOrder } from "../services/workerService";
 
-type Point = { latitude: number; longitude: number };
-type Pickup = { name: string; address: string; coordinates: Point | null };
-type RouteResult = { direct: number; via: (null | { toPickup: number; toCustomer: number })[] };
-const point = (p: any): p is Point => p && Number.isFinite(p.latitude) && Math.abs(p.latitude) <= 90 && Number.isFinite(p.longitude) && Math.abs(p.longitude) <= 180;
-const minutes = (seconds: number) => `${Math.max(1, Math.round(seconds / 60))} min`;
+type RestaurantPickup = { id: string; name?: string; pickupAddress?: string; pickupCoordinates?: DrivingPoint };
+type PickupEstimate = { toPickup: DrivingLeg; total: DrivingLeg | null };
 
-export function WorkerOrderDetails({ order }: { order: WorkerOrder }) {
-  const { colors } = useAppTheme(); const { position, message } = useWorkerLocation();
-  const [pickups, setPickups] = useState<Pickup[]>([]); const [pickupError, setPickupError] = useState(""); const [route, setRoute] = useState<RouteResult | null>(null); const [routeMessage, setRouteMessage] = useState("");
-  useEffect(() => { let alive = true; setPickups([]); setPickupError("");
-    getDocs(collection(db, "restaurants")).then(snapshot => {
-      const restaurants = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as { id: string; name?: string; pickupAddress?: string; pickupCoordinates?: Point }));
-      const distinct = new Map<string, Pickup>();
-      for (const item of order.items ?? []) {
-        const name = item.restaurantName?.trim(); if (!name) continue;
-        const key = item.restaurantId || name.toLocaleLowerCase("nb-NO"); if (distinct.has(key)) continue;
-        const matches = item.type === "custom" ? [] : item.restaurantId ? restaurants.filter(r => r.id === item.restaurantId) : restaurants.filter(r => r.name?.trim().toLocaleLowerCase("nb-NO") === name.toLocaleLowerCase("nb-NO"));
-        const r = matches.length === 1 ? matches[0] : null;
-        distinct.set(key, { name, address: r?.pickupAddress || "", coordinates: point(r?.pickupCoordinates) ? r!.pickupCoordinates! : null });
-      }
-      if (alive) setPickups([...distinct.values()]);
-    }).catch(() => { if (alive) setPickupError("Kunne ikke hente henteadresser."); });
-    return () => { alive = false; };
-  }, [order.id]);
+const minutes = (seconds: number) => seconds < 60 ? "< 1 min" : `${Math.round(seconds / 60)} min`;
+const km = (meters: number) => `${(meters / 1000).toLocaleString("nb-NO", { maximumFractionDigits: 1 })} km`;
+const coordinatesText = (point: DrivingPoint) => `${point.latitude},${point.longitude}`;
+
+export function WorkerOrderDetails({ order, canCall, showEstimate }: { order: WorkerOrder; canCall: boolean; showEstimate: boolean }) {
+  const { colors } = useAppTheme();
+  const { position, message } = useWorkerLocation();
+  const positionRef = useRef(position);
+  positionRef.current = position;
+
+  const [restaurants, setRestaurants] = useState<RestaurantPickup[] | null>(null);
+  const [pickupError, setPickupError] = useState(false);
+  const [resolved, setResolved] = useState<{ address: string; point: DrivingPoint | null }>();
+  const [direct, setDirect] = useState<DrivingLeg | null>(null);
+  const [via, setVia] = useState<Record<string, PickupEstimate | null>>({});
+  const [loadingRoute, setLoadingRoute] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const hasPosition = !!position;
+
+  useEffect(() => onSnapshot(collection(db, "restaurants"), snapshot => {
+    setPickupError(false);
+    setRestaurants(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as RestaurantPickup)));
+  }, () => setPickupError(true)), []);
+
+  const customerPoint = isDrivingPoint(order.coordinates) ? order.coordinates
+    : resolved?.address === order.address ? resolved.point : null;
   useEffect(() => {
-    let alive = true; let timer: ReturnType<typeof setTimeout> | undefined;
-    const run = async () => {
-      const endpoint = process.env.EXPO_PUBLIC_ROUTING_URL?.trim().replace(/\/$/, "");
-      if (!endpoint) { setRoute(null); setRouteMessage("Kjøretid er ikke satt opp ennå."); return; }
-      if (!position || Date.now() - position.timestamp > 120000) { setRoute(null); setRouteMessage(message); return; }
-      if (!point(order.coordinates)) { setRoute(null); setRouteMessage("Kundens koordinater mangler, så kjøretid kan ikke beregnes."); return; }
-      const valid = pickups.filter(p => p.coordinates); const points: Point[] = [position, order.coordinates, ...valid.map(p => p.coordinates!)];
+    if (!showEstimate || isDrivingPoint(order.coordinates) || !order.address) return;
+    let active = true;
+    void resolveNesoddenAddress(order.address).then(point => {
+      if (active) setResolved({ address: order.address, point });
+    });
+    return () => { active = false; };
+  }, [order.address, order.coordinates?.latitude, order.coordinates?.longitude, showEstimate, retry]);
+
+  const pickups = [...new Map((order.items ?? []).filter(item => item.restaurantName?.trim()).map(item => {
+    const name = item.restaurantName.trim();
+    const normalized = name.toLocaleLowerCase("nb-NO");
+    const key = item.type === "custom" ? `custom:${normalized}` : item.restaurantId || normalized;
+    const matches = item.type === "custom" ? [] : (restaurants ?? []).filter(restaurant =>
+      item.restaurantId ? restaurant.id === item.restaurantId : restaurant.name?.trim().toLocaleLowerCase("nb-NO") === normalized);
+    const pickup = matches.length === 1 ? matches[0] : undefined;
+    return [key, { key, name, address: pickup?.pickupAddress, point: pickup?.pickupCoordinates }] as const;
+  })).values()];
+  const pickupPointsKey = JSON.stringify(pickups.flatMap(({ key, point }) => isDrivingPoint(point) ? [{ key, point }] : []));
+
+  useEffect(() => {
+    setDirect(null);
+    setVia({});
+    setLoadingRoute(false);
+    if (!showEstimate || !hasPosition || !hasDrivingProvider) return;
+    const controller = new AbortController();
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const pickupPoints = JSON.parse(pickupPointsKey) as { key: string; point: DrivingPoint }[];
+    let lastOrigin = "";
+    const calculate = async () => {
+      const origin = positionRef.current;
+      if (!isDrivingPoint(origin) || controller.signal.aborted) return;
+      const fingerprint = `${origin.latitude.toFixed(4)},${origin.longitude.toFixed(4)}`;
+      if (fingerprint === lastOrigin) return;
+      lastOrigin = fingerprint;
+      setLoadingRoute(true);
+      const request = new AbortController();
+      const cancel = () => request.abort();
+      controller.signal.addEventListener("abort", cancel);
+      const deadline = setTimeout(cancel, 12000);
+
       try {
-        setRouteMessage("Beregner kjøretid …");
-        const response = await fetch(`${endpoint}/table/v1/driving/${points.map(p => `${p.longitude},${p.latitude}`).join(";")}?annotations=duration`);
-        if (!response.ok) throw new Error(); const json = await response.json(); const d = json.durations;
-        if (json.code !== "Ok" || !Number.isFinite(d?.[0]?.[1])) throw new Error();
-        let i = 2; const via = pickups.map(p => { if (!p.coordinates) return null; const index = i++; return Number.isFinite(d[0]?.[index]) && Number.isFinite(d[index]?.[1]) ? {toPickup:d[0][index],toCustomer:d[index][1]} : null; });
-        if (alive) { setRoute({direct:d[0][1],via}); setRouteMessage(""); }
-      } catch { if (alive) { setRoute(null); setRouteMessage("Kunne ikke beregne kjøretid. Prøv igjen senere."); } }
-      if (alive) timer = setTimeout(run, 60000);
+        if (customerPoint) {
+          const leg = await drivingLegs([origin, customerPoint], request.signal).then(legs => legs[0], () => null);
+          if (!controller.signal.aborted) setDirect(leg);
+        }
+        const estimates: Record<string, PickupEstimate | null> = {};
+        for (const { key, point } of pickupPoints) {
+          if (request.signal.aborted) break;
+          const legs = await drivingLegs(customerPoint ? [origin, point, customerPoint] : [origin, point], request.signal).catch(() => null);
+          if (!legs) { estimates[key] = null; continue; }
+          const [toPickup, toCustomer] = legs;
+          estimates[key] = {
+            toPickup,
+            total: toCustomer ? { seconds: toPickup.seconds + toCustomer.seconds, meters: toPickup.meters + toCustomer.meters } : null,
+          };
+        }
+        if (!controller.signal.aborted) setVia(estimates);
+      } finally {
+        clearTimeout(deadline);
+        controller.signal.removeEventListener("abort", cancel);
+        if (!controller.signal.aborted) setLoadingRoute(false);
+      }
     };
-    void run(); return () => { alive = false; if (timer) clearTimeout(timer); };
-  }, [order.id, order.coordinates?.latitude, order.coordinates?.longitude, pickups, position ? Math.floor(position.timestamp / 60000) : 0]);
-  const copy = async (value: string) => { try { await Clipboard.setStringAsync(value); Alert.alert("Kopiert", "Adressen er kopiert."); } catch { Alert.alert("Kunne ikke kopiere", "Prøv igjen."); } };
-  const maps = (value: string) => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`).catch(() => Alert.alert("Kunne ikke åpne kart"));
-  const action = (label: string, callback: () => void) => <TouchableOpacity onPress={callback} style={{paddingVertical:7,marginRight:18}}><Text style={{color:colors.primary,fontWeight:"700"}}>{label}</Text></TouchableOpacity>;
-  return <View style={{marginTop:12,borderTopWidth:1,borderColor:colors.border,paddingTop:12}}>
-    <Text style={{color:colors.text,fontSize:17,fontWeight:"800"}}>Kunde: {order.customerName || "Ikke oppgitt"}</Text><Text style={{color:colors.textSecondary,marginTop:4}}>{order.address || "Adresse mangler"}</Text>
-    {!!order.address && <View style={{flexDirection:"row"}}>{action("Kopier adresse", () => void copy(order.address))}{action("Åpne kart", () => maps(order.address))}</View>}
-    {order.customerPhone && <Text style={{color:colors.textSecondary}}>Telefon: {order.customerPhone}</Text>}
-    <Text style={{color:colors.text,fontWeight:"700",marginTop:10}}>Hentested</Text>{!!pickupError && <Text style={{color:colors.danger}}>{pickupError}</Text>}
-    {pickups.length ? pickups.map((p,i) => <View key={`${p.name}-${i}`} style={{marginTop:8}}><Text style={{color:colors.text,fontWeight:"700"}}>{p.name}</Text><Text style={{color:colors.textSecondary}}>{p.address || "Henteadresse mangler"}</Text>{!!p.address && <View style={{flexDirection:"row"}}>{action("Kopier adresse", () => void copy(p.address))}{action("Åpne kart", () => maps(p.address))}</View>}{route?.via[i] && <Text style={{color:colors.text}}>Til hentested: {minutes(route.via[i]!.toPickup)} · Via hentested til kunde: {minutes(route.via[i]!.toPickup + route.via[i]!.toCustomer)}</Text>}</View>) : <Text style={{color:colors.textMuted}}>Ingen hentesteder oppgitt.</Text>}
-    <Text style={{color:colors.text,fontWeight:"700",marginTop:12}}>Varer</Text>{(order.items ?? []).map((item,i) => <Text key={i} style={{color:colors.textSecondary,marginTop:3}}>{item.quantity} × {item.productName}{item.type !== "custom" && !item.customRequest ? ` · ${item.price} kr/stk` : " · pris avtales"}{item.customRequest ? ` — ${item.customRequest}` : ""}</Text>)}
-    <Text style={{color:colors.text,marginTop:8}}>Kjente varepriser: {order.totalPrice} kr · Levering: {order.deliveryFee == null ? "avtales" : `${order.deliveryFee} kr`}</Text>
-    {order.deliveryFee != null && <Text style={{color:colors.text,fontWeight:"700",marginTop:3}}>Sum kjente priser: {order.totalPrice + order.deliveryFee} kr</Text>}
-    <Text style={{color:colors.text,fontWeight:"700",marginTop:12}}>Kjøretid</Text><Text style={{color:colors.textMuted,marginTop:4}}>Posisjon og leveringskoordinater sendes til rutetjenesten når du åpner oppdraget.</Text>{route ? <Text style={{color:colors.textSecondary}}>Direkte til kunde: {minutes(route.direct)}. Estimat uten live trafikk.</Text> : <Text style={{color:colors.textMuted}}>{routeMessage}</Text>}
-    {pickups.length > 1 && <Text style={{color:colors.textMuted,marginTop:5}}>Tiden via hvert hentested er beregnet separat, ikke som en samlet rute.</Text>}
+    const refresh = async () => {
+      await calculate();
+      if (!controller.signal.aborted) timeout = setTimeout(refresh, 60000);
+    };
+    void refresh();
+    return () => { controller.abort(); clearTimeout(timeout); };
+  }, [showEstimate, hasPosition, customerPoint?.latitude, customerPoint?.longitude, pickupPointsKey, retry]);
+
+  const open = (url: string) => void Linking.openURL(url).catch(() => Alert.alert("Kunne ikke åpne lenken"));
+  const copy = (address: string) => void Clipboard.setStringAsync(address).then(ok => {
+    Alert.alert(ok ? "Adresse kopiert" : "Kunne ikke kopiere adressen");
+  }).catch(() => Alert.alert("Kunne ikke kopiere adressen"));
+  const maps = (destination: string) => open(`https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(destination)}`);
+  const action = (label: string, onPress: () => void) => <Pressable accessibilityRole="button" onPress={onPress} style={{ paddingVertical: 8 }}>
+    <Text style={{ color: colors.primary, fontWeight: "700" }}>{label}</Text>
+  </Pressable>;
+  const section = (title: string, children: ReactNode, highlight = false) => <View style={{
+    borderRadius: 14, borderWidth: 1, borderColor: highlight ? colors.primaryBorder : colors.border,
+    backgroundColor: highlight ? colors.primarySoft : colors.surface, padding: 16, gap: 8,
+  }}>
+    <Text style={{ color: colors.text, fontSize: 17, fontWeight: "800" }}>{title}</Text>
+    {children}
   </View>;
+  const description = (value: string) => <Text style={{ color: colors.textSecondary }}>{value}</Text>;
+  const destination = customerPoint ? coordinatesText(customerPoint) : order.address;
+
+  return <>
+    {showEstimate && section("Direkte til kunden med bil", <>
+      {direct && hasPosition ? <>
+        <Text style={{ color: colors.primary, fontSize: 32, fontWeight: "800" }}>{minutes(direct.seconds)}</Text>
+        {description(`${km(direct.meters)} · Fra din posisjon. Estimat uten sanntidstrafikk.`)}
+      </> : description(!hasPosition ? message
+        : !hasDrivingProvider ? "Åpne ruten i kart for å se beregnet kjøretid."
+        : !customerPoint ? "Venter på et gyldig leveringspunkt."
+        : loadingRoute ? "Beregner kjøretid …" : "Kjøretiden er utilgjengelig akkurat nå.")}
+      <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
+        {!!destination && action("Se bilrute i kart", () => maps(destination))}
+        {hasDrivingProvider && hasPosition && !loadingRoute && action("Oppdater kjøretid", () => setRetry(value => value + 1))}
+      </View>
+      {geoapifyKey && hasPosition && <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        <Text accessibilityRole="link" onPress={() => open("https://www.geoapify.com/")} style={{ color: colors.textMuted, fontSize: 12 }}>Powered by Geoapify</Text>
+        <Text accessibilityRole="link" onPress={() => open("https://www.openstreetmap.org/copyright")} style={{ color: colors.textMuted, fontSize: 12 }}>© OpenStreetMap contributors</Text>
+      </View>}
+    </>, true)}
+    {section("Leveringsadresse", <>
+      {description(order.address || "Adresse mangler")}
+      <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
+        {!!order.address && action("Kopier adresse", () => copy(order.address))}
+        {!showEstimate && !!destination && action("Åpne i kart", () => maps(destination))}
+        {canCall && !!order.customerPhone && action("Ring kunden", () => open(`tel:${order.customerPhone}`))}
+      </View>
+    </>)}
+    {section("Hentested", <>
+      {pickupError && description("Kunne ikke hente henteadressene.")}
+      {!pickups.length && description("Ingen hentesteder oppgitt.")}
+      {pickups.map(pickup => {
+        const estimate = hasPosition ? via[pickup.key] : null;
+        return <View key={pickup.key} style={{ paddingBottom: 4, gap: 4 }}>
+          <Text style={{ color: colors.text, fontWeight: "700" }}>{pickup.name}</Text>
+          {description(pickup.address || (restaurants || pickupError ? "Henteadresse mangler" : "Henter adresse …"))}
+          {estimate && description(`Fra deg til hentested: ${minutes(estimate.toPickup.seconds)}`)}
+          {estimate?.total && <Text style={{ color: colors.primary, fontWeight: "700" }}>Via hentested til kunde: {minutes(estimate.total.seconds)}</Text>}
+          <View style={{ flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
+            {!!pickup.address && action("Kopier adresse", () => copy(pickup.address!))}
+            {action("Åpne i kart", () => maps(isDrivingPoint(pickup.point) ? coordinatesText(pickup.point) : pickup.address || `${pickup.name}, Nesodden`))}
+          </View>
+        </View>;
+      })}
+      {pickups.length > 1 && Object.values(via).some(estimate => estimate?.total) && description("Tidene via hvert hentested er beregnet separat.")}
+    </>)}
+    {section("Varer og pris", <>
+      {(order.items ?? []).map((item, index) => <View key={index} style={{ gap: 2 }}>
+        <Text style={{ color: colors.text }}>{item.quantity} × {item.productName}{item.type === "custom" || item.customRequest ? " · pris avtales" : ` · ${item.price} kr/stk`}</Text>
+        {!!item.customRequest && description(item.customRequest)}
+      </View>)}
+      {description(`Kjente varepriser: ${order.totalPrice} kr`)}
+      {description(`Levering: ${order.deliveryFee == null ? "avtales" : `${order.deliveryFee} kr`}`)}
+      {order.deliveryFee != null && <Text style={{ color: colors.text, fontWeight: "800" }}>Sum kjente priser: {order.totalPrice + order.deliveryFee} kr</Text>}
+    </>)}
+  </>;
 }

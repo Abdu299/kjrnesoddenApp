@@ -30,7 +30,7 @@ export function WorkerLocationProvider({ children }: { children: ReactNode }) {
         if (disposed || current !== generation) watcher.remove(); else subscription = watcher;
       } catch { if (!disposed && current === generation) setState({ position: null, message: "Kunne ikke hente posisjonen" }); }
     };
-    if (AppState.currentState === "active") void start();
+    if (AppState.currentState == null || AppState.currentState === "active") void start();
     const listener = AppState.addEventListener("change", next => { if (next === "active") void start(); else { stop(); setState({ position: null, message: "Posisjon er satt på pause" }); } });
     return () => { disposed = true; stop(); listener.remove(); };
   }, [user?.uid, role]);

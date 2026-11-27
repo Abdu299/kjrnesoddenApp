@@ -5,6 +5,9 @@ import { auth, db, firebaseConfig } from "./firebase";
 import type { CustomerOrder, OrderStage } from "./customerOrders";
 
 export type WorkerOrder = CustomerOrder & { assignmentStatus: "available" | "assigned" | "completed"; assignedWorkerId: string | null };
+export const isActiveWorkerOrder = (order: WorkerOrder) =>
+  order.assignmentStatus === "assigned" && !["cancelled", "delivered"].includes(order.status);
+
 export type WorkerAccount = { id: string; name: string; email: string; active: boolean };
 
 export async function createWorkerAccount(name: string, email: string, password: string) {

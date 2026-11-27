@@ -20,6 +20,7 @@ type Props = {
   onChangeText: (value: string) => void;
   onSelect: (address: AddressSuggestion) => void;
   disabled?: boolean;
+  purpose?: "delivery" | "pickup";
 };
 
 export default function AddressAutocomplete({
@@ -27,6 +28,7 @@ export default function AddressAutocomplete({
   onChangeText,
   onSelect,
   disabled,
+  purpose = "delivery",
 }: Props) {
   const { styles, colors } = useThemedStyles(createStyles);
 
@@ -47,9 +49,9 @@ export default function AddressAutocomplete({
       try {
         setLoading(true);
         const matches = await searchNesoddenAddresses(value, controller.signal);
-        setSuggestions(matches);
+        if (!controller.signal.aborted) setSuggestions(matches);
       } catch (error: any) {
-        if (error?.name !== "AbortError") {
+        if (!controller.signal.aborted && error?.name !== "AbortError") {
           setSuggestions([]);
         }
       } finally {
@@ -92,13 +94,14 @@ export default function AddressAutocomplete({
         <View style={styles.suggestions}>
           {!loading && suggestions.length === 0 ? (
             <Text style={styles.emptyText}>
-              Ingen treff. Du kan skrive hele adressen og lagre. Området må avklares før leveringsprisen kan beregnes.
+              {purpose === "pickup" ? "Ingen treff. Prøv gate og husnummer uten poststed." : "Ingen treff. Du kan skrive hele adressen og lagre. Området må avklares før leveringsprisen kan beregnes."}
             </Text>
           ) : (
             suggestions.map((suggestion) => (
               <TouchableOpacity
                 key={suggestion.id}
                 style={styles.suggestion}
+                disabled={disabled}
                 onPress={() => {
                   setSelectedLabel(suggestion.label);
                   setSuggestions([]);
@@ -112,7 +115,7 @@ export default function AddressAutocomplete({
                     {suggestion.postalCode} {suggestion.postalPlace}
                   </Text>
                 </View>
-                <Text style={styles.fee}>{suggestion.zone.name}</Text>
+                {purpose === "delivery" && <Text style={styles.fee}>{suggestion.zone.name}</Text>}
               </TouchableOpacity>
             ))
           )}
@@ -120,7 +123,7 @@ export default function AddressAutocomplete({
       )}
 
       <Text style={styles.helper}>
-        Velg et adresseforslag for riktig område. Leveringsprisen beregnes fra både hentestedet og adressen din.
+        {purpose === "pickup" ? "Velg et forslag for å lagre adressen med kartpunkt." : "Velg et adresseforslag for riktig område. Leveringsprisen beregnes fra både hentestedet og adressen din."}
       </Text>
     </View>
   );
