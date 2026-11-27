@@ -6,10 +6,10 @@ function setup() {
   let order = { assignmentStatus: 'available', assignedWorkerId: null, status: 'ready' };
   const db = {}; let chain = Promise.resolve();
   const firestore = {
-    doc: (_db, collection, id) => ({ collection, id }), serverTimestamp: () => 'server-time',
+    collection: (_db, ...path) => ({ path }), doc: (_db, collection, id) => ({ collection, id }), serverTimestamp: () => 'server-time',
     runTransaction: async (_db, callback) => {
       let release; const old = chain; chain = new Promise(resolve => { release = resolve; }); await old;
-      try { return await callback({ get: async () => ({ exists: () => true, data: () => ({ ...order }) }), update: (_ref, changes) => { order = { ...order, ...changes }; } }); }
+      try { return await callback({ set: () => {}, get: async () => ({ exists: () => true, data: () => ({ ...order }) }), update: (_ref, changes) => { order = { ...order, ...changes }; } }); }
       finally { release(); }
     },
   };
