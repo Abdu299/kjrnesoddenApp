@@ -10,7 +10,8 @@ import { ORDER_STAGE_LABELS, type CustomerOrder } from "../../services/customerO
 import { db } from "../../services/firebase";
 
 export default function CustomerOrderPage() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  const fromHistory = from === "history";
   const { user, role, loading } = useAuth();
   const { colors } = useAppTheme();
   const focused = useIsFocused();
@@ -33,8 +34,8 @@ export default function CustomerOrderPage() {
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 14 }}>
-      <Pressable accessibilityRole="button" onPress={() => router.navigate("/my-orders")} style={{ paddingVertical: 10 }}>
-        <Text style={{ color: colors.primary, fontWeight: "700" }}>‹ Mine bestillinger</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.navigate(fromHistory ? "/customer-order-history" : "/my-orders")} style={{ paddingVertical: 10 }}>
+        <Text style={{ color: colors.primary, fontWeight: "700" }}>{fromHistory ? "‹ Tidligere bestillinger" : "‹ Mine bestillinger"}</Text>
       </Pressable>
       <Text style={{ color: colors.text, fontSize: 26, fontWeight: "800" }}>Bestilling #{id?.slice(-6)}</Text>
       {(loading || (role === "customer" && !current)) && <ActivityIndicator color={colors.primary} />}
