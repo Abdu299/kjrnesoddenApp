@@ -1846,6 +1846,7 @@ export default function LoginScreen() {
               )}
 
 
+              {profile.role === "worker" && <View style={styles.profileCard}><Text style={styles.sectionTitle}>Sjåførkonto</Text><Text style={styles.infoValue}>{profile.name}</Text><Text style={styles.infoValue}>{profile.email}</Text></View>}
               {/* ADMIN */}
 
               {profile.role ===

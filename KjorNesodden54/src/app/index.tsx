@@ -1,3 +1,5 @@
+import WorkerOrders from "./worker-orders";
+import WorkerManagement from "../components/WorkerManagement";
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
 import RestaurantLoginSetup from "../components/RestaurantLoginSetup";
 import AppUpdatePolicyEditor from "../components/AppUpdatePolicyEditor";
@@ -134,6 +136,8 @@ export default function HomeScreen() {
     );
   }
 
+
+  if (role === "worker") return <WorkerOrders />;
 
   if (
     role ===
@@ -1853,6 +1857,7 @@ function AdminHomeScreen() {
           </TouchableOpacity>
         </View>}
 
+        <WorkerManagement />
         <DeliveryPricingEditor />
 
 

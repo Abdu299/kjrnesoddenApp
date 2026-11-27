@@ -1,3 +1,4 @@
+import { unregisterOrderPush } from "./pushNotifications";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
@@ -41,6 +42,7 @@ const CART_STORAGE_PREFIX =
 export type UserRole =
   | "customer"
   | "restaurant"
+  | "worker"
   | "admin";
 
 
@@ -507,7 +509,8 @@ async function loginWithEmail(
 
   if (
     userData.role !== "customer" &&
-    userData.role !== "admin"
+    userData.role !== "admin" &&
+    !(userData.role === "worker" && userData.active === true)
   ) {
     await signOut(
       auth
@@ -526,6 +529,7 @@ async function loginWithEmail(
     role:
       userData.role as
         | "customer"
+        | "worker"
         | "admin",
   };
 }
@@ -1057,6 +1061,8 @@ export async function deleteCustomerAccount(
 // ==================================================
 
 export async function logout() {
+  await unregisterOrderPush().catch(() => {});
+
   await signOut(
     auth
   );
