@@ -415,6 +415,7 @@ service cloud.firestore {
         ||
         (
           isRestaurant() &&
+          resource.data.status == "pending" &&
           resource.data.restaurantId == currentRestaurantId() &&
           request.resource.data.restaurantId == resource.data.restaurantId &&
           request.resource.data.customerId == resource.data.customerId &&

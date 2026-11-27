@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAppTheme } from "../context/ThemeContext";
 import { createWorkerAccount, setWorkerActive, subscribeWorkers, type WorkerAccount } from "../services/workerService";
-export default function WorkerManagement() {
+export default function WorkerManagement({ onSelect }: { onSelect?: (worker: WorkerAccount) => void }) {
   const { colors } = useAppTheme();
   const [workers, setWorkers] = useState<WorkerAccount[]>([]); const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   useEffect(() => subscribeWorkers(setWorkers, e => setError(e.message)), []);
@@ -12,6 +12,6 @@ export default function WorkerManagement() {
     {field(name, setName, "Navn")}{field(email, setEmail, "E-post")}{field(password, setPassword, "Midlertidig passord", true)}
     <TouchableOpacity disabled={busy} onPress={create}><Text style={{ color: colors.primary, paddingVertical: 12 }}>Opprett sjåførkonto</Text></TouchableOpacity>
     {!!error && <Text style={{ color: colors.danger }}>{error}</Text>}
-    {workers.map(worker => <View key={worker.id} style={{ paddingVertical: 8 }}><Text style={{ color: colors.text }}>{worker.name} · {worker.email} · {worker.active ? "Aktiv" : "Deaktivert"}</Text><TouchableOpacity onPress={() => setWorkerActive(worker.id, !worker.active).catch(() => Alert.alert("Feil", "Kunne ikke endre tilgang."))}><Text style={{ color: colors.primary, paddingVertical: 5 }}>{worker.active ? "Deaktiver" : "Aktiver"}</Text></TouchableOpacity></View>)}
+    {workers.map(worker => <View key={worker.id} style={{ paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border }}><TouchableOpacity onPress={() => onSelect?.(worker)} accessibilityRole="button"><Text style={{ color: colors.text, fontWeight: "700", fontSize: 16 }}>{worker.name}  ›</Text><Text style={{color:colors.textSecondary, marginTop:4}}>{worker.email} · {worker.active ? "Aktiv" : "Deaktivert"}</Text><Text style={{color:colors.primary, marginTop:4}}>Se oppdrag og inntekter</Text></TouchableOpacity><TouchableOpacity onPress={() => setWorkerActive(worker.id, !worker.active).catch(() => Alert.alert("Feil", "Kunne ikke endre tilgang."))}><Text style={{ color: colors.primary, paddingVertical: 5 }}>{worker.active ? "Deaktiver" : "Aktiver"}</Text></TouchableOpacity></View>)}
   </View>;
 }

@@ -1,4 +1,5 @@
 const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const { initializeTestEnvironment, assertSucceeds, assertFails } = require('@firebase/rules-unit-testing');
 const { doc, collection, getDoc, getDocs, query, where, runTransaction, updateDoc, serverTimestamp } = require('firebase/firestore');
@@ -110,4 +111,13 @@ test('an assigned worker can atomically save an order update and customer inbox 
   const notice={title:'Bestillingen er hentet',orderId:'push-order',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'picked_up'};
   await assertFails(setDoc(doc(worker,'users/customer/notifications/forged'),notice));
   await assertSucceeds(runTransaction(worker,async tx=>{tx.update(doc(worker,'orderGroups/push-order'),{status:'picked_up',statusUpdatedAt:serverTimestamp()});tx.set(doc(worker,'users/customer/notifications/genuine'),notice);}));
+});
+
+test('admin cancellation atomically updates the order, restaurant request and customer notification', async () => {
+  const { setDoc }=require('firebase/firestore');
+  await env.withSecurityRulesDisabled(async ctx=>{const db=ctx.firestore();await setDoc(doc(db,'orderGroups/admin-cancel'),{customerId:'customer',customerName:'Kunde',status:'confirmed',deliveryFee:100});await setDoc(doc(db,'users/restaurant-cancel-test'),{role:'restaurant',restaurantId:'r1'});await setDoc(doc(db,'restaurantRequests/admin-cancel-r'),{orderGroupId:'admin-cancel',restaurantId:'r1',customerId:'customer',status:'pending'});});
+  const admin=env.authenticatedContext('admin').firestore();
+  await assertSucceeds(runTransaction(admin,async tx=>{const order=doc(admin,'orderGroups/admin-cancel'), request=doc(admin,'restaurantRequests/admin-cancel-r');await Promise.all([tx.get(order),tx.get(request)]);tx.update(order,{status:'cancelled',statusUpdatedAt:serverTimestamp()});tx.update(request,{status:'cancelled',cancelledAt:serverTimestamp()});tx.set(doc(admin,'users/customer/notifications/admin-cancel'),{title:'Bestillingen er kansellert',orderId:'admin-cancel',createdAt:serverTimestamp(),read:false,pushState:'pending',event:'cancelled'});}));
+  const customer=env.authenticatedContext('customer').firestore();assert.equal((await getDoc(doc(customer,'orderGroups/admin-cancel'))).data().status,'cancelled');
+  const restaurant=env.authenticatedContext('restaurant-cancel-test').firestore();await assertFails(updateDoc(doc(restaurant,'restaurantRequests/admin-cancel-r'),{status:'completed',completedAt:serverTimestamp()}));
 });

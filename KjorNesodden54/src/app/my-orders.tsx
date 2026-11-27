@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { useAppTheme } from "../context/ThemeContext";
 import FeePanel from "../components/FeePanel";
+import { cancelCustomerRequest } from "../services/adminRequestService";
 import { makeLegacyOrderAvailable, releaseAssignedOrder } from "../services/workerService";
 import { ORDER_STAGES, ORDER_STAGE_LABELS, subscribeOrders, updateOrderStage, type CustomerOrder, type OrderStage } from "../services/customerOrders";
 
@@ -23,7 +24,7 @@ export default function MyOrders() {
     return subscribeOrders(admin, value => { setOrders(value); setLoading(false); }, e => { setError(e.message); setLoading(false); });
   }, [user?.uid, role, admin]);
   const setStage = async (id: string, stage: OrderStage) => {
-    try { setSaving(id); await updateOrderStage(id, stage); }
+    try { setSaving(id); if (stage === "cancelled") await cancelCustomerRequest(id); else await updateOrderStage(id, stage); }
     catch { Alert.alert("Kunne ikke oppdatere", "Prøv igjen."); }
     finally { setSaving(""); }
   };
@@ -54,7 +55,7 @@ export default function MyOrders() {
         {admin && order.assignmentStatus === "assigned" && ["placed", "confirmed", "preparing", "ready"].includes(order.status) && <TouchableOpacity disabled={!!saving} onPress={() => Alert.alert("Frigi oppdrag", "Oppdraget blir tilgjengelig for andre sjåfører.", [{ text: "Avbryt", style: "cancel" }, { text: "Frigi", onPress: async () => { try { setSaving(order.id); await releaseAssignedOrder(order.id); } catch (e) { Alert.alert("Kunne ikke frigi oppdrag", e instanceof Error ? e.message : "Prøv igjen."); } finally { setSaving(""); } } }])}><Text style={{ color: colors.primary, marginTop: 12 }}>Frigi oppdrag fra sjåfør</Text></TouchableOpacity>}
         {admin && !order.assignmentStatus && !["delivered", "cancelled"].includes(order.status) && <TouchableOpacity disabled={!!saving} onPress={async () => { try { setSaving(order.id); await makeLegacyOrderAvailable(order.id); } catch (e) { Alert.alert("Kunne ikke legge ut oppdrag", e instanceof Error ? e.message : "Prøv igjen."); } finally { setSaving(""); } }}><Text style={{ color: colors.primary, marginTop: 12 }}>Gjør eldre bestilling tilgjengelig for sjåfører</Text></TouchableOpacity>}
         {admin && <View style={{ marginTop: 12 }}><Text style={{ color: colors.textSecondary }}>Oppdater status:</Text><View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-          {ORDER_STAGES.map(stage => <TouchableOpacity key={stage} disabled={!!saving || order.status === stage} onPress={() => setStage(order.id, stage)} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 8, marginRight: 6, marginTop: 6, opacity: order.status === stage ? 0.5 : 1 }}><Text style={{ color: colors.primary }}>{ORDER_STAGE_LABELS[stage]}</Text></TouchableOpacity>)}
+          {ORDER_STAGES.map(stage => <TouchableOpacity key={stage} disabled={!!saving || order.status === stage} onPress={() => stage === "cancelled" ? Alert.alert("Kanseller bestilling?", "Bestillingen lagres som kansellert, og kunden varsles.", [{ text: "Avbryt", style: "cancel" }, { text: "Kanseller bestilling", style: "destructive", onPress: () => setStage(order.id, stage) }]) : setStage(order.id, stage)} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 8, marginRight: 6, marginTop: 6, opacity: order.status === stage ? 0.5 : 1 }}><Text style={{ color: colors.primary }}>{ORDER_STAGE_LABELS[stage]}</Text></TouchableOpacity>)}
         </View></View>}
         </>}
       </View>)}

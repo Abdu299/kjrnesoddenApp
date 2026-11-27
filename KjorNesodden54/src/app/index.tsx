@@ -1,10 +1,8 @@
 import * as Location from "expo-location";
 import WorkerOrders from "./worker-orders";
-import WorkerManagement from "../components/WorkerManagement";
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
 import RestaurantLoginSetup from "../components/RestaurantLoginSetup";
 import AppUpdatePolicyEditor from "../components/AppUpdatePolicyEditor";
-import DeliveryPricingEditor from "../components/DeliveryPricingEditor";
 import DeliveryAreaPicker from "../components/DeliveryAreaPicker";
 import DeliveryPrice from "../components/DeliveryPrice";
 import { areaName, type DeliveryAreaId } from "../services/deliveryPricing";
@@ -1890,8 +1888,17 @@ function AdminHomeScreen() {
           </TouchableOpacity>
         </View>}
 
-        <WorkerManagement />
-        <DeliveryPricingEditor />
+        <View style={{ gap: 10, marginBottom: 20 }}>
+          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-workers" as any)} accessibilityRole="button">
+            <Text style={styles.sectionTitle}>🚗 Sjåfører</Text><Text style={styles.manageProductDescription}>Kontoer, oppdrag og leveringsinntekter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-pricing" as any)} accessibilityRole="button">
+            <Text style={styles.sectionTitle}>💰 Leveringspriser</Text><Text style={styles.manageProductDescription}>Se og endre områdesatser</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.formCard} onPress={() => router.push("/admin-requests" as any)} accessibilityRole="button">
+            <Text style={styles.sectionTitle}>📋 Åpne forespørsler</Text><Text style={styles.manageProductDescription}>Se og kanseller aktive kundeforespørsler</Text>
+          </TouchableOpacity>
+        </View>
 
 
         <View
