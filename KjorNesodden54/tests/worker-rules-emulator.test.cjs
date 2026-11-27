@@ -161,10 +161,10 @@ test('only the assigned driver can cancel with a reason and keep the order in hi
   assert.equal(closed.cancellation.reason, 'Bilen stoppet');
 });
 
-test('assigned driver can finish after pickup without an intermediate on-the-way status', async () => {
+test('assigned driver can finish a received order without intermediate statuses', async () => {
   const { setDoc } = require('firebase/firestore');
   await env.withSecurityRulesDisabled(async ctx => setDoc(doc(ctx.firestore(), 'orderGroups/direct-finish'), {
-    customerId: 'customer', assignedWorkerId: 'b', assignmentStatus: 'assigned', status: 'picked_up', deliveryFee: 100,
+    customerId: 'customer', assignedWorkerId: 'b', assignmentStatus: 'assigned', status: 'placed', deliveryFee: 100,
   }));
   const driver = env.authenticatedContext('b').firestore();
   await assertSucceeds(runTransaction(driver, async tx => {

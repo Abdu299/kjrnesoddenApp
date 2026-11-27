@@ -61,15 +61,20 @@ export async function takeOrder(id: string) {
 }
 export async function advanceDelivery(id: string, next: OrderStage) {
   const uid = auth.currentUser?.uid; if (!uid) throw new Error("Logg inn på nytt.");
-  const previous: Partial<Record<OrderStage, OrderStage>> = { picked_up: "ready", on_the_way: "picked_up", delivered: "on_the_way" };
-  if (!previous[next]) throw new Error("Ugyldig status.");
+  const previous: Partial<Record<OrderStage, string[]>> = {
+    picked_up: ["ready"],
+    on_the_way: ["picked_up"],
+    delivered: ["placed", "confirmed", "preparing", "ready", "picked_up", "on_the_way"],
+  };
+  const allowedStages = previous[next];
+  if (!allowedStages) throw new Error("Ugyldig status.");
   await runTransaction(db, async transaction => {
     const ref = doc(db, "orderGroups", id); const snap = await transaction.get(ref);
     if (!snap.exists()) throw new Error("Bestillingen finnes ikke.");
     const data = snap.data();
     if (data.assignedWorkerId !== uid) throw new Error("Oppdraget er ikke tildelt deg.");
     if (data.status === next) return;
-    if (data.assignmentStatus !== "assigned" || (data.status !== previous[next] && !(next === "delivered" && data.status === "picked_up"))) throw new Error("Statusen er endret. Oppdater oppdraget.");
+    if (data.assignmentStatus !== "assigned" || !allowedStages.includes(data.status)) throw new Error("Statusen er endret. Oppdater oppdraget.");
     transaction.update(ref, { status: next, statusUpdatedAt: serverTimestamp(), ...(next === "delivered" ? { assignmentStatus: "completed", completedAt: serverTimestamp() } : {}) });
     const titles = { picked_up: "Bestillingen er hentet", on_the_way: "Bestillingen er på vei", delivered: "Bestillingen er levert" };
     transaction.set(doc(collection(db, "users", data.customerId, "notifications")), { title: titles[next as keyof typeof titles], orderId: id, createdAt: serverTimestamp(), read: false, pushState: "pending", event: next });

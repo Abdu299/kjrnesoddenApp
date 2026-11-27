@@ -1,9 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const load = require('./load-typescript.cjs');
-function setup() {
+function setup(status = 'ready') {
   const auth = { currentUser: { uid: 'worker-a' } };
-  let order = { assignmentStatus: 'available', assignedWorkerId: null, status: 'ready' };
+  let order = { assignmentStatus: 'available', assignedWorkerId: null, status };
   const db = {}; let chain = Promise.resolve();
   const firestore = {
     collection: (_db, ...path) => ({ path }), doc: (_db, collection, id) => ({ collection, id }), serverTimestamp: () => 'server-time',
@@ -23,12 +23,16 @@ test('only one worker can take an order; repeating a successful claim is harmles
   await assert.rejects(app.takeOrder('order'), /ikke lenger ledig/);
   assert.equal(app.read().assignedWorkerId, 'worker-a');
 });
-test('only assigned worker can complete delivery in the allowed sequence', async () => {
-  const app = setup(); await app.takeOrder('order');
-  await assert.rejects(app.advanceDelivery('order', 'delivered'), /Statusen er endret/);
+test('only the assigned worker can finish directly from received', async () => {
+  const app = setup('placed');
+  await app.takeOrder('order');
   app.auth.currentUser = { uid: 'worker-b' };
-  await assert.rejects(app.advanceDelivery('order', 'picked_up'), /ikke tildelt deg/);
+  await assert.rejects(app.advanceDelivery('order', 'delivered'), /ikke tildelt deg/);
   app.auth.currentUser = { uid: 'worker-a' };
-  await app.advanceDelivery('order', 'picked_up'); await app.advanceDelivery('order', 'on_the_way'); await app.advanceDelivery('order', 'delivered');
-  assert.equal(app.read().assignmentStatus, 'completed'); assert.equal(app.read().completedAt, 'server-time');
+  await app.advanceDelivery('order', 'delivered');
+  await app.advanceDelivery('order', 'delivered');
+  assert.equal(app.read().status, 'delivered');
+  assert.equal(app.read().assignmentStatus, 'completed');
+  assert.equal(app.read().completedAt, 'server-time');
+  assert.equal(app.isActiveWorkerOrder(app.read()), false);
 });

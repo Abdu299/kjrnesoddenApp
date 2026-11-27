@@ -386,7 +386,7 @@ service cloud.firestore {
           ((resource.data.status == 'ready' && request.resource.data.status == 'picked_up') || (resource.data.status == 'picked_up' && request.resource.data.status == 'on_the_way')) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt'])) ||
         (isActiveWorker() && feeAllowsDispatch(resource.data) && resource.data.assignedWorkerId == request.auth.uid && resource.data.assignmentStatus == 'assigned' &&
-          resource.data.status in ['picked_up', 'on_the_way'] && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
+          resource.data.status in ['placed', 'confirmed', 'preparing', 'ready', 'picked_up', 'on_the_way'] && request.resource.data.status == 'delivered' && request.resource.data.assignmentStatus == 'completed' &&
           request.resource.data.statusUpdatedAt == request.time && request.resource.data.completedAt == request.time &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusUpdatedAt', 'assignmentStatus', 'completedAt']));
       allow delete: if false;
