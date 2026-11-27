@@ -560,7 +560,7 @@ export function subscribeToMyRestaurantRequests(
               snapshot
             ) => {
               const requests =
-                snapshot.docs.map(
+                snapshot.docs.filter((requestDocument) => requestDocument.data().status !== "cancelled").map(
                   (
                     requestDocument
                   ) =>
