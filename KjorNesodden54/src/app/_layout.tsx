@@ -293,6 +293,7 @@ function AppTabs() {
 
       <Tabs.Screen name="worker-orders" options={{ title: "Oppdrag", href: role === "worker" ? undefined : null, tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚗</Text> }} />
 
+      <Tabs.Screen name="admin-dashboard" options={{ href: null }} />
       <Tabs.Screen name="admin-workers" options={{ href: null }} />
       <Tabs.Screen name="admin-pricing" options={{ href: null }} />
       <Tabs.Screen name="admin-requests" options={{ href: null }} />
