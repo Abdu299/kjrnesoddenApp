@@ -15,6 +15,7 @@ export default function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const admin = role === "admin";
   useEffect(() => {
     if (!user || (role !== "customer" && role !== "admin")) { setLoading(false); return; }
@@ -39,8 +40,11 @@ export default function MyOrders() {
       <Text style={{ color: colors.text, fontSize: 19, fontWeight: "700", marginVertical: 14 }}>{section.title}</Text>
       {section.data.length === 0 && <Text style={{ color: colors.textMuted }}>Ingen bestillinger her.</Text>}
       {section.data.map(order => <View key={order.id} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, marginBottom: 12, backgroundColor: colors.surface }}>
-        <Text style={{ color: colors.primary, fontWeight: "800", fontSize: 17 }}>{ORDER_STAGE_LABELS[order.status] ?? "Ukjent status"}</Text>
-        <Text style={{ color: colors.textMuted, marginTop: 5 }}>{order.createdAt?.toDate?.().toLocaleString("nb-NO") ?? "Registreres…"} · #{order.id.slice(-6)}</Text>
+        <TouchableOpacity accessibilityRole="button" accessibilityState={{ expanded: orderId === order.id || expandedId === order.id }} onPress={() => { if (orderId) router.setParams({orderId: ""}); setExpandedId(expandedId === order.id && !orderId ? null : order.id); }}>
+          <Text style={{ color: colors.primary, fontWeight: "800", fontSize: 17 }}>{ORDER_STAGE_LABELS[order.status] ?? "Ukjent status"}</Text>
+          <Text style={{ color: colors.textMuted, marginTop: 5 }}>{order.createdAt?.toDate?.().toLocaleString("nb-NO") ?? "Registreres…"} · #{order.id.slice(-6)} · Trykk for detaljer</Text>
+        </TouchableOpacity>
+        {(orderId === order.id || expandedId === order.id) && <>
         {admin && <Text style={{ color: colors.text, marginTop: 8 }}>{order.customerName}</Text>}
         <Text style={{ color: colors.text, marginTop: 8 }}>Levering: {order.address}</Text>
         {admin && order.coordinates && <Text onPress={() => Linking.openURL(`https://www.google.com/maps?q=${order.coordinates!.latitude},${order.coordinates!.longitude}`)} style={{ color: colors.primary, marginTop: 8 }}>Åpne leveringspunkt i kart</Text>}
@@ -52,6 +56,7 @@ export default function MyOrders() {
         {admin && <View style={{ marginTop: 12 }}><Text style={{ color: colors.textSecondary }}>Oppdater status:</Text><View style={{ flexDirection: "row", flexWrap: "wrap" }}>
           {ORDER_STAGES.map(stage => <TouchableOpacity key={stage} disabled={!!saving || order.status === stage} onPress={() => setStage(order.id, stage)} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: 8, marginRight: 6, marginTop: 6, opacity: order.status === stage ? 0.5 : 1 }}><Text style={{ color: colors.primary }}>{ORDER_STAGE_LABELS[stage]}</Text></TouchableOpacity>)}
         </View></View>}
+        </>}
       </View>)}
     </View>)}
   </ScrollView></SafeAreaView>;

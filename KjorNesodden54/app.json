@@ -61,7 +61,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "KjørNesodden bruker posisjonen din når du velger leveringssted."
+          "locationWhenInUsePermission": "KjørNesodden bruker posisjonen din for å vise hvor du er."
         }
       ],
       "expo-notifications"

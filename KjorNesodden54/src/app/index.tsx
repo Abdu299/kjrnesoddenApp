@@ -1,3 +1,4 @@
+import * as Location from "expo-location";
 import WorkerOrders from "./worker-orders";
 import WorkerManagement from "../components/WorkerManagement";
 import { ensureFagerstrandGrillCatalog } from "../services/restaurantCatalogImportService";
@@ -190,6 +191,28 @@ export default function HomeScreen() {
 function CustomerHomeScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
   const delivery = useDeliveryEstimate();
+  const [currentLocation, setCurrentLocation] = useState("Henter posisjon…");
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const permission = await Location.requestForegroundPermissionsAsync();
+        if (!permission.granted) { if (active) setCurrentLocation("Posisjon ikke tilgjengelig"); return; }
+        const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        let label = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+        try {
+          const [address] = await Location.reverseGeocodeAsync(position.coords);
+          if (address) {
+            const street = [address.street, address.streetNumber].filter(Boolean).join(" ");
+            const place = [address.postalCode, address.city ?? address.subregion].filter(Boolean).join(" ");
+            label = [street, place].filter(Boolean).join(", ") || label;
+          }
+        } catch { /* Coordinates remain available if address lookup fails. */ }
+        if (active) setCurrentLocation(label);
+      } catch { if (active) setCurrentLocation("Posisjon ikke tilgjengelig"); }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const {
     totalItems,
@@ -314,6 +337,16 @@ function CustomerHomeScreen() {
         </TouchableOpacity>
       </View>
 
+
+      <View style={styles.locationSummary}>
+        <Text style={styles.locationCaption}>📍 Din posisjon</Text>
+        <Text style={styles.locationValue} numberOfLines={2}>{currentLocation}</Text>
+        <TouchableOpacity onPress={() => router.push("/login")} accessibilityRole="button">
+          <Text style={styles.locationAddress} numberOfLines={2}>
+            {delivery.profile?.address ? `Leveringsadresse: ${delivery.profile.address} · Endre i profil` : "Velg leveringsadresse i profil"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* RESTAURANTS */}
 
@@ -2322,6 +2355,11 @@ const createStyles = (colors: AppThemeColors) =>
       color: colors.primary,
     },
 
+
+    locationSummary: { paddingHorizontal: 22, paddingVertical: 10, backgroundColor: colors.surfaceMuted, borderBottomWidth: 1, borderBottomColor: colors.border },
+    locationCaption: { fontSize: 12, color: colors.textMuted, fontWeight: "700" },
+    locationValue: { fontSize: 15, color: colors.text, fontWeight: "700", marginTop: 2 },
+    locationAddress: { fontSize: 12, color: colors.primary, marginTop: 5 },
 
     // CART HEADER
 
